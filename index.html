@@ -1000,7 +1000,15 @@ $('#btnLogout').addEventListener('click', async function(){
 });
 
 var authChecked = false;
+var authTimeoutId = setTimeout(function(){
+  if(!authChecked){
+    authChecked = true;
+    switchAuthMode('login');
+    showScreen('screen-auth');
+  }
+}, 3000);
 onAuthStateChanged(auth, async function(user){
+  clearTimeout(authTimeoutId);
   if(user){
     if(state.uid !== user.uid){
       try{ await completeLogin(user); }
