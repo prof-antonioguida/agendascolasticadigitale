@@ -535,9 +535,39 @@ input,select{font-family:inherit;}
   <div id="modalBox"></div>
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import {
+  getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc,
+  collection, writeBatch
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
 (function(){
 'use strict';
+
+/* ====================================================================
+   INCOLLA QUI LA CONFIGURAZIONE DEL TUO PROGETTO FIREBASE.
+   La trovi in: Console Firebase -> Impostazioni progetto -> Generali ->
+   "Le tue app" -> app web (icona </>) -> "Configurazione SDK".
+   Questi valori NON sono segreti: è normale che compaiano nel codice
+   pubblico. La vera protezione dei dati è nelle regole di sicurezza
+   di Firestore (vedi il messaggio che ti ho scritto in chat).
+   ==================================================================== */
+var firebaseConfig = {
+  apiKey: "AIzaSyALTbJQI5R7Ai-07vvrnmdxSYRglKoKIoQ",
+  authDomain: "agenda-scolastica-digitale.firebaseapp.com",
+  projectId: "agenda-scolastica-digitale",
+  storageBucket: "agenda-scolastica-digitale.firebasestorage.app",
+  messagingSenderId: "880824056608",
+  appId: "1:880824056608:web:7c198ad513fd1588fe3545"
+};
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+var db = getFirestore(app);
 
 /* ================= Utilities ================= */
 function $(sel){ return document.querySelector(sel); }
@@ -546,11 +576,6 @@ function uid(){ return 'id'+Date.now().toString(36)+Math.random().toString(36).s
 function norm(e){ return (e||'').trim().toLowerCase(); }
 function escapeHtml(s){ var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 function escapeAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
-
-async function sha256(text){
-  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
-}
 
 function showScreen(id){
   $$('.screen').forEach(function(s){ s.classList.remove('active'); });
@@ -581,31 +606,21 @@ function closeModal(){
 }
 $('#modalOverlay').addEventListener('click', function(e){ if(e.target.id==='modalOverlay') closeModal(); });
 
-/* ================= Storage helpers ================= */
-async function stGet(key){
-  try{ var r = await window.storage.get(key, true); return (r && r.value!=null) ? r.value : null; }
-  catch(e){ return null; }
-}
-async function stSet(key, value){
-  try{ var r = await window.storage.set(key, value, true); return !!r; }
-  catch(e){ console.error('storage set error', e); return false; }
-}
-async function stDelete(key){
-  try{ await window.storage.delete(key, true); return true; }
-  catch(e){ return false; }
-}
-async function stList(prefix){
-  try{ var r = await window.storage.list(prefix, true); return (r && r.keys) ? r.keys : []; }
-  catch(e){ return []; }
-}
-async function getJSON(key){
-  var v = await stGet(key);
-  if(v==null) return null;
-  try{ return JSON.parse(v); }catch(e){ return null; }
-}
-async function setJSON(key, obj){
-  return stSet(key, JSON.stringify(obj));
-}
+/* ================= Firestore path helpers =================
+   Struttura dati: users/{uid}/agendas/{agendaId}
+                   users/{uid}/agendas/{agendaId}/days/{YYYY-MM-DD}
+                   users/{uid}/agendas/{agendaId}/days/{YYYY-MM-DD}/elements/{elementId}
+                   users/{uid}/agendas/{agendaId}/alarms/{YYYY-MM-DD}
+   Le regole di sicurezza (fornite in chat) permettono l'accesso a
+   ciascun utente solo ai propri documenti sotto users/{uid}/...       */
+function agendasColl(){ return collection(db, 'users', state.uid, 'agendas'); }
+function agendaRef(id){ return doc(db, 'users', state.uid, 'agendas', id); }
+function daysColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'days'); }
+function dayRef(agendaId, dKey){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'days', dKey); }
+function elementsColl(agendaId, dKey){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'days', dKey, 'elements'); }
+function elementRef(agendaId, dKey, elId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'days', dKey, 'elements', elId); }
+function alarmsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'alarms'); }
+function alarmRef(agendaId, dKey){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'alarms', dKey); }
 
 /* ================= Icons ================= */
 var ICONS = {
@@ -644,8 +659,8 @@ function ringsHTML(){
 
 /* ================= State ================= */
 var state = {
-  email:null, agende:[], currentAgendaId:null, currentAgenda:null,
-  currentDate:null, dayElements:[], dayAlarm:null, dirty:false,
+  uid:null, email:null, agende:[], currentAgendaId:null, currentAgenda:null,
+  currentDate:null, dayElements:[], dayAlarm:null, deletedElementIds:[], dirty:false,
   eraserActive:false, drawColor:'#2E2A22', drawThickness:3,
   allAlarms:[], authMode:'login', coverMainImage:null, coverRoundImage:null
 };
@@ -665,7 +680,9 @@ function formatDateIt(d){
   return dn+' '+dd+' '+mn+' '+d.getFullYear();
 }
 
-/* ================= Image resize helper ================= */
+/* ================= Image resize helper =================
+   Le dimensioni/qualità sono tenute basse perché ogni elemento è un
+   documento Firestore, con un limite di 1 MB a documento.          */
 function resizeImageFile(file, maxDim, quality){
   return new Promise(function(resolve, reject){
     var reader = new FileReader();
@@ -686,6 +703,8 @@ function resizeImageFile(file, maxDim, quality){
     reader.readAsDataURL(file);
   });
 }
+function dataUrlTooBig(durl){ return !!durl && durl.length > 900000; }
+var MEDIA_FILE_MAX_BYTES = 700000; /* ~700KB grezzi, per restare sotto 1MB dopo la conversione base64 */
 
 /* ================= AUTH ================= */
 function switchAuthMode(mode){
@@ -699,6 +718,23 @@ function switchAuthMode(mode){
 $('#authTabLogin').addEventListener('click', function(){ switchAuthMode('login'); });
 $('#authTabRegister').addEventListener('click', function(){ switchAuthMode('register'); });
 
+function friendlyAuthError(err){
+  var code = err && err.code;
+  var map = {
+    'auth/email-already-in-use': "Questa email è già registrata. Effettua l'accesso.",
+    'auth/invalid-email': 'Indirizzo email non valido.',
+    'auth/weak-password': 'Password troppo debole (minimo 6 caratteri).',
+    'auth/user-not-found': 'Email non trovata. Registrati prima di accedere.',
+    'auth/wrong-password': 'Password errata.',
+    'auth/invalid-credential': 'Email o password non corrette.',
+    'auth/too-many-requests': 'Troppi tentativi. Riprova tra qualche minuto.',
+    'auth/network-request-failed': 'Errore di rete. Controlla la connessione e riprova.',
+    'auth/api-key-not-valid': 'Configurazione Firebase mancante o non valida: controlla firebaseConfig nel codice.',
+    'auth/invalid-api-key': 'Configurazione Firebase mancante o non valida: controlla firebaseConfig nel codice.'
+  };
+  return map[code] || ('Si è verificato un errore'+(err&&err.message?(': '+err.message):'')+'.');
+}
+
 $('#authForm').addEventListener('submit', async function(e){
   e.preventDefault();
   var email = norm($('#authEmail').value);
@@ -706,53 +742,69 @@ $('#authForm').addEventListener('submit', async function(e){
   var errEl = $('#authError');
   errEl.textContent='';
   if(!email || !/^\S+@\S+\.\S+$/.test(email)){ errEl.textContent='Inserisci un indirizzo email valido.'; return; }
-  if(pass.length<4){ errEl.textContent='La password deve contenere almeno 4 caratteri.'; return; }
+  if(pass.length<6){ errEl.textContent='La password deve contenere almeno 6 caratteri.'; return; }
   $('#authSubmitBtn').disabled=true;
   try{
     if(state.authMode==='register'){
       var confirmPass = $('#authConfirm').value;
       if(pass!==confirmPass){ errEl.textContent='Le due password non coincidono.'; $('#authSubmitBtn').disabled=false; return; }
-      var existing = await getJSON('agenda_users:'+email);
-      if(existing){ errEl.textContent="Questa email è già registrata. Effettua l'accesso."; $('#authSubmitBtn').disabled=false; return; }
-      var hash = await sha256(pass);
-      var ok = await setJSON('agenda_users:'+email, {email:email, passHash:hash, createdAt:Date.now()});
-      if(!ok){ errEl.textContent='Errore durante la registrazione. Riprova.'; $('#authSubmitBtn').disabled=false; return; }
-      await completeLogin(email);
+      await createUserWithEmailAndPassword(auth, email, pass);
+      /* onAuthStateChanged si occupa di caricare i dati e cambiare schermata */
     } else {
-      var user = await getJSON('agenda_users:'+email);
-      if(!user){ errEl.textContent="Email non trovata. Registrati prima di accedere."; $('#authSubmitBtn').disabled=false; return; }
-      var hash2 = await sha256(pass);
-      if(hash2!==user.passHash){ errEl.textContent='Password errata.'; $('#authSubmitBtn').disabled=false; return; }
-      await completeLogin(email);
+      await signInWithEmailAndPassword(auth, email, pass);
     }
   }catch(err){
     console.error(err);
-    errEl.textContent='Si è verificato un errore. Riprova.';
+    errEl.textContent = friendlyAuthError(err);
   }
   $('#authSubmitBtn').disabled=false;
 });
 
-async function completeLogin(email){
-  state.email = email;
-  var list = await getJSON('agenda_list:'+email) || [];
-  state.agende = list;
-  state.allAlarms = [];
-  for(var i=0;i<list.length;i++){
-    var a = list[i];
-    var idx = await getJSON('agenda_alarms:'+email+':'+a.id) || [];
-    idx.forEach(function(al){ state.allAlarms.push({agendaId:a.id, date:al.date, time:al.time, fired:!!al.fired}); });
+async function completeLogin(user){
+  state.uid = user.uid;
+  state.email = user.email;
+  try{
+    var snap = await getDocs(agendasColl());
+    state.agende = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+  }catch(err){
+    console.error(err);
+    showToast('Errore nel caricamento delle agende: '+err.message, 'error');
+    state.agende = [];
   }
-  $('#userEmailLabel').textContent = email;
+  state.allAlarms = [];
+  for(var i=0;i<state.agende.length;i++){
+    var a = state.agende[i];
+    try{
+      var aSnap = await getDocs(alarmsColl(a.id));
+      aSnap.docs.forEach(function(ad){
+        var d = ad.data();
+        if(!d.fired) state.allAlarms.push({agendaId:a.id, date:ad.id, time:d.time, fired:false});
+      });
+    }catch(err){ console.error(err); }
+  }
+  $('#userEmailLabel').textContent = state.email;
   renderHomeList();
   showScreen('screen-home');
 }
 
-$('#btnLogout').addEventListener('click', function(){
+$('#btnLogout').addEventListener('click', async function(){
   if(state.dirty && !confirm('Hai modifiche non salvate. Uscire comunque?')) return;
-  state.email=null; state.agende=[]; state.currentAgendaId=null; state.currentAgenda=null; state.allAlarms=[];
+  try{ await signOut(auth); }catch(err){ console.error(err); }
+  state.uid=null; state.email=null; state.agende=[]; state.currentAgendaId=null; state.currentAgenda=null; state.allAlarms=[];
   $('#authEmail').value=''; $('#authPassword').value=''; $('#authConfirm').value='';
   switchAuthMode('login');
   showScreen('screen-auth');
+});
+
+onAuthStateChanged(auth, async function(user){
+  if(user){
+    if(state.uid !== user.uid){
+      try{ await completeLogin(user); }
+      catch(err){ console.error(err); showToast('Errore nel caricamento dei dati.', 'error'); }
+    }
+  } else {
+    state.uid=null; state.email=null; state.agende=[]; state.currentAgendaId=null; state.currentAgenda=null; state.allAlarms=[];
+  }
 });
 
 /* ================= HOME ================= */
@@ -782,15 +834,16 @@ function renderHomeList(){
       var id = btn.dataset.id;
       var a = state.agende.find(function(x){ return x.id===id; });
       if(!confirm('Eliminare definitivamente l\'agenda "'+(a?a.nome:'')+'"? Questa azione non può essere annullata.')) return;
-      state.agende = state.agende.filter(function(x){ return x.id!==id; });
-      await setJSON('agenda_list:'+state.email, state.agende);
-      await stDelete('agenda_data:'+state.email+':'+id);
-      var dayKeys = await stList('agenda_day:'+state.email+':'+id+':');
-      for(var i=0;i<dayKeys.length;i++) await stDelete(dayKeys[i]);
-      await stDelete('agenda_alarms:'+state.email+':'+id);
-      state.allAlarms = state.allAlarms.filter(function(al){ return al.agendaId!==id; });
-      renderHomeList();
-      showToast('Agenda eliminata.', 'info');
+      try{
+        await deleteAgendaCascade(id);
+        state.agende = state.agende.filter(function(x){ return x.id!==id; });
+        state.allAlarms = state.allAlarms.filter(function(al){ return al.agendaId!==id; });
+        renderHomeList();
+        showToast('Agenda eliminata.', 'info');
+      }catch(err){
+        console.error(err);
+        showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error');
+      }
     });
   });
 }
@@ -813,21 +866,47 @@ $('#btnNewAgenda').addEventListener('click', function(){
     var nome = input.value.trim();
     if(!nome){ showToast("Inserisci un nome per l'agenda.", 'error'); return; }
     var id = uid();
-    var createdAt = Date.now();
-    var agendaData = {id:id, nome:nome, createdAt:createdAt, cover:{}, schoolYear:null};
-    var listEntry = {id:id, nome:nome, createdAt:createdAt, cover:{}};
-    state.agende.push(listEntry);
-    await setJSON('agenda_data:'+state.email+':'+id, agendaData);
-    await setJSON('agenda_list:'+state.email, state.agende);
-    closeModal();
-    renderHomeList();
-    showToast('Agenda creata.', 'success');
+    var agendaData = {nome:nome, createdAt:Date.now(), cover:{}, schoolYear:null};
+    try{
+      await setDoc(agendaRef(id), agendaData);
+      var listEntry = Object.assign({id:id}, agendaData);
+      state.agende.push(listEntry);
+      closeModal();
+      renderHomeList();
+      showToast('Agenda creata.', 'success');
+    }catch(err){
+      console.error(err);
+      showToast('Errore durante la creazione'+(err.message?(': '+err.message):'')+'.', 'error');
+    }
   };
 });
 
 async function openAgendaById(id){
-  var data = await getJSON('agenda_data:'+state.email+':'+id);
-  if(data){ state.currentAgendaId=id; state.currentAgenda=data; }
+  var found = state.agende.find(function(a){ return a.id===id; });
+  if(found){ state.currentAgendaId=id; state.currentAgenda=found; return; }
+  try{
+    var snap = await getDoc(agendaRef(id));
+    if(snap.exists()){ var data=snap.data(); data.id=id; state.currentAgendaId=id; state.currentAgenda=data; }
+  }catch(err){ console.error(err); showToast('Errore nel caricamento agenda.', 'error'); }
+}
+
+async function deleteAgendaCascade(agendaId){
+  var daysSnap = await getDocs(daysColl(agendaId));
+  for(var i=0;i<daysSnap.docs.length;i++){
+    var dayDoc = daysSnap.docs[i];
+    var elSnap = await getDocs(collection(db,'users',state.uid,'agendas',agendaId,'days',dayDoc.id,'elements'));
+    var batch = writeBatch(db);
+    elSnap.docs.forEach(function(e){ batch.delete(e.ref); });
+    batch.delete(dayDoc.ref);
+    await batch.commit();
+  }
+  var alarmsSnap = await getDocs(alarmsColl(agendaId));
+  if(alarmsSnap.docs.length>0){
+    var batch2 = writeBatch(db);
+    alarmsSnap.docs.forEach(function(a){ batch2.delete(a.ref); });
+    await batch2.commit();
+  }
+  await deleteDoc(agendaRef(agendaId));
 }
 
 /* ================= MENU ================= */
@@ -895,25 +974,34 @@ $('#coverMainImageClear').addEventListener('click', function(){ state.coverMainI
 $('#coverRoundImageClear').addEventListener('click', function(){ state.coverRoundImage=null; renderCoverPreview(); });
 $('#coverMainImageInput').addEventListener('change', async function(e){
   var f=e.target.files[0]; if(!f) return;
-  try{ state.coverMainImage = await resizeImageFile(f, 900, 0.8); renderCoverPreview(); }
-  catch(err){ showToast('Errore nel caricamento immagine.', 'error'); }
+  try{
+    var durl = await resizeImageFile(f, 700, 0.72);
+    if(dataUrlTooBig(durl)){ showToast("Immagine troppo complessa anche dopo la compressione. Prova un'altra immagine.", 'error'); e.target.value=''; return; }
+    state.coverMainImage = durl; renderCoverPreview();
+  }catch(err){ showToast('Errore nel caricamento immagine.', 'error'); }
   e.target.value='';
 });
 $('#coverRoundImageInput').addEventListener('change', async function(e){
   var f=e.target.files[0]; if(!f) return;
-  try{ state.coverRoundImage = await resizeImageFile(f, 320, 0.82); renderCoverPreview(); }
-  catch(err){ showToast('Errore nel caricamento immagine.', 'error'); }
+  try{
+    var durl = await resizeImageFile(f, 240, 0.78);
+    if(dataUrlTooBig(durl)){ showToast("Immagine troppo complessa anche dopo la compressione. Prova un'altra immagine.", 'error'); e.target.value=''; return; }
+    state.coverRoundImage = durl; renderCoverPreview();
+  }catch(err){ showToast('Errore nel caricamento immagine.', 'error'); }
   e.target.value='';
 });
 $('#coverSave').addEventListener('click', async function(){
   var cover = currentCoverData();
   state.currentAgenda.cover = cover;
-  var okData = await setJSON('agenda_data:'+state.email+':'+state.currentAgendaId, state.currentAgenda);
-  var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
-  if(listEntry) listEntry.cover = cover;
-  var okList = await setJSON('agenda_list:'+state.email, state.agende);
-  if(okData && okList) showToast('Copertina salvata.', 'success');
-  else showToast('Errore nel salvataggio.', 'error');
+  try{
+    await updateDoc(agendaRef(state.currentAgendaId), {cover: cover});
+    var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
+    if(listEntry) listEntry.cover = cover;
+    showToast('Copertina salvata.', 'success');
+  }catch(err){
+    console.error(err);
+    showToast('Errore nel salvataggio'+(err.message?(': '+err.message):'')+'.', 'error');
+  }
 });
 $('#coverBack').addEventListener('click', function(){ showMenuScreen(); });
 
@@ -933,7 +1021,11 @@ $('#calGenerateBtn').addEventListener('click', async function(){
   var label = startYear+'-'+(startYear+1);
   $('#calYearInput').value = label;
   state.currentAgenda.schoolYear = label;
-  await setJSON('agenda_data:'+state.email+':'+state.currentAgendaId, state.currentAgenda);
+  try{
+    await updateDoc(agendaRef(state.currentAgendaId), {schoolYear: label});
+    var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
+    if(listEntry) listEntry.schoolYear = label;
+  }catch(err){ console.error(err); showToast('Errore nel salvataggio anno scolastico.', 'error'); }
   generateCalendar(label);
 });
 $('#calBack').addEventListener('click', function(){ showMenuScreen(); });
@@ -980,30 +1072,34 @@ function generateCalendar(label){
 }
 
 /* ================= DAY PAGE ================= */
-function dayKeyStorage(){
-  return 'agenda_day:'+state.email+':'+state.currentAgendaId+':'+dateKey(state.currentDate);
-}
 function markDirty(){
   state.dirty=true;
   var el = $('#btnSaveDay');
   if(el) el.classList.add('needs-save');
 }
 async function saveDayData(silent){
-  var key = dayKeyStorage();
-  var payload = {elements: state.dayElements, alarm: state.dayAlarm};
-  var json = JSON.stringify(payload);
-  if(json.length > 4.8*1024*1024){
-    showToast('La pagina supera lo spazio massimo consentito. Rimuovi qualche file multimediale.', 'error');
+  var dKey = dateKey(state.currentDate);
+  try{
+    var batch = writeBatch(db);
+    state.deletedElementIds.forEach(function(elId){
+      batch.delete(elementRef(state.currentAgendaId, dKey, elId));
+    });
+    state.dayElements.forEach(function(el){
+      var payload = Object.assign({}, el);
+      delete payload.id;
+      batch.set(elementRef(state.currentAgendaId, dKey, el.id), payload);
+    });
+    await batch.commit();
+    state.deletedElementIds = [];
+    state.dirty=false;
+    var saveBtn = $('#btnSaveDay'); if(saveBtn) saveBtn.classList.remove('needs-save');
+    if(!silent) showToast('Agenda salvata.', 'success');
+    return true;
+  }catch(err){
+    console.error(err);
+    if(!silent) showToast('Errore durante il salvataggio'+(err.message?(': '+err.message):'')+'.', 'error');
     return false;
   }
-  var ok = await setJSON(key, payload);
-  if(ok){
-    state.dirty=false;
-    var el = $('#btnSaveDay');
-    if(el) el.classList.remove('needs-save');
-    if(!silent) showToast('Agenda salvata.', 'success');
-  } else if(!silent){ showToast('Errore durante il salvataggio.', 'error'); }
-  return ok;
 }
 $('#btnSaveDay').addEventListener('click', function(){ saveDayData(false); });
 
@@ -1014,14 +1110,26 @@ async function openDayScreen(date){
   }
   state.currentDate = date;
   state.eraserActive = false;
+  state.deletedElementIds = [];
   var er = $('#btnEraser'); if(er) er.classList.remove('active');
-  var key = dayKeyStorage();
-  var data = await getJSON(key);
-  state.dayElements = (data && data.elements) ? data.elements : [];
-  state.dayAlarm = (data && data.alarm) ? data.alarm : null;
+  var dKey = dateKey(date);
+  var container = $('#dayElements');
+  container.innerHTML = '<p class="empty-day-hint">Caricamento...</p>';
+  try{
+    var elSnap = await getDocs(elementsColl(state.currentAgendaId, dKey));
+    var els = elSnap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+    els.sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+    state.dayElements = els;
+    var daySnap = await getDoc(dayRef(state.currentAgendaId, dKey));
+    state.dayAlarm = (daySnap.exists() && daySnap.data().alarm) ? daySnap.data().alarm : null;
+  }catch(err){
+    console.error(err);
+    showToast('Errore nel caricamento della pagina'+(err.message?(': '+err.message):'')+'.', 'error');
+    state.dayElements = [];
+    state.dayAlarm = null;
+  }
   state.dirty = false;
   var saveBtn = $('#btnSaveDay'); if(saveBtn) saveBtn.classList.remove('needs-save');
-  var container = $('#dayElements');
   container.innerHTML='';
   if(state.dayElements.length===0){
     container.innerHTML = '<p class="empty-day-hint">Pagina vuota. Usa gli strumenti qui sopra per iniziare a scrivere.</p>';
@@ -1070,6 +1178,7 @@ function elementTypeIcon(type){
 function removeElementData(id){
   var idx = state.dayElements.findIndex(function(d){ return d.id===id; });
   if(idx>-1) state.dayElements.splice(idx,1);
+  state.deletedElementIds.push(id);
 }
 function makeBlockShell(data, innerHTML, extraClass){
   var div = document.createElement('div');
@@ -1153,7 +1262,15 @@ function renderDrawingBlock(data){
     ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(p[0],p[1]); ctx.stroke();
     lastX=p[0]; lastY=p[1];
   }
-  function end(){ if(drawing){ drawing=false; data.dataURL = canvas.toDataURL('image/png'); markDirty(); } }
+  function end(){
+    if(drawing){
+      drawing=false;
+      var out = canvas.toDataURL('image/png');
+      if(dataUrlTooBig(out)){ showToast('Il disegno è diventato troppo grande: alcune parti potrebbero non essere salvate.', 'error'); }
+      data.dataURL = out;
+      markDirty();
+    }
+  }
   canvas.addEventListener('mousedown', start);
   canvas.addEventListener('mousemove', move);
   window.addEventListener('mouseup', end);
@@ -1197,6 +1314,7 @@ function renderElementFromData(data){
 }
 function addElement(data){
   clearEmptyHint();
+  data.createdAt = Date.now();
   state.dayElements.push(data);
   var node = renderElementFromData(data);
   $('#dayElements').appendChild(node);
@@ -1222,7 +1340,8 @@ $('#btnAddImage').addEventListener('click', function(){ $('#fileImage').click();
 $('#fileImage').addEventListener('change', async function(e){
   var f=e.target.files[0]; if(!f) return;
   try{
-    var durl = await resizeImageFile(f, 1000, 0.78);
+    var durl = await resizeImageFile(f, 700, 0.7);
+    if(dataUrlTooBig(durl)){ showToast("Immagine troppo complessa anche dopo la compressione. Prova un'altra immagine.", 'error'); e.target.value=''; return; }
     addElement({id:uid(), type:'image', dataURL:durl});
   }catch(err){ showToast('Errore nel caricamento immagine.', 'error'); }
   e.target.value='';
@@ -1230,7 +1349,7 @@ $('#fileImage').addEventListener('change', async function(e){
 $('#btnAddVideo').addEventListener('click', function(){ $('#fileVideo').click(); });
 $('#fileVideo').addEventListener('change', function(e){
   var f=e.target.files[0]; if(!f) return;
-  if(f.size > 4.5*1024*1024){ showToast('File video troppo grande (max 4,5MB). Prova un video più corto.', 'error'); e.target.value=''; return; }
+  if(f.size > MEDIA_FILE_MAX_BYTES){ showToast('File video troppo grande (max circa 700KB - ogni pagina è un documento con un limite di 1MB). Prova un video molto breve o più compresso.', 'error'); e.target.value=''; return; }
   var reader = new FileReader();
   reader.onload = function(){ addElement({id:uid(), type:'video', dataURL:reader.result}); };
   reader.readAsDataURL(f);
@@ -1262,6 +1381,7 @@ $('#btnAddLink').addEventListener('click', function(){
 $('#btnTrashPage').addEventListener('click', function(){
   if(state.dayElements.length===0){ showToast('La pagina è già vuota.', 'info'); return; }
   if(confirm("Cancellare tutto il contenuto di questa pagina?")){
+    state.dayElements.forEach(function(el){ state.deletedElementIds.push(el.id); });
     state.dayElements = [];
     $('#dayElements').innerHTML = '<p class="empty-day-hint">Pagina vuota. Usa gli strumenti qui sopra per iniziare a scrivere.</p>';
     markDirty();
@@ -1278,7 +1398,7 @@ $('#btnDictation').addEventListener('click', function(){
   catch(err){ showToast('Impossibile avviare la dettatura.', 'error'); return; }
   recognition.lang='it-IT'; recognition.continuous=true; recognition.interimResults=true;
   clearEmptyHint();
-  var data = {id:uid(), type:'text', html:'', size:16, bold:false, italic:false, underline:false, color:'#2E2A22'};
+  var data = {id:uid(), type:'text', html:'', size:16, bold:false, italic:false, underline:false, color:'#2E2A22', createdAt:Date.now()};
   state.dayElements.push(data);
   var node = renderTextBlock(data);
   $('#dayElements').appendChild(node);
@@ -1316,7 +1436,7 @@ $('#btnAddAudio').addEventListener('click', function(){
 });
 $('#fileAudio').addEventListener('change', function(e){
   var f=e.target.files[0]; if(!f) return;
-  if(f.size > 4.5*1024*1024){ showToast('File audio troppo grande (max 4,5MB).', 'error'); e.target.value=''; return; }
+  if(f.size > MEDIA_FILE_MAX_BYTES){ showToast('File audio troppo grande (max circa 700KB - ogni pagina è un documento con un limite di 1MB).', 'error'); e.target.value=''; return; }
   var reader = new FileReader();
   reader.onload = function(){ addElement({id:uid(), type:'audio', dataURL:reader.result}); };
   reader.readAsDataURL(f);
@@ -1336,7 +1456,7 @@ async function startAudioRecording(){
   mr.onstop = function(){
     stream.getTracks().forEach(function(t){ t.stop(); });
     var blob = new Blob(chunks, {type: mr.mimeType||'audio/webm'});
-    if(blob.size > 4.5*1024*1024){ showToast('Registrazione troppo grande, non salvata.', 'error'); return; }
+    if(blob.size > MEDIA_FILE_MAX_BYTES){ showToast('Registrazione troppo lunga (max circa 700KB). Prova una registrazione più breve.', 'error'); return; }
     var reader = new FileReader();
     reader.onload = function(){ addElement({id:uid(), type:'audio', dataURL:reader.result}); };
     reader.readAsDataURL(blob);
@@ -1387,15 +1507,20 @@ $('#btnAlarm').addEventListener('click', function(){
   }
 });
 async function persistAlarm(){
-  await saveDayData(true);
-  var key = 'agenda_alarms:'+state.email+':'+state.currentAgendaId;
-  var idx = await getJSON(key) || [];
-  var dStr = dateKey(state.currentDate);
-  idx = idx.filter(function(a){ return a.date!==dStr; });
-  if(state.dayAlarm) idx.push({date:dStr, time:state.dayAlarm.time, fired:false});
-  await setJSON(key, idx);
-  state.allAlarms = state.allAlarms.filter(function(a){ return !(a.agendaId===state.currentAgendaId && a.date===dStr); });
-  if(state.dayAlarm) state.allAlarms.push({agendaId:state.currentAgendaId, date:dStr, time:state.dayAlarm.time, fired:false});
+  var dKey = dateKey(state.currentDate);
+  try{
+    await setDoc(dayRef(state.currentAgendaId, dKey), {alarm: state.dayAlarm}, {merge:true});
+    if(state.dayAlarm){
+      await setDoc(alarmRef(state.currentAgendaId, dKey), {time: state.dayAlarm.time, fired:false});
+    } else {
+      await deleteDoc(alarmRef(state.currentAgendaId, dKey));
+    }
+    state.allAlarms = state.allAlarms.filter(function(a){ return !(a.agendaId===state.currentAgendaId && a.date===dKey); });
+    if(state.dayAlarm) state.allAlarms.push({agendaId:state.currentAgendaId, date:dKey, time:state.dayAlarm.time, fired:false});
+  }catch(err){
+    console.error(err);
+    showToast('Errore nel salvataggio della sveglia'+(err.message?(': '+err.message):'')+'.', 'error');
+  }
 }
 
 function playBeep(){
@@ -1417,15 +1542,13 @@ async function triggerAlarm(alarm){
   alarm.fired = true;
   playBeep();
   showToast('Sveglia: hai un promemoria per oggi.', 'success');
-  var key = 'agenda_alarms:'+state.email+':'+alarm.agendaId;
-  var idx = await getJSON(key) || [];
-  idx = idx.map(function(x){ return (x.date===alarm.date) ? Object.assign({}, x, {fired:true}) : x; });
-  await setJSON(key, idx);
+  try{ await updateDoc(alarmRef(alarm.agendaId, alarm.date), {fired:true}); }
+  catch(err){ console.error(err); }
   await openAgendaById(alarm.agendaId);
   await openDayScreen(new Date(alarm.date+'T00:00:00'));
 }
 function checkAlarms(){
-  if(!state.email || state.allAlarms.length===0) return;
+  if(!state.uid || state.allAlarms.length===0) return;
   var now = new Date();
   var todayStr = dateKey(now);
   var hh = String(now.getHours()).padStart(2,'0');
