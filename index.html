@@ -81,7 +81,7 @@ input,select{font-family:inherit;}
 .topbar-btn.primary.needs-save{box-shadow:0 0 0 3px rgba(162,58,44,.25);}
 
 /* ---------- Auth screen ---------- */
-#screen-auth{
+#screen-auth.active{
   background:
     radial-gradient(circle at 20% 15%, rgba(255,255,255,.06), transparent 40%),
     linear-gradient(155deg, var(--leather-light), var(--leather) 55%, var(--leather-deep));
@@ -745,14 +745,18 @@ $('#authForm').addEventListener('submit', async function(e){
   if(pass.length<6){ errEl.textContent='La password deve contenere almeno 6 caratteri.'; return; }
   $('#authSubmitBtn').disabled=true;
   try{
+    var cred;
     if(state.authMode==='register'){
       var confirmPass = $('#authConfirm').value;
       if(pass!==confirmPass){ errEl.textContent='Le due password non coincidono.'; $('#authSubmitBtn').disabled=false; return; }
-      await createUserWithEmailAndPassword(auth, email, pass);
-      /* onAuthStateChanged si occupa di caricare i dati e cambiare schermata */
+      cred = await createUserWithEmailAndPassword(auth, email, pass);
     } else {
-      await signInWithEmailAndPassword(auth, email, pass);
+      cred = await signInWithEmailAndPassword(auth, email, pass);
     }
+    /* Passiamo subito alla schermata successiva, senza aspettare
+       onAuthStateChanged (che resta comunque attivo per il ripristino
+       automatico della sessione al ricaricamento della pagina). */
+    if(cred && cred.user){ await completeLogin(cred.user); }
   }catch(err){
     console.error(err);
     errEl.textContent = friendlyAuthError(err);
@@ -782,8 +786,11 @@ async function completeLogin(user){
       });
     }catch(err){ console.error(err); }
   }
-  $('#userEmailLabel').textContent = state.email;
-  renderHomeList();
+  try{
+    var lbl = $('#userEmailLabel');
+    if(lbl) lbl.textContent = state.email;
+    renderHomeList();
+  }catch(err){ console.error(err); }
   showScreen('screen-home');
 }
 
