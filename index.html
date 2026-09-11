@@ -214,7 +214,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .menu-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:26px;}
 .menu-tile{
   background:var(--surface);border:1px solid var(--paper-line);border-radius:var(--radius);
-  padding:28px 22px;text-align:left;cursor:pointer;box-shadow:0 6px 16px rgba(46,32,20,.1);
+  padding:28px 22px;text-align:left;cursor:pointer;box-shadow:0 6px 16px rgba(46,32,20,.1);color:var(--ink);
 }
 .menu-tile:hover{box-shadow:0 10px 22px rgba(46,32,20,.16);}
 .menu-tile .tile-icon{width:34px;height:34px;color:var(--accent);margin-bottom:14px;}
@@ -310,6 +310,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
 #btnAddText{--tool-color:#4E7FBD;}
 #btnDictation{--tool-color:#C0524B;}
 #btnAddDrawing{--tool-color:#8B5FBF;}
+#btnEraser{--tool-color:#8A7F68;}
 #btnAddImage{--tool-color:#4C9C6B;}
 #btnAddAudio{--tool-color:#D08A3E;}
 #btnAddLink{--tool-color:#4C5FBF;}
@@ -326,6 +327,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
   border:1px solid var(--paper-line);border-radius:14px;box-shadow:0 14px 30px rgba(0,0,0,.15);
 }
 .day-canvas.placing{cursor:crosshair;outline:2px dashed var(--accent);outline-offset:-2px;}
+.day-canvas.erasing{cursor:crosshair;outline:2px dashed #8A7F68;outline-offset:-2px;}
 
 .canvas-el{position:absolute;touch-action:none;}
 .el-delete-x{
@@ -667,6 +669,7 @@ body.dark .audio-badge,body.dark .link-badge{border-color:#fff;}
     <button type="button" class="icon-btn tool" id="btnAddText" data-icon="text" title="Inserisci testo"></button>
     <button type="button" class="icon-btn tool" id="btnDictation" data-icon="mic" title="Dettatura vocale"></button>
     <button type="button" class="icon-btn tool" id="btnAddDrawing" data-icon="pencil" title="Disegno a mano libera"></button>
+    <button type="button" class="icon-btn tool" id="btnEraser" data-icon="eraser" title="Gomma"></button>
     <button type="button" class="icon-btn tool" id="btnAddImage" data-icon="image" title="Inserisci immagine"></button>
     <button type="button" class="icon-btn tool" id="btnAddAudio" data-icon="headphones" title="Inserisci audio"></button>
     <button type="button" class="icon-btn tool" id="btnAddLink" data-icon="link" title="Inserisci link"></button>
@@ -1028,6 +1031,22 @@ onAuthStateChanged(auth, async function(user){
 function applyTheme(mode){
   document.body.classList.toggle('dark', mode==='dark');
   try{ localStorage.setItem('agendaTheme', mode); }catch(e){}
+  refreshTextColorsForTheme();
+}
+function refreshTextColorsForTheme(){
+  var col = defaultTextColor();
+  $$('#dayCanvas .canvas-text').forEach(function(wrapper){
+    var id = wrapper.dataset.id;
+    var data = state.dayElements.find(function(d){ return d.id===id; });
+    if(data && !data.colorCustom){
+      var contentEl = wrapper.querySelector('.text-content');
+      if(contentEl) contentEl.style.color = col;
+      var colorInput = wrapper.querySelector('.t-color');
+      if(colorInput) colorInput.value = col;
+    }
+  });
+  var ptColor = $('#ptColor');
+  if(ptColor && typeof pendingTextStyle==='object' && pendingTextStyle && !pendingTextStyle.colorCustom){ pendingTextStyle.color = col; ptColor.value = col; }
 }
 $('#btnThemeToggle').addEventListener('click', function(){
   var next = document.body.classList.contains('dark') ? 'light' : 'dark';
@@ -1330,6 +1349,7 @@ $('#btnSaveDay').addEventListener('click', function(){ saveDayData(false); });
 
 async function openDayScreen(date){
   if(freeDrawOverlay) finishFreeDraw(false);
+  if(eraserActive){ eraserActive=false; var eb=$('#btnEraser'); if(eb) eb.classList.remove('active'); }
   if(state.dirty && state.currentDate){
     var doSave = confirm('Ci sono modifiche non salvate in questa pagina. Vuoi salvarle prima di continuare?');
     if(doSave) await saveDayData(true);
@@ -1419,7 +1439,7 @@ var PAGE_MARGIN = 19; /* ~0.5cm a 96dpi */
 var PAGE_WIDTH = 760;
 function textLineWidth(x){ return Math.max(80, PAGE_WIDTH - PAGE_MARGIN - x); }
 
-var pendingTextStyle = { font:"'Work Sans',sans-serif", size:16, color:'#2E2A22', bold:false, italic:false, underline:false };
+var pendingTextStyle = { font:"'Work Sans',sans-serif", size:16, color:'#2E2A22', colorCustom:false, bold:false, italic:false, underline:false };
 
 var TOOL_HINTS = {
   text:"Clicca sulla pagina dove vuoi scrivere.",
@@ -1433,6 +1453,8 @@ var TOOL_BTN_ID = {text:'btnAddText', dictation:'btnDictation', image:'btnAddIma
 function armPlacement(type){
   if(placementMode===type){ disarmPlacement(); return; }
   placementMode = type;
+  if(eraserActive){ eraserActive=false; $('#btnEraser').classList.remove('active'); $('#dayCanvas').classList.remove('erasing'); }
+  if(freeDrawOverlay) finishFreeDraw(false);
   $('#dayCanvas').classList.add('placing');
   $('#dayHintBar').textContent = TOOL_HINTS[type] || '';
   $$('.day-toolbar .icon-btn.tool').forEach(function(b){ b.classList.remove('active'); });
@@ -1440,6 +1462,10 @@ function armPlacement(type){
   if(btnId) $('#'+btnId).classList.add('active');
   var bar = $('#textStyleBar');
   if(bar) bar.style.display = (type==='text') ? 'flex' : 'none';
+  if(type==='text' && !pendingTextStyle.colorCustom){
+    pendingTextStyle.color = defaultTextColor();
+    var ptc = $('#ptColor'); if(ptc) ptc.value = pendingTextStyle.color;
+  }
 }
 function disarmPlacement(){
   placementMode = null;
@@ -1473,7 +1499,7 @@ function hideDeleteX(){
   });
   $('#ptFont').addEventListener('change', function(e){ pendingTextStyle.font = e.target.value; });
   sizeSel.addEventListener('change', function(e){ pendingTextStyle.size = +e.target.value; });
-  $('#ptColor').addEventListener('input', function(e){ pendingTextStyle.color = e.target.value; });
+  $('#ptColor').addEventListener('input', function(e){ pendingTextStyle.colorCustom = true; pendingTextStyle.color = e.target.value; });
   $('#ptBold').addEventListener('click', function(){ pendingTextStyle.bold=!pendingTextStyle.bold; $('#ptBold').classList.toggle('active', pendingTextStyle.bold); });
   $('#ptItalic').addEventListener('click', function(){ pendingTextStyle.italic=!pendingTextStyle.italic; $('#ptItalic').classList.toggle('active', pendingTextStyle.italic); });
   $('#ptUnderline').addEventListener('click', function(){ pendingTextStyle.underline=!pendingTextStyle.underline; $('#ptUnderline').classList.toggle('active', pendingTextStyle.underline); });
@@ -1487,6 +1513,51 @@ $('#btnAddDrawing').addEventListener('click', function(){
 $('#btnAddImage').addEventListener('click', function(){ armPlacement('image'); });
 $('#btnAddAudio').addEventListener('click', function(){ armPlacement('audio'); });
 $('#btnAddLink').addEventListener('click', function(){ armPlacement('link'); });
+
+/* ---- gomma: cancella ciò che attraversa mentre è selezionata ---- */
+var eraserActive = false, erasing = false;
+$('#btnEraser').addEventListener('click', function(){
+  eraserActive = !eraserActive;
+  disarmPlacement();
+  if(freeDrawOverlay) finishFreeDraw(false);
+  $('#btnEraser').classList.toggle('active', eraserActive);
+  $('#dayCanvas').classList.toggle('erasing', eraserActive);
+  if(eraserActive) showToast('Gomma attiva: trascina sopra un elemento per cancellarlo.', 'info');
+});
+function eraseAtPoint(evt){
+  var clientX = evt.touches?evt.touches[0].clientX:evt.clientX;
+  var clientY = evt.touches?evt.touches[0].clientY:evt.clientY;
+  var el = document.elementFromPoint(clientX, clientY);
+  var wrapper = el ? el.closest('.canvas-el') : null;
+  if(wrapper){
+    var id = wrapper.dataset.id;
+    var data = state.dayElements.find(function(d){ return d.id===id; });
+    if(data) deleteElement(wrapper, data);
+  }
+}
+$('#dayCanvas').addEventListener('mousedown', function(evt){
+  if(!eraserActive) return;
+  evt.stopPropagation(); evt.preventDefault();
+  erasing = true;
+  eraseAtPoint(evt);
+}, true);
+$('#dayCanvas').addEventListener('mousemove', function(evt){
+  if(!eraserActive || !erasing) return;
+  eraseAtPoint(evt);
+}, true);
+document.addEventListener('mouseup', function(){ erasing = false; });
+$('#dayCanvas').addEventListener('touchstart', function(evt){
+  if(!eraserActive) return;
+  evt.stopPropagation(); evt.preventDefault();
+  erasing = true;
+  eraseAtPoint(evt);
+}, {capture:true, passive:false});
+$('#dayCanvas').addEventListener('touchmove', function(evt){
+  if(!eraserActive || !erasing) return;
+  evt.preventDefault();
+  eraseAtPoint(evt);
+}, {capture:true, passive:false});
+$('#dayCanvas').addEventListener('touchend', function(){ erasing = false; }, true);
 $('#btnTrashPage').addEventListener('click', function(){
   if(state.dayElements.length===0){ showToast('La pagina è già vuota.', 'info'); return; }
   if(confirm('Cancellare tutto il contenuto di questa pagina?')){
@@ -1527,7 +1598,8 @@ function placeElementAt(type, x, y){
   if(type==='text'){
     var data = {id:uid(), type:'text', x:x, y:y, w:textLineWidth(x), html:'',
       font:pendingTextStyle.font, size:pendingTextStyle.size, bold:pendingTextStyle.bold,
-      italic:pendingTextStyle.italic, underline:pendingTextStyle.underline, color:pendingTextStyle.color};
+      italic:pendingTextStyle.italic, underline:pendingTextStyle.underline,
+      color:pendingTextStyle.color, colorCustom:pendingTextStyle.colorCustom};
     addCanvasElement(data);
     var wrapper = document.querySelector('#dayCanvas [data-id="'+data.id+'"]');
     if(wrapper) enterTextEditMode(wrapper, data);
@@ -1704,6 +1776,7 @@ function renderTextEl(data){
   wrapper.style.top = data.y+'px';
   wrapper.style.width = (data.w||240)+'px';
   if(!data.font) data.font = "'Work Sans',sans-serif";
+  var displayColor = data.colorCustom ? data.color : defaultTextColor();
   var sizes=[12,14,16,18,20,24,28,32,36];
   var opts = sizes.map(function(s){ return '<option value="'+s+'"'+(s===data.size?' selected':'')+'>'+s+'px</option>'; }).join('');
   var fontOptions = [
@@ -1718,9 +1791,9 @@ function renderTextEl(data){
       '<button type="button" class="t-bold'+(data.bold?' active':'')+'">G</button>'+
       '<button type="button" class="t-italic'+(data.italic?' active':'')+'" style="font-style:italic">C</button>'+
       '<button type="button" class="t-underline'+(data.underline?' active':'')+'" style="text-decoration:underline">S</button>'+
-      '<input type="color" class="t-color" value="'+data.color+'">'+
+      '<input type="color" class="t-color" value="'+displayColor+'">'+
     '</div>'+
-    '<div class="text-content" contenteditable="false" style="font-family:'+data.font+'; font-size:'+data.size+'px; font-weight:'+(data.bold?'700':'400')+'; font-style:'+(data.italic?'italic':'normal')+'; text-decoration:'+(data.underline?'underline':'none')+'; color:'+data.color+';">'+(data.html||'')+'</div>'+
+    '<div class="text-content" contenteditable="false" style="font-family:'+data.font+'; font-size:'+data.size+'px; font-weight:'+(data.bold?'700':'400')+'; font-style:'+(data.italic?'italic':'normal')+'; text-decoration:'+(data.underline?'underline':'none')+'; color:'+displayColor+';">'+(data.html||'')+'</div>'+
     '<div class="resize-handle-text" title="Ridimensiona larghezza"></div>'+
     '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
   var contentEl = wrapper.querySelector('.text-content');
@@ -1732,7 +1805,7 @@ function renderTextEl(data){
   boldBtn.addEventListener('click', function(evt){ evt.stopPropagation(); data.bold=!data.bold; boldBtn.classList.toggle('active',data.bold); contentEl.style.fontWeight=data.bold?'700':'400'; markDirty(); });
   italBtn.addEventListener('click', function(evt){ evt.stopPropagation(); data.italic=!data.italic; italBtn.classList.toggle('active',data.italic); contentEl.style.fontStyle=data.italic?'italic':'normal'; markDirty(); });
   undBtn.addEventListener('click', function(evt){ evt.stopPropagation(); data.underline=!data.underline; undBtn.classList.toggle('active',data.underline); contentEl.style.textDecoration=data.underline?'underline':'none'; markDirty(); });
-  wrapper.querySelector('.t-color').addEventListener('input', function(e){ data.color=e.target.value; contentEl.style.color=data.color; markDirty(); });
+  wrapper.querySelector('.t-color').addEventListener('input', function(e){ data.colorCustom=true; data.color=e.target.value; contentEl.style.color=data.color; markDirty(); });
   wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
   attachTextResizeHandle(wrapper.querySelector('.resize-handle-text'), wrapper, data);
   return wrapper;
