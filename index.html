@@ -1323,7 +1323,7 @@ async function saveDayData(silent){
 $('#btnSaveDay').addEventListener('click', function(){ saveDayData(false); });
 
 async function openDayScreen(date){
-  if(freeDrawOverlay) finishFreeDraw(true);
+  if(freeDrawOverlay) finishFreeDraw(false);
   if(state.dirty && state.currentDate){
     var doSave = confirm('Ci sono modifiche non salvate in questa pagina. Vuoi salvarle prima di continuare?');
     if(doSave) await saveDayData(true);
@@ -1392,7 +1392,7 @@ $('#dayNext').addEventListener('click', function(){
 });
 
 async function guardNavigate(target){
-  if(freeDrawOverlay) finishFreeDraw(true);
+  if(freeDrawOverlay) finishFreeDraw(false);
   if(state.dirty){
     var doSave = confirm('Ci sono modifiche non salvate. Vuoi salvarle prima di uscire da questa pagina?');
     if(doSave){ var ok = await saveDayData(true); if(!ok) return false; }
@@ -1475,7 +1475,7 @@ function hideDeleteX(){
 
 $('#btnAddText').addEventListener('click', function(){ armPlacement('text'); });
 $('#btnAddDrawing').addEventListener('click', function(){
-  if(freeDrawOverlay){ finishFreeDraw(true); return; }
+  if(freeDrawOverlay){ finishFreeDraw(false); return; }
   startFreeDraw();
 });
 $('#btnAddImage').addEventListener('click', function(){ armPlacement('image'); });
