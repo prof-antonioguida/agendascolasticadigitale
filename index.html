@@ -163,10 +163,10 @@ input,select{font-family:inherit;}
 body.dark .theme-toggle .icon-sun{display:none;}
 body.dark .theme-toggle .icon-moon{display:block;}
 .agenda-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:26px;padding-left:6px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:20px;
 }
 .agenda-card{
-  cursor:pointer;background:transparent;border:none;padding:0;text-align:left;position:relative;overflow:visible;
+  cursor:pointer;background:transparent;border:none;padding:0;text-align:left;position:relative;
 }
 .agenda-delete{
   position:absolute;top:8px;left:8px;z-index:3;width:30px;height:30px;border-radius:50%;
@@ -209,14 +209,6 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .cover-visual.mini .cover-school,.cover-visual.mini .cover-year{font-size:.66rem;}
 .cover-visual.mini .cover-round-img{width:52px;height:52px;top:10px;right:10px;border-width:2px;}
 .cover-visual.mini .cover-text{padding:8px 10px 10px;}
-.agenda-card .cover-visual.mini{
-  border-left:8px solid #d8c9a0;
-  transform:perspective(700px) rotateY(-13deg);
-  transform-origin:left center;
-  box-shadow:12px 10px 22px rgba(0,0,0,.4);
-  transition:transform .25s;
-}
-.agenda-card:hover .cover-visual.mini{transform:perspective(700px) rotateY(-5deg);}
 
 /* ---------- Menu screen ---------- */
 .menu-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:26px;}
@@ -377,7 +369,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .canvas-text.editing .text-content{box-shadow:0 0 0 2px var(--gold);border-radius:4px;}
 
 /* image */
-.canvas-image{border:1px solid var(--paper-line);border-radius:8px;background:var(--surface-alt);box-shadow:0 3px 10px rgba(0,0,0,.12);}
+.canvas-image{border:1px solid var(--paper-line);border-radius:8px;background:transparent;box-shadow:0 3px 10px rgba(0,0,0,.12);}
 .canvas-image img{width:100%;height:100%;object-fit:contain;border-radius:7px;display:block;pointer-events:none;}
 
 /* audio / link badges */
@@ -675,6 +667,7 @@ body.dark .audio-badge,body.dark .link-badge{border-color:#fff;}
     <button type="button" class="icon-btn tool" id="btnTrashPage" data-icon="trash" title="Cancella tutta la pagina"></button>
     <button type="button" class="icon-btn tool" id="btnExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
     <input type="file" id="fileImage" accept="image/*" style="display:none;">
+    <input type="file" id="fileImageCamera" accept="image/*" capture="environment" style="display:none;">
     <input type="file" id="fileAudio" accept="audio/*" style="display:none;">
   </div>
   <div class="day-hint-bar" id="dayHintBar"></div>
@@ -1330,6 +1323,7 @@ async function saveDayData(silent){
 $('#btnSaveDay').addEventListener('click', function(){ saveDayData(false); });
 
 async function openDayScreen(date){
+  if(freeDrawOverlay) finishFreeDraw(true);
   if(state.dirty && state.currentDate){
     var doSave = confirm('Ci sono modifiche non salvate in questa pagina. Vuoi salvarle prima di continuare?');
     if(doSave) await saveDayData(true);
@@ -1398,6 +1392,7 @@ $('#dayNext').addEventListener('click', function(){
 });
 
 async function guardNavigate(target){
+  if(freeDrawOverlay) finishFreeDraw(true);
   if(state.dirty){
     var doSave = confirm('Ci sono modifiche non salvate. Vuoi salvarle prima di uscire da questa pagina?');
     if(doSave){ var ok = await saveDayData(true); if(!ok) return false; }
@@ -1479,7 +1474,10 @@ function hideDeleteX(){
 })();
 
 $('#btnAddText').addEventListener('click', function(){ armPlacement('text'); });
-$('#btnAddDrawing').addEventListener('click', function(){ startFreeDraw(); });
+$('#btnAddDrawing').addEventListener('click', function(){
+  if(freeDrawOverlay){ finishFreeDraw(true); return; }
+  startFreeDraw();
+});
 $('#btnAddImage').addEventListener('click', function(){ armPlacement('image'); });
 $('#btnAddAudio').addEventListener('click', function(){ armPlacement('audio'); });
 $('#btnAddLink').addEventListener('click', function(){ armPlacement('link'); });
@@ -1522,8 +1520,7 @@ function placeElementAt(type, x, y){
   } else if(type==='dictation'){
     startDictationAt(x, y);
   } else if(type==='image'){
-    pendingPlacement = {x:x, y:y};
-    $('#fileImage').click();
+    openImageSourceModal(x, y);
   } else if(type==='audio'){
     openMediaNameModal('audio', x, y);
   } else if(type==='link'){
@@ -2035,8 +2032,21 @@ function openRenameModal(data, wrapper){
   };
 }
 
-/* ---- input file (immagine/audio/video) ---- */
-$('#fileImage').addEventListener('change', async function(e){
+/* ---- input file (immagine/audio) ---- */
+function openImageSourceModal(x, y){
+  openModal(
+    '<h3>Inserisci immagine</h3>'+
+    '<div class="modal-choices">'+
+      '<button type="button" class="choice-btn" id="imgCameraBtn">'+iconSvg('image')+'<span>Scatta una foto</span></button>'+
+      '<button type="button" class="choice-btn" id="imgGalleryBtn">'+iconSvg('image')+'<span>Scegli dalla libreria</span></button>'+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="imgModalCancel">Annulla</button>'
+  );
+  $('#imgModalCancel').onclick = closeModal;
+  $('#imgCameraBtn').onclick = function(){ closeModal(); pendingPlacement = {x:x,y:y}; $('#fileImageCamera').click(); };
+  $('#imgGalleryBtn').onclick = function(){ closeModal(); pendingPlacement = {x:x,y:y}; $('#fileImage').click(); };
+}
+async function handleImageFileInput(e){
   var f=e.target.files[0]; if(!f) return;
   var pos = pendingPlacement || nextDropPosition(); pendingPlacement=null;
   try{
@@ -2044,11 +2054,13 @@ $('#fileImage').addEventListener('change', async function(e){
     if(dataUrlTooBig(durl)){ showToast("Immagine troppo complessa anche dopo la compressione. Prova un'altra immagine.", 'error'); e.target.value=''; return; }
     var dims = await getImageNaturalSize(durl);
     var w = Math.min(280, dims.w || 220);
-    var h = dims.w ? Math.round(dims.h * (w/dims.w)) : 160;
+    var h = dims.w ? (dims.h * (w/dims.w)) : 160;
     addCanvasElement({id:uid(), type:'image', x:pos.x, y:pos.y, w:w, h:h, dataURL:durl});
   }catch(err){ showToast('Errore nel caricamento immagine.', 'error'); }
   e.target.value='';
-});
+}
+$('#fileImage').addEventListener('change', handleImageFileInput);
+$('#fileImageCamera').addEventListener('change', handleImageFileInput);
 $('#fileAudio').addEventListener('change', function(e){
   var f=e.target.files[0]; if(!f) return;
   var pos = pendingPlacement || nextDropPosition(); pendingPlacement=null;
