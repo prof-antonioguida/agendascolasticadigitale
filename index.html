@@ -454,10 +454,16 @@ body.dark .audio-badge,body.dark .link-badge{border-color:#fff;}
   .cover-preview-sticky .cover-visual{max-width:220px;}
 }
 @media print{
+  @page{ size: A4 portrait; margin: 10mm; }
+  html, body{background:#fff !important;}
   body *{visibility:hidden;}
   #dayCanvas, #dayCanvas *{visibility:visible;}
-  #dayCanvas{position:absolute;left:0;top:0;width:100%;box-shadow:none;border:none;background:#fff;}
-  .day-canvas-outer{overflow:visible;}
+  #dayCanvas{
+    position:absolute; left:0; top:0;
+    transform:scale(var(--print-scale, 1)); transform-origin:top left;
+    box-shadow:none; border:none; background:#fff;
+  }
+  .day-canvas-outer{overflow:visible;background:#fff;}
 }
 </style>
 </head>
@@ -1492,6 +1498,14 @@ $('#btnTrashPage').addEventListener('click', function(){
   }
 });
 $('#btnExportPdf').addEventListener('click', function(){
+  var canvas = $('#dayCanvas');
+  var PX_PER_MM = 3.7795;
+  var printableWpx = (210 - 20) * PX_PER_MM;
+  var printableHpx = (297 - 20) * PX_PER_MM;
+  var naturalW = PAGE_WIDTH;
+  var naturalH = canvas.scrollHeight || naturalW;
+  var scale = Math.min(printableWpx/naturalW, printableHpx/naturalH, 1);
+  canvas.style.setProperty('--print-scale', scale);
   window.print();
 });
 
