@@ -366,6 +366,8 @@ body.dark .theme-toggle .icon-moon{display:block;}
 #btnAddEmail{--tool-color:#C25A8A;}
 #btnTrashPage{--tool-color:#A23A2C;}
 #btnExportPdf{--tool-color:#5A6B7A;}
+#btnUndo{--tool-color:#7A8A99;}
+#btnRedo{--tool-color:#7A8A99;}
 
 /* --- the page canvas --- */
 .day-canvas-outer{width:100%;overflow:hidden;padding:0 10px 60px;-webkit-overflow-scrolling:touch;}
@@ -450,6 +452,9 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .link-open-btn{margin-left:2px;color:var(--accent-deep);display:flex;align-items:center;}
 .link-open-btn svg{width:13px;height:13px;}
 .phone-call-btn,.email-open-btn{color:inherit;display:flex;align-items:center;justify-content:center;text-decoration:none;}
+.link-edit-btn{background:var(--paper-deep);border:none;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;margin-left:2px;flex-shrink:0;width:22px;height:22px;border-radius:50%;}
+.link-edit-btn svg{width:12px;height:12px;}
+.link-edit-btn:hover{color:#fff;background:var(--accent);}
 
 /* drawing (elemento finito: si comporta come un'immagine ridimensionabile) */
 .canvas-drawing img{width:100%;height:100%;display:block;pointer-events:none;}
@@ -568,6 +573,8 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regAddColQ2{--tool-color:#2C5F79;}
 #regDelColQ2{--tool-color:#9c6b2c;}
 #regExportPdf{--tool-color:#5A6B7A;}
+#regUndo{--tool-color:#7A8A99;}
+#regRedo{--tool-color:#7A8A99;}
 .reg-table-outer{overflow:auto;padding:0 16px 10px;max-width:100%;-webkit-overflow-scrolling:touch;}
 .reg-table{border-collapse:collapse;font-size:.82rem;background:#fff;margin:0 auto;color:#222;}
 .reg-table td,.reg-table th{border:1px solid #bbb;padding:3px 5px;text-align:center;min-width:32px;}
@@ -690,13 +697,18 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
       </button>
       <button type="button" class="menu-tile menu-tile-add" id="menuBtnAddSections">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        <h3>Aggiungi sezioni</h3>
+        <h3>Aggiungi/rimuovi sezioni</h3>
         <p>Scegli quali altre sezioni mostrare</p>
       </button>
       <button type="button" class="menu-tile" id="menuBtnCalendar">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
         <h3>Calendario</h3>
-        <p>Genera il calendario dell'anno o dell'anno scolastico</p>
+        <p>Genera il calendario dell'anno (Gennaio - Dicembre)</p>
+      </button>
+      <button type="button" class="menu-tile" id="menuBtnSchoolCalendar">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><path d="M7 14 L10 15.5 L7 17"></path></svg>
+        <h3>Calendario scolastico</h3>
+        <p>Genera il calendario dell'anno scolastico (Settembre - Luglio)</p>
       </button>
       <button type="button" class="menu-tile" id="menuBtnNotebook">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="8" y1="8" x2="16" y2="8"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="16" x2="13" y2="16"></line></svg>
@@ -744,6 +756,9 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" class="icon-btn tool" id="regDelColQ2" data-icon="colminus" title="Elimina colonna voto (2° quadrimestre)"></button>
     <span class="reg-sep"></span>
     <button type="button" class="icon-btn tool" id="regExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
+    <span class="reg-sep"></span>
+    <button type="button" class="icon-btn tool" id="regUndo" data-icon="undo" title="Annulla ultima modifica"></button>
+    <button type="button" class="icon-btn tool" id="regRedo" data-icon="redo" title="Ripristina ultima modifica"></button>
   </div>
   <div class="reg-table-outer">
     <div id="regTableContainer"></div>
@@ -856,6 +871,9 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" class="icon-btn tool" id="btnAddEmail" data-icon="email" title="Email"></button>
     <button type="button" class="icon-btn tool" id="btnTrashPage" data-icon="trash" title="Cancella tutta la pagina"></button>
     <button type="button" class="icon-btn tool" id="btnExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
+    <span class="reg-sep"></span>
+    <button type="button" class="icon-btn tool" id="btnUndo" data-icon="undo" title="Annulla ultima modifica"></button>
+    <button type="button" class="icon-btn tool" id="btnRedo" data-icon="redo" title="Ripristina ultima modifica"></button>
     <input type="file" id="fileImage" accept="image/*" style="display:none;">
     <input type="file" id="fileImageCamera" accept="image/*" capture="environment" style="display:none;">
     <input type="file" id="fileAudio" accept="audio/*" style="display:none;">
@@ -1067,6 +1085,8 @@ var ICONS = {
   phone:'<path fill="currentColor" stroke="none" d="M6.6 10.8c1.4 2.7 3.6 4.9 6.3 6.3l2.1-2.1c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1v3.4c0 .6-.4 1-1 1C10.6 21.6 2.4 13.4 2.4 3.5c0-.6.4-1 1-1H7c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1L6.6 10.8Z"></path>',
   email:'<rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="12" cy="12" r="2.6"></circle><path d="M14.6 12 v1.2 a2 2 0 0 0 4 0 V12 a6.6 6.6 0 1 1 -2.6 -5.3"></path>',
   duplicate:'<rect x="4" y="7" width="12" height="14" rx="2"></rect><path d="M9 4 H18 A2 2 0 0 1 20 6 V17"></path>',
+  undo:'<path d="M4 12 A8 8 0 1 1 8.5 19.3"></path><polyline points="4 6 4 12 10 12"></polyline>',
+  redo:'<path d="M20 12 A8 8 0 1 0 15.5 19.3"></path><polyline points="20 6 20 12 14 12"></polyline>',
   list:'<line x1="8" y1="6" x2="20" y2="6"></line><line x1="8" y1="12" x2="20" y2="12"></line><line x1="8" y1="18" x2="20" y2="18"></line><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle>',
   location:'<path d="M12 22 C12 22 5 14.3 5 9.3 A7 7 0 0 1 19 9.3 C19 14.3 12 22 12 22 Z"></path><circle cx="12" cy="9.3" r="2.5"></circle>',
   rowplus:'<rect x="3" y="4" width="18" height="6" rx="1"></rect><rect x="3" y="13" width="18" height="6" rx="1"></rect><line x1="12" y1="10.5" x2="12" y2="10.5"></line><line x1="19" y1="1" x2="19" y2="7"></line><line x1="16" y1="4" x2="22" y2="4"></line>',
@@ -1493,6 +1513,7 @@ async function deleteAgendaCascade(agendaId){
 /* ================= MENU ================= */
 var SECTION_TILES = {
   calendar: 'menuBtnCalendar',
+  schoolCalendar: 'menuBtnSchoolCalendar',
   notebook: 'menuBtnNotebook',
   contacts: 'menuBtnContacts',
   links: 'menuBtnScheduleLink',
@@ -1509,18 +1530,19 @@ function showMenuScreen(){
   showScreen('screen-menu');
 }
 $('#menuBtnCover').addEventListener('click', function(){ showCoverEditor(); });
-$('#menuBtnCalendar').addEventListener('click', function(){ showCalendarScreen(); });
+$('#menuBtnCalendar').addEventListener('click', function(){ showCalendarScreen('solar'); });
+$('#menuBtnSchoolCalendar').addEventListener('click', function(){ showCalendarScreen('school'); });
 $('#menuBackHome').addEventListener('click', function(){ showHomeScreen(); });
 $('#menuBtnAddSections').addEventListener('click', function(){ openAddSectionsModal(); });
 var SECTION_LABELS = {
-  calendar:'Calendario', notebook:'Blocco note', contacts:'Rubrica',
+  calendar:'Calendario', schoolCalendar:'Calendario scolastico', notebook:'Blocco note', contacts:'Rubrica',
   links:'Schedule link', register:'Registro personale'
 };
 function openAddSectionsModal(){
   var enabled = state.currentAgenda.enabledSections;
   if(!Array.isArray(enabled)) enabled = Object.keys(SECTION_TILES);
   var options = [
-    ['calendar','Calendario'], ['notebook','Blocco note'], ['contacts','Rubrica'],
+    ['calendar','Calendario'], ['schoolCalendar','Calendario scolastico'], ['notebook','Blocco note'], ['contacts','Rubrica'],
     ['links','Schedule link'], ['register','Registro personale']
   ];
   var rows = options.map(function(o){
@@ -1565,16 +1587,11 @@ function openAddSectionsModal(){
 async function deleteSectionData(agendaId, key){
   try{
     if(key==='calendar'){
-      await updateDoc(agendaRef(agendaId), {schoolYear:null, calendarType:null, daysWithContent:[]});
-      var daysSnap = await getDocs(daysColl(agendaId));
-      for(var i=0;i<daysSnap.docs.length;i++){
-        var dayDoc = daysSnap.docs[i];
-        var elSnap = await getDocs(collection(db,'users',state.uid,'agendas',agendaId,'days',dayDoc.id,'elements'));
-        var batch = writeBatch(db);
-        elSnap.docs.forEach(function(e){ batch.delete(e.ref); });
-        batch.delete(dayDoc.ref);
-        await batch.commit();
-      }
+      await updateDoc(agendaRef(agendaId), {solarYear:null});
+      if(state.currentAgenda && state.currentAgenda.id===agendaId) state.currentAgenda.solarYear = null;
+    } else if(key==='schoolCalendar'){
+      await updateDoc(agendaRef(agendaId), {schoolYear:null});
+      if(state.currentAgenda && state.currentAgenda.id===agendaId) state.currentAgenda.schoolYear = null;
     } else if(key==='notebook'){
       var npSnap = await getDocs(notebookPagesColl(agendaId));
       for(var j=0;j<npSnap.docs.length;j++){
@@ -1706,26 +1723,21 @@ $('#coverSave').addEventListener('click', async function(){
 $('#coverBack').addEventListener('click', function(){ showMenuScreen(); });
 
 /* ================= CALENDAR ================= */
-function showCalendarScreen(){
+var currentCalType = 'solar';
+function showCalendarScreen(calType){
+  currentCalType = calType || currentCalType || 'solar';
   $('#calAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
   var agenda = state.currentAgenda;
-  if(!agenda.calendarType){
-    $('#calYearRow').style.display = 'none';
-    $('#calGrid').innerHTML = '';
-    showScreen('screen-calendar');
-    openCalendarTypeModal();
-    return;
-  }
   updateCalendarYearRowUI();
-  $('#calYearInput').value = agenda.schoolYear || '';
-  if(agenda.schoolYear){ generateCalendar(agenda.schoolYear, agenda.calendarType); }
+  var yearVal = currentCalType==='solar' ? (agenda.solarYear||'') : (agenda.schoolYear||'');
+  $('#calYearInput').value = yearVal;
+  if(yearVal){ generateCalendar(yearVal, currentCalType); }
   else { $('#calGrid').innerHTML = "<p class=\"cal-empty\">Inserisci l'anno e genera il calendario.</p>"; }
   showScreen('screen-calendar');
 }
 function updateCalendarYearRowUI(){
-  var type = state.currentAgenda.calendarType;
   $('#calYearRow').style.display = 'flex';
-  if(type==='solar'){
+  if(currentCalType==='solar'){
     $('#calYearLabel').textContent = 'Anno';
     $('#calYearInput').placeholder = 'Es. 2026';
   } else {
@@ -1733,52 +1745,27 @@ function updateCalendarYearRowUI(){
     $('#calYearInput').placeholder = 'Es. 2026-2027';
   }
 }
-function openCalendarTypeModal(){
-  openModal(
-    '<h3>Che calendario vuoi creare?</h3>'+
-    '<div class="modal-choices">'+
-      '<button type="button" class="choice-btn" id="calTypeSchool">'+iconSvg('calendar')+'<span>Calendario scolastico (Settembre - Luglio)</span></button>'+
-      '<button type="button" class="choice-btn" id="calTypeSolar">'+iconSvg('calendar')+'<span>Calendario solare (Gennaio - Dicembre)</span></button>'+
-    '</div>'+
-    '<button type="button" class="btn-secondary" id="calTypeCancel">Annulla</button>'
-  );
-  $('#calTypeCancel').onclick = function(){ closeModal(); showMenuScreen(); };
-  $('#calTypeSchool').onclick = async function(){ await chooseCalendarType('school'); };
-  $('#calTypeSolar').onclick = async function(){ await chooseCalendarType('solar'); };
-}
-async function chooseCalendarType(type){
-  state.currentAgenda.calendarType = type;
-  try{
-    await updateDoc(agendaRef(state.currentAgendaId), {calendarType: type});
-    var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
-    if(listEntry) listEntry.calendarType = type;
-  }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
-  closeModal();
-  updateCalendarYearRowUI();
-  $('#calYearInput').value = '';
-  $('#calGrid').innerHTML = "<p class=\"cal-empty\">Inserisci l'anno e genera il calendario.</p>";
-  setTimeout(function(){ $('#calYearInput').focus(); }, 60);
-}
 $('#calGenerateBtn').addEventListener('click', async function(){
   var raw = $('#calYearInput').value.trim();
   var m = raw.match(/(\d{4})/);
   if(!m){ showToast('Inserisci un anno valido.', 'error'); return; }
   var startYear = parseInt(m[1],10);
-  var type = state.currentAgenda.calendarType || 'school';
-  var label = (type==='solar') ? String(startYear) : (startYear+'-'+(startYear+1));
+  var label = (currentCalType==='solar') ? String(startYear) : (startYear+'-'+(startYear+1));
   $('#calYearInput').value = label;
-  state.currentAgenda.schoolYear = label;
+  var field = currentCalType==='solar' ? 'solarYear' : 'schoolYear';
+  state.currentAgenda[field] = label;
   try{
-    await updateDoc(agendaRef(state.currentAgendaId), {schoolYear: label});
+    var payload = {}; payload[field] = label;
+    await updateDoc(agendaRef(state.currentAgendaId), payload);
     var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
-    if(listEntry) listEntry.schoolYear = label;
+    if(listEntry) listEntry[field] = label;
   }catch(err){ console.error(err); showToast('Errore nel salvataggio anno.', 'error'); }
-  generateCalendar(label, type);
+  generateCalendar(label, currentCalType);
 });
 $('#calBack').addEventListener('click', function(){ showMenuScreen(); });
 
 function generateCalendar(label, type){
-  type = type || state.currentAgenda.calendarType || 'school';
+  type = type || currentCalType || 'solar';
   var m = label.match(/(\d{4})/);
   var startYear = parseInt(m[1],10);
   var months = [];
@@ -2099,6 +2086,7 @@ async function openDayScreen(date){
   disarmPlacement();
   activeDeleteWrapper = null;
   activeEditingText = null;
+  resetDayHistory();
   var dKey = dateKey(date);
   var canvas = $('#dayCanvas');
   canvas.innerHTML = '<p class="empty-day-hint">Caricamento...</p>';
@@ -2252,6 +2240,7 @@ async function openNotebookPageScreen(pageId){
   disarmPlacement();
   activeDeleteWrapper = null;
   activeEditingText = null;
+  resetDayHistory();
   var canvas = $('#dayCanvas');
   canvas.innerHTML = '<p class="empty-day-hint">Caricamento...</p>';
   var pageInfo = (state.notebookPages||[]).find(function(p){ return p.id===pageId; });
@@ -2606,6 +2595,38 @@ async function deleteScheduleLink(id){
 state.registerSheets = [];
 state.currentSheetId = null;
 var registerDirty = false;
+var regHistoryUndo = [];
+var regHistoryRedo = [];
+var REG_HISTORY_LIMIT = 25;
+function resetRegisterHistory(){ regHistoryUndo = []; regHistoryRedo = []; }
+function pushRegisterHistory(){
+  var sheet = getCurrentSheet(); if(!sheet) return;
+  regHistoryUndo.push(JSON.parse(JSON.stringify(sheet)));
+  if(regHistoryUndo.length>REG_HISTORY_LIMIT) regHistoryUndo.shift();
+  regHistoryRedo = [];
+}
+function undoRegisterChange(){
+  var sheet = getCurrentSheet(); if(!sheet) return;
+  if(regHistoryUndo.length===0){ showToast('Nessuna modifica da annullare.', 'info'); return; }
+  regHistoryRedo.push(JSON.parse(JSON.stringify(sheet)));
+  var prev = regHistoryUndo.pop();
+  Object.assign(sheet, prev);
+  markRegisterDirty();
+  renderRegisterTable(sheet);
+  renderRegisterTabs();
+}
+function redoRegisterChange(){
+  var sheet = getCurrentSheet(); if(!sheet) return;
+  if(regHistoryRedo.length===0){ showToast('Nessuna modifica da ripristinare.', 'info'); return; }
+  regHistoryUndo.push(JSON.parse(JSON.stringify(sheet)));
+  var next = regHistoryRedo.pop();
+  Object.assign(sheet, next);
+  markRegisterDirty();
+  renderRegisterTable(sheet);
+  renderRegisterTabs();
+}
+$('#regUndo').addEventListener('click', undoRegisterChange);
+$('#regRedo').addEventListener('click', redoRegisterChange);
 var REG_COLORS = ['#4E7FBD','#C0524B','#3E9C5C','#D08A3E','#8B5FBF','#2C5F79','#C25A8A'];
 
 function colLetter(i){ return String.fromCharCode(65+i); }
@@ -2671,6 +2692,7 @@ async function enterRegisterSection(){
     state.currentSheetId = state.registerSheets[0].id;
   }
   registerDirty = false;
+  resetRegisterHistory();
   $('#regAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
   renderRegisterTabs();
   renderRegisterTable(getCurrentSheet());
@@ -2718,6 +2740,7 @@ async function switchRegisterSheet(id){
   }
   state.currentSheetId = id;
   registerDirty = false;
+  resetRegisterHistory();
   var b=$('#regSaveBtn'); if(b) b.classList.remove('needs-save');
   renderRegisterTabs();
   renderRegisterTable(getCurrentSheet());
@@ -2920,8 +2943,12 @@ function isLowGrade(v){
 }
 function wireRegisterTableEvents(sheet){
   var cn = $('#regClassName');
-  if(cn) cn.addEventListener('input', function(e){ sheet.className = e.target.value; markRegisterDirty(); });
+  if(cn){
+    cn.addEventListener('focus', function(){ pushRegisterHistory(); });
+    cn.addEventListener('input', function(e){ sheet.className = e.target.value; markRegisterDirty(); });
+  }
   $$('.reg-name-input').forEach(function(inp){
+    inp.addEventListener('focus', function(){ pushRegisterHistory(); });
     inp.addEventListener('input', function(e){ sheet.names[+inp.dataset.row] = e.target.value; markRegisterDirty(); });
   });
   $$('.reg-del-row-btn').forEach(function(btn){
@@ -2933,6 +2960,7 @@ function wireRegisterTableEvents(sheet){
   var topInsertBtn = $('.reg-insert-row-top');
   if(topInsertBtn) topInsertBtn.addEventListener('click', function(){ insertRegisterRow(sheet, 0); });
   $$('.reg-grade-input').forEach(function(inp){
+    inp.addEventListener('focus', function(){ pushRegisterHistory(); });
     inp.addEventListener('input', function(e){
       var q = inp.dataset.quarter, r = +inp.dataset.row, c = +inp.dataset.col;
       if(q==='1') sheet.grades1[r][c] = e.target.value; else sheet.grades2[r][c] = e.target.value;
@@ -2944,6 +2972,7 @@ function wireRegisterTableEvents(sheet){
     inp.addEventListener('keydown', handleGradeArrowNav);
   });
   $$('[data-desc-quarter]').forEach(function(inp){
+    inp.addEventListener('focus', function(){ pushRegisterHistory(); });
     inp.addEventListener('input', function(e){
       var q = inp.dataset.descQuarter, idx = +inp.dataset.descIndex;
       if(q==='1') sheet.desc1[idx] = e.target.value; else sheet.desc2[idx] = e.target.value;
@@ -2991,6 +3020,7 @@ function addRegisterRow(){
   insertRegisterRow(sheet, sheet.numRows);
 }
 function insertRegisterRow(sheet, atIndex){
+  pushRegisterHistory();
   sheet.names.splice(atIndex,0,'');
   sheet.grades1.splice(atIndex,0,new Array(sheet.numCols1).fill(''));
   sheet.grades2.splice(atIndex,0,new Array(sheet.numCols2).fill(''));
@@ -3000,6 +3030,7 @@ function insertRegisterRow(sheet, atIndex){
 }
 function deleteRegisterRow(sheet, r){
   if(sheet.numRows<=1){ showToast('Deve restare almeno una riga.', 'info'); return; }
+  pushRegisterHistory();
   sheet.names.splice(r,1);
   sheet.grades1.splice(r,1);
   sheet.grades2.splice(r,1);
@@ -3017,6 +3048,7 @@ function addRegisterCol(quarter){
   insertRegisterCol(sheet, quarter, quarter===1?sheet.numCols1:sheet.numCols2);
 }
 function insertRegisterCol(sheet, quarter, atIndex){
+  pushRegisterHistory();
   if(quarter===1){ sheet.numCols1++; sheet.grades1.forEach(function(row){ row.splice(atIndex,0,''); }); sheet.desc1.splice(atIndex,0,''); }
   else { sheet.numCols2++; sheet.grades2.forEach(function(row){ row.splice(atIndex,0,''); }); sheet.desc2.splice(atIndex,0,''); }
   markRegisterDirty();
@@ -3027,11 +3059,12 @@ function delRegisterCol(quarter){
   deleteRegisterColAt(sheet, quarter, (quarter===1?sheet.numCols1:sheet.numCols2)-1);
 }
 function deleteRegisterColAt(sheet, quarter, atIndex){
+  if(quarter===1 && sheet.numCols1<=1){ showToast('Deve restare almeno una colonna.', 'info'); return; }
+  if(quarter===2 && sheet.numCols2<=1){ showToast('Deve restare almeno una colonna.', 'info'); return; }
+  pushRegisterHistory();
   if(quarter===1){
-    if(sheet.numCols1<=1){ showToast('Deve restare almeno una colonna.', 'info'); return; }
     sheet.numCols1--; sheet.grades1.forEach(function(row){ row.splice(atIndex,1); }); sheet.desc1.splice(atIndex,1);
   } else {
-    if(sheet.numCols2<=1){ showToast('Deve restare almeno una colonna.', 'info'); return; }
     sheet.numCols2--; sheet.grades2.forEach(function(row){ row.splice(atIndex,1); }); sheet.desc2.splice(atIndex,1);
   }
   markRegisterDirty();
@@ -3089,6 +3122,55 @@ function clearEmptyHint(){
   var hint = $('#dayCanvas .empty-day-hint');
   if(hint) hint.remove();
 }
+/* ---- annulla / ripristina (pagine giorno e blocco note) ---- */
+var dayHistoryUndo = [];
+var dayHistoryRedo = [];
+var DAY_HISTORY_LIMIT = 25;
+function cloneDayElements(arr){ return JSON.parse(JSON.stringify(arr||[])); }
+function resetDayHistory(){ dayHistoryUndo = []; dayHistoryRedo = []; }
+function commitDaySnapshot(snapshot){
+  dayHistoryUndo.push(snapshot);
+  if(dayHistoryUndo.length>DAY_HISTORY_LIMIT) dayHistoryUndo.shift();
+  dayHistoryRedo = [];
+}
+function pushDayHistory(){
+  commitDaySnapshot(cloneDayElements(state.dayElements));
+}
+function rerenderCanvasFromElements(){
+  var canvas = $('#dayCanvas');
+  if(!canvas) return;
+  disarmPlacement();
+  activeDeleteWrapper = null;
+  activeEditingText = null;
+  canvas.innerHTML = '';
+  if(state.dayElements.length===0){
+    canvas.innerHTML = '<p class="empty-day-hint">Pagina vuota. Scegli uno strumento qui sopra, poi clicca sulla pagina per posizionare il primo elemento.</p>';
+  } else {
+    state.dayElements.forEach(function(d){
+      var node = renderCanvasElement(d);
+      canvas.appendChild(node);
+      attachElementInteractions(node, d);
+    });
+  }
+  growCanvasIfNeeded();
+}
+function undoDayChange(){
+  if(dayHistoryUndo.length===0){ showToast('Nessuna modifica da annullare.', 'info'); return; }
+  dayHistoryRedo.push(cloneDayElements(state.dayElements));
+  state.dayElements = dayHistoryUndo.pop();
+  rerenderCanvasFromElements();
+  markDirty();
+}
+function redoDayChange(){
+  if(dayHistoryRedo.length===0){ showToast('Nessuna modifica da ripristinare.', 'info'); return; }
+  dayHistoryUndo.push(cloneDayElements(state.dayElements));
+  state.dayElements = dayHistoryRedo.pop();
+  rerenderCanvasFromElements();
+  markDirty();
+}
+$('#btnUndo').addEventListener('click', undoDayChange);
+$('#btnRedo').addEventListener('click', redoDayChange);
+
 function growCanvasIfNeeded(){
   var canvas = $('#dayCanvas');
   if(!canvas) return;
@@ -3148,7 +3230,7 @@ async function guardNavigate(target){
 }
 $('#btnGoCalendar').addEventListener('click', function(){
   if(pageMode==='notebook'){ guardNavigate(function(){ showNotebookListScreen(); }); }
-  else { guardNavigate(function(){ showCalendarScreen(); }); }
+  else { guardNavigate(function(){ showCalendarScreen(currentCalType); }); }
 });
 $('#btnGoSettings').addEventListener('click', function(){ guardNavigate(function(){ showMenuScreen(); }); });
 $('#btnGoHome').addEventListener('click', function(){ guardNavigate(function(){ showHomeScreen(); }); });
@@ -3288,6 +3370,7 @@ $('#dayCanvas').addEventListener('touchend', function(){ erasing = false; }, tru
 $('#btnTrashPage').addEventListener('click', function(){
   if(state.dayElements.length===0){ showToast('La pagina è già vuota.', 'info'); return; }
   if(confirm('Cancellare tutto il contenuto di questa pagina?')){
+    pushDayHistory();
     state.dayElements.forEach(function(el){ state.deletedElementIds.push(el.id); });
     state.dayElements = [];
     $('#dayCanvas').innerHTML = '<p class="empty-day-hint">Pagina vuota. Scegli uno strumento qui sopra, poi clicca sulla pagina per posizionare il primo elemento.</p>';
@@ -3347,6 +3430,7 @@ function placeElementAt(type, x, y){
   }
 }
 function addCanvasElement(data, skipInteractions){
+  pushDayHistory();
   clearEmptyHint();
   data.createdAt = Date.now();
   state.dayElements.push(data);
@@ -3364,6 +3448,7 @@ function deleteElement(wrapper, data){
   performLocalDelete(wrapper, data);
 }
 function performLocalDelete(wrapper, data, skipDeletedTracking){
+  pushDayHistory();
   var idx = state.dayElements.findIndex(function(d){ return d.id===data.id; });
   if(idx>-1) state.dayElements.splice(idx,1);
   if(!skipDeletedTracking) state.deletedElementIds.push(data.id);
@@ -3381,11 +3466,12 @@ function performLocalDelete(wrapper, data, skipDeletedTracking){
 function attachElementInteractions(wrapper, data){
   var target = wrapper;
   var longPressActive=false, moved=false, abortedByEarlyMove=false;
-  var pressTimer=null, startX=0,startY=0,startLeft=0,startTop=0;
+  var pressTimer=null, startX=0,startY=0,startLeft=0,startTop=0, preMoveSnapshot=null;
   var THRESH=6;
   function ignoreTarget(evt){
     return evt.target.closest('.resize-handle') || evt.target.closest('.el-delete-x') || evt.target.closest('.el-duplicate-btn') ||
            evt.target.closest('.link-open-btn') || evt.target.closest('.phone-call-btn') || evt.target.closest('.email-open-btn') ||
+           evt.target.closest('.link-edit-btn') ||
            evt.target.closest('.play-toggle') || evt.target.closest('.text-mini-toolbar');
   }
   function down(evt){
@@ -3393,6 +3479,7 @@ function attachElementInteractions(wrapper, data){
     if(data.type==='text' && wrapper.classList.contains('editing') && evt.target.closest('.text-content')) return;
     evt.preventDefault();
     longPressActive=false; moved=false; abortedByEarlyMove=false;
+    preMoveSnapshot = cloneDayElements(state.dayElements);
     var clientX=evt.touches?evt.touches[0].clientX:evt.clientX;
     var clientY=evt.touches?evt.touches[0].clientY:evt.clientY;
     startX=clientX; startY=clientY; startLeft=data.x; startTop=data.y;
@@ -3434,7 +3521,7 @@ function attachElementInteractions(wrapper, data){
     document.removeEventListener('touchend', up);
     if(longPressActive){
       wrapper.classList.remove('move-active');
-      if(moved){ markDirty(); growCanvasIfNeeded(); }
+      if(moved){ if(preMoveSnapshot) commitDaySnapshot(preMoveSnapshot); markDirty(); growCanvasIfNeeded(); }
       return;
     }
     if(abortedByEarlyMove) return;
@@ -3461,10 +3548,11 @@ function attachResizeHandles(wrapper, data, minW, minH, lockAspect){
   var aspect = (data.w && data.h) ? (data.w/data.h) : 1;
   handles.forEach(function(handleEl){
     var corner = handleEl.dataset.corner;
-    var resizing=false, startX,startY,startW,startH,startLeft,startTop;
+    var resizing=false, startX,startY,startW,startH,startLeft,startTop, preResizeSnapshot=null;
     function down(evt){
       evt.stopPropagation(); evt.preventDefault();
       resizing=true;
+      preResizeSnapshot = cloneDayElements(state.dayElements);
       var clientX=evt.touches?evt.touches[0].clientX:evt.clientX;
       var clientY=evt.touches?evt.touches[0].clientY:evt.clientY;
       startX=clientX; startY=clientY; startW=data.w; startH=data.h; startLeft=data.x; startTop=data.y;
@@ -3491,7 +3579,7 @@ function attachResizeHandles(wrapper, data, minW, minH, lockAspect){
       wrapper.style.left=nx+'px'; wrapper.style.top=ny+'px';
     }
     function up(){
-      if(resizing){ resizing=false; markDirty(); growCanvasIfNeeded(); }
+      if(resizing){ resizing=false; if(preResizeSnapshot) commitDaySnapshot(preResizeSnapshot); markDirty(); growCanvasIfNeeded(); }
       document.removeEventListener('mousemove', move);
       document.removeEventListener('mouseup', up);
       document.removeEventListener('touchmove', move);
@@ -3511,6 +3599,7 @@ function fourHandlesHTML(){
 /* ---- testo ---- */
 function enterTextEditMode(wrapper, data){
   if(activeEditingText && activeEditingText!==wrapper) exitTextEditMode(activeEditingText);
+  pushDayHistory();
   wrapper.classList.add('editing');
   var contentEl = wrapper.querySelector('.text-content');
   contentEl.contentEditable = 'true';
@@ -3567,10 +3656,11 @@ function renderTextEl(data){
   return wrapper;
 }
 function attachTextResizeHandle(handle, wrapper, data){
-  var resizing=false, startX=0, startW=0;
+  var resizing=false, startX=0, startW=0, preSnapshot=null;
   function down(evt){
     evt.stopPropagation(); evt.preventDefault();
     resizing=true;
+    preSnapshot = cloneDayElements(state.dayElements);
     startX = evt.touches?evt.touches[0].clientX:evt.clientX;
     startW = data.w||240;
     document.addEventListener('mousemove', move);
@@ -3586,7 +3676,7 @@ function attachTextResizeHandle(handle, wrapper, data){
     wrapper.style.width = nw+'px';
   }
   function up(){
-    if(resizing){ resizing=false; markDirty(); growCanvasIfNeeded(); }
+    if(resizing){ resizing=false; if(preSnapshot) commitDaySnapshot(preSnapshot); markDirty(); growCanvasIfNeeded(); }
     document.removeEventListener('mousemove', move);
     document.removeEventListener('mouseup', up);
     document.removeEventListener('touchmove', move);
@@ -3774,6 +3864,7 @@ function renderLinkEl(data){
     '<div class="link-badge">'+
       '<span class="link-badge-icon">'+iconSvg('link')+'</span>'+
       '<span class="el-media-label lbl-text">'+escapeHtml(data.label||data.url)+'</span>'+
+      '<button type="button" class="link-edit-btn" title="Modifica">'+iconSvg('pencil')+'</button>'+
       '<a href="'+escapeAttr(data.url)+'" target="_blank" rel="noopener noreferrer" class="link-open-btn" title="Apri link">'+iconSvg('externalLink')+'</a>'+
     '</div>'+
     '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
@@ -3782,6 +3873,10 @@ function renderLinkEl(data){
   openBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
   openBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
   openBtn.addEventListener('click', function(evt){ evt.stopPropagation(); });
+  var editBtn = wrapper.querySelector('.link-edit-btn');
+  editBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
+  editBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
+  editBtn.addEventListener('click', function(evt){ evt.stopPropagation(); openLinkModal(data.x, data.y, data, wrapper); });
   attachActionButtons(wrapper, data);
   return wrapper;
 }
@@ -3795,6 +3890,7 @@ function renderPhoneEl(data){
     '<div class="phone-badge">'+
       '<a href="tel:'+escapeAttr(data.phone||'')+'" class="phone-call-btn phone-badge-icon" title="Chiama">'+iconSvg('phone')+'</a>'+
       '<span class="el-media-label lbl-text">'+escapeHtml(data.label||'Contatto')+'</span>'+
+      '<button type="button" class="link-edit-btn" title="Modifica">'+iconSvg('pencil')+'</button>'+
     '</div>'+
     '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
   wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
@@ -3802,6 +3898,10 @@ function renderPhoneEl(data){
   callBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
   callBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
   callBtn.addEventListener('click', function(evt){ evt.stopPropagation(); });
+  var editBtn = wrapper.querySelector('.link-edit-btn');
+  editBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
+  editBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
+  editBtn.addEventListener('click', function(evt){ evt.stopPropagation(); openPhoneModal(data.x, data.y, data, wrapper); });
   attachActionButtons(wrapper, data);
   return wrapper;
 }
@@ -3814,6 +3914,7 @@ function renderEmailEl(data){
     '<div class="email-badge">'+
       '<a href="mailto:'+escapeAttr(data.email||'')+'" class="email-open-btn email-badge-icon" title="Invia email">'+iconSvg('email')+'</a>'+
       '<span class="el-media-label lbl-text">'+escapeHtml(data.label||'Contatto')+'</span>'+
+      '<button type="button" class="link-edit-btn" title="Modifica">'+iconSvg('pencil')+'</button>'+
     '</div>'+
     '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
   wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
@@ -3821,6 +3922,10 @@ function renderEmailEl(data){
   openBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
   openBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
   openBtn.addEventListener('click', function(evt){ evt.stopPropagation(); });
+  var editBtn2 = wrapper.querySelector('.link-edit-btn');
+  editBtn2.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
+  editBtn2.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
+  editBtn2.addEventListener('click', function(evt){ evt.stopPropagation(); openEmailModal(data.x, data.y, data, wrapper); });
   attachActionButtons(wrapper, data);
   return wrapper;
 }
@@ -3886,6 +3991,7 @@ function openLinkModal(x, y, existingData, existingWrapper){
     var finalUrl = url;
     if(!/^https?:\/\//i.test(finalUrl)) finalUrl = 'https://'+finalUrl;
     if(existingData){
+      pushDayHistory();
       existingData.url = finalUrl; existingData.label = label||finalUrl;
       if(existingWrapper){
         var lbl = existingWrapper.querySelector('.lbl-text'); if(lbl) lbl.textContent = existingData.label;
@@ -3917,6 +4023,7 @@ function openPhoneModal(x, y, existingData, existingWrapper){
     if(!number){ showToast('Inserisci un numero di telefono.', 'error'); return; }
     var label = name || number;
     if(existingData){
+      pushDayHistory();
       existingData.label = label; existingData.phone = number;
       if(existingWrapper){
         var lbl = existingWrapper.querySelector('.lbl-text'); if(lbl) lbl.textContent = label;
@@ -3948,6 +4055,7 @@ function openEmailModal(x, y, existingData, existingWrapper){
     if(!addr){ showToast('Inserisci un indirizzo email.', 'error'); return; }
     var label = name || addr;
     if(existingData){
+      pushDayHistory();
       existingData.label = label; existingData.email = addr;
       if(existingWrapper){
         var lbl = existingWrapper.querySelector('.lbl-text'); if(lbl) lbl.textContent = label;
@@ -3975,6 +4083,7 @@ function openRenameModal(data, wrapper){
   $('#renameCancel').onclick = closeModal;
   $('#renameConfirm').onclick = function(){
     var v = input.value.trim();
+    pushDayHistory();
     data.label = v || data.label;
     var lbl = wrapper.querySelector('.lbl-text'); if(lbl) lbl.textContent = data.label;
     markDirty();
