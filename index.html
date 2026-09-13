@@ -174,7 +174,14 @@ body.dark .theme-toggle .icon-moon{display:block;}
 }
 .agenda-delete svg{width:15px;height:15px;}
 .agenda-delete:hover{background:var(--accent);}
-.agenda-name{margin-top:9px;font-family:var(--font-display);font-weight:600;font-size:1.02rem;}
+.agenda-name-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:9px;}
+.agenda-name{font-family:var(--font-display);font-weight:600;font-size:1.02rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.agenda-rename{
+  background:none;border:none;color:var(--ink-soft);cursor:pointer;flex-shrink:0;
+  width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;
+}
+.agenda-rename:hover{background:var(--paper-deep);color:var(--ink);}
+.agenda-rename svg{width:14px;height:14px;}
 .empty-hint{color:var(--ink-soft);font-size:.95rem;padding:30px 0;}
 
 .fab{
@@ -242,6 +249,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
 
 /* ---------- Calendar screen ---------- */
 .cal-year-row{display:flex;gap:10px;align-items:center;margin:18px 0 26px;flex-wrap:wrap;}
+.cal-year-label{font-size:.88rem;color:var(--ink-soft);}
 .cal-year-row input{
   padding:10px 12px;border-radius:8px;border:1px solid var(--paper-line);background:var(--surface);
   font-size:.95rem;width:160px;
@@ -264,6 +272,8 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .cal-cell.empty{cursor:default;}
 .cal-cell.empty:hover{background:none;}
 .cal-cell.today{background:var(--accent);color:#fff;font-weight:700;}
+.cal-cell.has-content{background:rgba(201,161,94,.4);font-weight:600;}
+.cal-cell.has-content.today{background:var(--accent);box-shadow:inset 0 0 0 2px var(--gold);}
 
 /* ---------- Day screen ---------- */
 .day-topbar{
@@ -277,6 +287,40 @@ body.dark .theme-toggle .icon-moon{display:block;}
 }
 .date-bar .date-label{font-family:var(--font-display);font-weight:600;font-size:1.5rem;letter-spacing:.01em;text-align:center;min-width:280px;}
 .date-sub{text-align:center;font-size:.8rem;color:var(--ink-soft);margin-top:2px;font-style:italic;}
+.notebook-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:18px 16px 6px;}
+.notebook-page-name{font-family:var(--font-display);font-weight:600;font-size:1.4rem;text-align:center;}
+.notebook-footer{
+  display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+  padding:16px;max-width:1080px;margin:0 auto 30px;
+}
+.np-search{
+  width:100%;max-width:420px;padding:10px 14px;border-radius:22px;border:1px solid var(--paper-line);
+  background:var(--surface);font-size:.9rem;margin:16px 0 20px;color:var(--ink);
+}
+.np-list-item{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--surface);border:1px solid var(--paper-line);border-radius:10px;
+  padding:14px 16px;margin-bottom:10px;cursor:pointer;
+}
+.np-list-item:hover{background:var(--surface-alt);}
+.np-list-item .np-item-name{font-family:var(--font-display);font-weight:600;font-size:1.02rem;}
+.np-list-item .np-item-delete{
+  background:none;border:none;color:var(--ink-soft);cursor:pointer;flex-shrink:0;
+  width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;
+}
+.np-list-item .np-item-delete:hover{background:rgba(162,58,44,.15);color:var(--accent);}
+.np-list-item .np-item-delete svg{width:15px;height:15px;}
+.contact-detail-row{
+  display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--paper-line);
+}
+.contact-detail-row:last-of-type{border-bottom:none;}
+.contact-detail-text{flex:1;font-size:.92rem;color:var(--ink);overflow-wrap:anywhere;}
+.contact-action-icon{
+  width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;text-decoration:none;
+}
+.contact-action-icon svg{width:18px;height:18px;}
+.contact-detail-name{font-family:var(--font-display);font-size:1.25rem;font-weight:600;margin-bottom:10px;}
 .day-toolbar{
   display:flex;gap:10px;flex-wrap:wrap;padding:12px 16px;background:var(--paper-deep);
   border-radius:16px;margin:10px auto 4px;max-width:1080px;justify-content:center;
@@ -294,17 +338,17 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .text-style-bar button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 .text-style-bar input[type=color]{width:34px;padding:0;}
 
-/* --- colored "3D" tool buttons --- */
+/* --- pulsanti strumento: quadrati con angoli arrotondati, stile professionale --- */
 .icon-btn.tool{
-  width:48px;height:48px;border-radius:50%;border:none;color:#fff;position:relative;
-  background:radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--tool-color) 55%, white), var(--tool-color) 72%);
-  box-shadow:0 3px 0 color-mix(in srgb, var(--tool-color) 65%, black), 0 7px 14px rgba(0,0,0,.28), inset 0 1px 1px rgba(255,255,255,.6);
-  transition:transform .08s;
+  width:46px;height:46px;border-radius:12px;border:1px solid rgba(0,0,0,.1);color:#fff;position:relative;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--tool-color) 82%, white), var(--tool-color) 85%);
+  box-shadow:0 2px 4px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.4);
+  transition:transform .08s, box-shadow .12s, filter .12s;
 }
-.icon-btn.tool:hover{filter:brightness(1.06);}
+.icon-btn.tool:hover{filter:brightness(1.07); box-shadow:0 3px 7px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.4);}
 .icon-btn.tool:active,.icon-btn.tool.active{
-  transform:translateY(2px);
-  box-shadow:0 1px 0 color-mix(in srgb, var(--tool-color) 65%, black), 0 3px 7px rgba(0,0,0,.22), inset 0 1px 1px rgba(255,255,255,.6);
+  transform:translateY(1px);
+  box-shadow:0 1px 2px rgba(0,0,0,.22), inset 0 2px 4px rgba(0,0,0,.28);
 }
 .icon-btn.tool.active{outline:2px solid var(--gold);outline-offset:2px;}
 #btnAddText{--tool-color:#4E7FBD;}
@@ -314,6 +358,8 @@ body.dark .theme-toggle .icon-moon{display:block;}
 #btnAddImage{--tool-color:#4C9C6B;}
 #btnAddAudio{--tool-color:#D08A3E;}
 #btnAddLink{--tool-color:#4C5FBF;}
+#btnAddPhone{--tool-color:#3E9C5C;}
+#btnAddEmail{--tool-color:#C25A8A;}
 #btnTrashPage{--tool-color:#A23A2C;}
 #btnExportPdf{--tool-color:#5A6B7A;}
 
@@ -331,11 +377,21 @@ body.dark .theme-toggle .icon-moon{display:block;}
 
 .canvas-el{position:absolute;touch-action:none;}
 .el-delete-x{
-  position:absolute;top:-11px;right:-11px;width:26px;height:26px;border-radius:50%;
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;
   background:var(--accent);color:#fff;border:2px solid var(--paper);display:none;
-  align-items:center;justify-content:center;font-size:17px;line-height:1;cursor:pointer;z-index:8;padding:0;
+  align-items:center;justify-content:center;font-size:19px;line-height:1;cursor:pointer;z-index:9;padding:0;
+  box-shadow:0 3px 10px rgba(0,0,0,.35);
 }
 .canvas-el.show-delete .el-delete-x{display:flex;}
+.el-duplicate-btn{
+  position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;
+  background:#3E9C5C;color:#fff;border:2px solid var(--paper);display:none;
+  align-items:center;justify-content:center;font-size:14px;cursor:pointer;z-index:9;padding:0;
+  box-shadow:0 3px 8px rgba(0,0,0,.3);
+}
+.el-duplicate-btn svg{width:14px;height:14px;}
+.canvas-el.show-delete .el-duplicate-btn{display:flex;}
+.canvas-el.move-active{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px;}
 .resize-handle{
   position:absolute;width:15px;height:15px;border-radius:4px;
   background:var(--accent);border:2px solid var(--paper);display:none;z-index:7;
@@ -374,21 +430,22 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .canvas-image{border:1px solid var(--paper-line);border-radius:8px;background:transparent;box-shadow:0 3px 10px rgba(0,0,0,.12);}
 .canvas-image img{width:100%;height:100%;object-fit:contain;border-radius:7px;display:block;pointer-events:none;}
 
-/* audio / link badges */
-.audio-badge,.link-badge{
+/* audio / link / phone / email badges */
+.audio-badge,.link-badge,.phone-badge,.email-badge{
   display:flex;align-items:center;gap:7px;background:var(--surface-alt);border:1.5px solid #000;
   border-radius:22px;padding:7px 14px 7px 7px;font-size:.82rem;box-shadow:0 3px 8px rgba(0,0,0,.12);
   white-space:nowrap;cursor:pointer;color:var(--ink);
 }
-body.dark .audio-badge,body.dark .link-badge{border-color:#fff;}
-.audio-badge-icon,.link-badge-icon{
+body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .email-badge{border-color:#fff;}
+.audio-badge-icon,.link-badge-icon,.phone-badge-icon,.email-badge-icon{
   width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   background:var(--accent);color:#fff;flex-shrink:0;
 }
-.audio-badge-icon svg,.link-badge-icon svg{width:15px;height:15px;}
+.audio-badge-icon svg,.link-badge-icon svg,.phone-badge-icon svg,.email-badge-icon svg{width:15px;height:15px;}
 .link-badge{text-decoration:none;}
 .link-open-btn{margin-left:2px;color:var(--accent-deep);display:flex;align-items:center;}
 .link-open-btn svg{width:13px;height:13px;}
+.phone-call-btn,.email-open-btn{color:inherit;display:flex;align-items:center;justify-content:center;text-decoration:none;}
 
 /* drawing (elemento finito: si comporta come un'immagine ridimensionabile) */
 .canvas-drawing img{width:100%;height:100%;display:block;pointer-events:none;}
@@ -456,17 +513,65 @@ body.dark .audio-badge,body.dark .link-badge{border-color:#fff;}
   .cover-preview-sticky .cover-visual{max-width:220px;}
 }
 @media print{
-  @page{ size: A4 portrait; margin: 10mm; }
   html, body{background:#fff !important;}
-  body *{visibility:hidden;}
-  #dayCanvas, #dayCanvas *{visibility:visible;}
-  #dayCanvas{
+  body:not(.printing-register) *{visibility:hidden;}
+  body:not(.printing-register) #dayCanvas, body:not(.printing-register) #dayCanvas *{visibility:visible;}
+  body:not(.printing-register) #dayCanvas{
     position:absolute; left:0; top:0;
     transform:scale(var(--print-scale, 1)); transform-origin:top left;
     box-shadow:none; border:none; background:#fff;
   }
-  .day-canvas-outer{overflow:visible;background:#fff;}
+  body:not(.printing-register) .day-canvas-outer{overflow:visible;background:#fff;}
 }
+@media print{
+  body.printing-register *{visibility:hidden;}
+  body.printing-register #regPrintArea, body.printing-register #regPrintArea *{visibility:visible;}
+  body.printing-register #regPrintArea{position:absolute;left:0;top:0;width:100%;}
+  .reg-print-sheet{page-break-after:always;padding:10px;}
+  .reg-print-sheet:last-child{page-break-after:auto;}
+}
+
+/* ---------- Registro personale ---------- */
+.reg-toolbar{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;background:var(--paper-deep);border-radius:12px;margin:12px 16px;align-items:center;}
+.reg-sep{width:1px;height:28px;background:var(--paper-line);margin:0 4px;}
+#regAddSheet{--tool-color:#3E9C5C;}
+#regDupSheet{--tool-color:#8B5FBF;}
+#regDelSheet{--tool-color:#A23A2C;}
+#regAddRow{--tool-color:#4E7FBD;}
+#regDelRow{--tool-color:#C0524B;}
+#regAddColQ1{--tool-color:#4E7FBD;}
+#regDelColQ1{--tool-color:#C0524B;}
+#regAddColQ2{--tool-color:#2C5F79;}
+#regDelColQ2{--tool-color:#9c6b2c;}
+#regExportPdf{--tool-color:#5A6B7A;}
+.reg-table-outer{overflow:auto;padding:0 16px 10px;max-width:100%;}
+.reg-table{border-collapse:collapse;font-size:.82rem;background:#fff;margin:0 auto;color:#222;}
+.reg-table td,.reg-table th{border:1px solid #bbb;padding:3px 5px;text-align:center;min-width:32px;}
+.reg-table .reg-classe-cell{background:#2E5E3E;color:#fff;font-weight:700;text-align:left;padding-left:10px;}
+.reg-table .reg-hdr-grade{background:#8FBF95;color:#1c3b24;font-weight:600;}
+.reg-table .reg-hdr-media1{background:#2E5E3E;color:#fff;font-weight:700;}
+.reg-table .reg-hdr-media2{background:#2C5F79;color:#fff;font-weight:700;}
+.reg-table .reg-name-cell{text-align:left;padding-left:8px;min-width:150px;}
+.reg-table .reg-del-row-btn{background:none;border:none;color:#a23a2c;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;}
+.reg-table .reg-del-row-btn svg{width:13px;height:13px;}
+.reg-table input.reg-input{border:none;background:transparent;width:100%;text-align:inherit;font-size:inherit;font-family:inherit;color:inherit;}
+.reg-table input.reg-grade-input{text-align:center;width:30px;}
+.reg-table tbody tr.reg-data-row:nth-child(odd) td.reg-alt{background:#ffffff;}
+.reg-table tbody tr.reg-data-row:nth-child(even) td.reg-alt{background:#e4e4e4;}
+.reg-table td.reg-media-cell{background:#FFF3D6;font-weight:700;}
+.reg-table td.reg-media-cell.low{background:#F5A623;color:#5a2d00;}
+.reg-table tr.reg-separator-row td{background:#2b2b2b;height:8px;padding:0;border:none;}
+.reg-table .reg-desc-label{background:#F5E9C8;font-weight:600;}
+.reg-table .reg-desc-letter{background:#8FBF95;font-weight:700;}
+.reg-table .reg-desc-text{text-align:left;}
+.reg-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 30px;align-items:center;}
+.reg-tab{
+  display:flex;align-items:center;padding:7px 12px;border-radius:8px 8px 0 0;border:1px solid var(--paper-line);
+  border-bottom:3px solid var(--tab-color,#999);background:var(--surface);cursor:pointer;font-size:.8rem;white-space:nowrap;color:var(--ink);
+}
+.reg-tab.active{background:var(--surface-alt);font-weight:700;}
+.reg-tab-color{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle;cursor:pointer;border:1px solid rgba(0,0,0,.25);padding:0;}
+#regPrintArea{position:fixed;left:-99999px;top:0;}
 </style>
 </head>
 <body>
@@ -553,27 +658,57 @@ body.dark .audio-badge,body.dark .link-badge{border-color:#fff;}
         <h3>Calendario</h3>
         <p>Genera il calendario dell'anno scolastico</p>
       </button>
+      <button type="button" class="menu-tile" id="menuBtnNotebook">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="8" y1="8" x2="16" y2="8"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="16" x2="13" y2="16"></line></svg>
+        <h3>Blocco note</h3>
+        <p>Pagine libere, non legate al calendario</p>
+      </button>
+      <button type="button" class="menu-tile" id="menuBtnContacts">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="3"></rect><circle cx="12" cy="10" r="2.5"></circle><path d="M8 17 a4 4 0 0 1 8 0"></path></svg>
+        <h3>Rubrica</h3>
+        <p>Contatti: nome, telefono, email e indirizzo</p>
+      </button>
+      <button type="button" class="menu-tile" id="menuBtnScheduleLink">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15 L15 9"></path><path d="M8 16 A4 4 0 0 1 8 8 L11 5"></path><path d="M16 8 A4 4 0 0 1 16 16 L13 19"></path></svg>
+        <h3>Schedule link</h3>
+        <p>Elenco di link salvati con un nome</p>
+      </button>
       <button type="button" class="menu-tile" id="menuBtnRegistro">
-        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="20" y2="6"></line><line x1="8" y1="12" x2="20" y2="12"></line><line x1="8" y1="18" x2="20" y2="18"></line><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle></svg>
-        <h3>Registro</h3>
-        <p>Prossimamente</p>
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="9" x2="9" y2="20"></line><line x1="15" y1="9" x2="15" y2="20"></line></svg>
+        <h3>Registro personale</h3>
+        <p>Voti, medie e schede per classe</p>
       </button>
     </div>
   </div>
 </div>
 
-<!-- ============ REGISTRO placeholder ============ -->
+<!-- ============ REGISTRO PERSONALE ============ -->
 <div id="screen-registro" class="screen paper">
-  <div class="page-rings">__RINGS__</div>
-  <div class="page-wrap">
-    <div class="top-header">
-      <div class="header-back">
-        <button type="button" class="icon-btn" id="registroBack" data-icon="arrowLeft" title="Indietro"></button>
-        <h1>Registro</h1>
-      </div>
+  <div class="day-topbar">
+    <div class="nav-group">
+      <button type="button" class="icon-btn" id="regBack" data-icon="arrowLeft" title="Indietro"></button>
+      <span class="day-agenda-tag" id="regAgendaName"></span>
     </div>
-    <p style="color:var(--ink-soft);margin-top:20px;">Questa sezione sarà disponibile in un prossimo aggiornamento.</p>
+    <button type="button" class="topbar-btn primary" id="regSaveBtn" data-icon="save" data-label="Salva"></button>
   </div>
+  <div class="reg-toolbar">
+    <button type="button" class="icon-btn tool" id="regAddSheet" data-icon="plus" title="Nuova scheda"></button>
+    <button type="button" class="icon-btn tool" id="regDupSheet" data-icon="duplicate" title="Duplica scheda"></button>
+    <button type="button" class="icon-btn tool" id="regDelSheet" data-icon="trash" title="Elimina scheda"></button>
+    <span class="reg-sep"></span>
+    <button type="button" class="icon-btn tool" id="regAddRow" data-icon="rowplus" title="Aggiungi riga"></button>
+    <button type="button" class="icon-btn tool" id="regDelRow" data-icon="rowminus" title="Elimina ultima riga"></button>
+    <button type="button" class="icon-btn tool" id="regAddColQ1" data-icon="colplus" title="Aggiungi colonna voto (1° quadrimestre)"></button>
+    <button type="button" class="icon-btn tool" id="regDelColQ1" data-icon="colminus" title="Elimina colonna voto (1° quadrimestre)"></button>
+    <button type="button" class="icon-btn tool" id="regAddColQ2" data-icon="colplus" title="Aggiungi colonna voto (2° quadrimestre)"></button>
+    <button type="button" class="icon-btn tool" id="regDelColQ2" data-icon="colminus" title="Elimina colonna voto (2° quadrimestre)"></button>
+    <span class="reg-sep"></span>
+    <button type="button" class="icon-btn tool" id="regExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
+  </div>
+  <div class="reg-table-outer">
+    <div id="regTableContainer"></div>
+  </div>
+  <div class="reg-tabs" id="regTabs"></div>
 </div>
 
 <!-- ============ COVER EDITOR ============ -->
@@ -590,19 +725,19 @@ body.dark .audio-badge,body.dark .link-badge{border-color:#fff;}
     <div class="cover-editor-grid">
       <div>
         <div class="form-field">
-          <label for="coverCognomeNome">Cognome e Nome</label>
+          <label for="coverCognomeNome">Titolo</label>
           <input type="text" id="coverCognomeNome" placeholder="Es. Guida Antonio">
         </div>
         <div class="form-field">
-          <label for="coverMateria">Materia</label>
+          <label for="coverMateria">Descrizione</label>
           <input type="text" id="coverMateria" placeholder="Es. Musica">
         </div>
         <div class="form-field">
-          <label for="coverScuola">Scuola</label>
+          <label for="coverScuola">Info secondarie</label>
           <input type="text" id="coverScuola" placeholder="Es. Scuola Secondaria I Grado">
         </div>
         <div class="form-field">
-          <label for="coverAnno">Anno scolastico</label>
+          <label for="coverAnno">Anno</label>
           <input type="text" id="coverAnno" placeholder="Es. 2026-2027">
         </div>
         <div class="form-field">
@@ -614,7 +749,7 @@ body.dark .audio-badge,body.dark .link-badge{border-color:#fff;}
           <input type="file" id="coverMainImageInput" accept="image/*" style="display:none;">
         </div>
         <div class="form-field">
-          <label>Foto tonda (es. foto dell'insegnante)</label>
+          <label>Foto profilo</label>
           <div class="img-upload-row">
             <button type="button" class="img-upload-btn" id="coverRoundImageBtn">Scegli immagine</button>
             <button type="button" class="img-clear-link" id="coverRoundImageClear">&#10005; Rimuovi</button>
@@ -639,7 +774,8 @@ body.dark .audio-badge,body.dark .link-badge{border-color:#fff;}
         <h1 id="calAgendaName"></h1>
       </div>
     </div>
-    <div class="cal-year-row">
+    <div class="cal-year-row" id="calYearRow" style="display:none;">
+      <span class="cal-year-label" id="calYearLabel">Anno scolastico</span>
       <input type="text" id="calYearInput" placeholder="Es. 2026-2027">
       <button type="button" id="calGenerateBtn">Genera calendario</button>
     </div>
@@ -659,12 +795,16 @@ body.dark .audio-badge,body.dark .link-badge{border-color:#fff;}
     <button type="button" class="topbar-btn primary" id="btnSaveDay" data-icon="save" data-label="Salva"></button>
   </div>
   <div class="page-rings">__RINGS__</div>
-  <div class="date-bar">
+  <div class="date-bar" id="dateBar">
     <button type="button" class="icon-btn" id="dayPrev" data-icon="arrowLeft" title="Giorno precedente"></button>
     <div class="date-label" id="dayDateLabel"></div>
     <button type="button" class="icon-btn" id="dayNext" data-icon="arrowRight" title="Giorno successivo"></button>
   </div>
   <div class="date-sub" id="dayDateSub"></div>
+  <div class="notebook-bar" id="notebookBar" style="display:none;">
+    <div class="notebook-page-name" id="npNameDisplay"></div>
+    <button type="button" class="icon-btn" id="npRenameBtn" data-icon="pencil" title="Rinomina pagina"></button>
+  </div>
   <div class="day-toolbar">
     <button type="button" class="icon-btn tool" id="btnAddText" data-icon="text" title="Inserisci testo"></button>
     <button type="button" class="icon-btn tool" id="btnDictation" data-icon="mic" title="Dettatura vocale"></button>
@@ -673,6 +813,8 @@ body.dark .audio-badge,body.dark .link-badge{border-color:#fff;}
     <button type="button" class="icon-btn tool" id="btnAddImage" data-icon="image" title="Inserisci immagine"></button>
     <button type="button" class="icon-btn tool" id="btnAddAudio" data-icon="headphones" title="Inserisci audio"></button>
     <button type="button" class="icon-btn tool" id="btnAddLink" data-icon="link" title="Inserisci link"></button>
+    <button type="button" class="icon-btn tool" id="btnAddPhone" data-icon="phone" title="Numero di telefono"></button>
+    <button type="button" class="icon-btn tool" id="btnAddEmail" data-icon="email" title="Email"></button>
     <button type="button" class="icon-btn tool" id="btnTrashPage" data-icon="trash" title="Cancella tutta la pagina"></button>
     <button type="button" class="icon-btn tool" id="btnExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
     <input type="file" id="fileImage" accept="image/*" style="display:none;">
@@ -697,12 +839,68 @@ body.dark .audio-badge,body.dark .link-badge{border-color:#fff;}
   <div class="day-canvas-outer">
     <div class="day-canvas" id="dayCanvas"></div>
   </div>
+  <div class="notebook-footer" id="notebookFooter" style="display:none;">
+    <button type="button" class="icon-btn" id="npPrevBtn" data-icon="arrowLeft" title="Pagina precedente"></button>
+    <button type="button" class="topbar-btn" id="npAddBtn" data-icon="plus" data-label="Nuova pagina"></button>
+    <button type="button" class="topbar-btn" id="npDeleteBtn" data-icon="trash" data-label="Elimina pagina"></button>
+    <button type="button" class="icon-btn" id="npNextBtn" data-icon="arrowRight" title="Pagina successiva"></button>
+  </div>
+</div>
+
+<!-- ============ NOTEBOOK LIST ============ -->
+<div id="screen-notebook-list" class="screen paper">
+  <div class="page-rings">__RINGS__</div>
+  <div class="page-wrap">
+    <div class="top-header">
+      <div class="header-back">
+        <button type="button" class="icon-btn" id="npListBack" data-icon="arrowLeft" title="Indietro"></button>
+        <h1>Blocco note</h1>
+      </div>
+      <button type="button" class="topbar-btn primary" id="npListAddBtn" data-icon="plus" data-label="Nuova pagina"></button>
+    </div>
+    <input type="text" id="npSearchInput" class="np-search" placeholder="Cerca tra i nomi delle pagine...">
+    <div id="npListContainer"></div>
+  </div>
+</div>
+
+<!-- ============ RUBRICA ============ -->
+<div id="screen-contacts" class="screen paper">
+  <div class="page-rings">__RINGS__</div>
+  <div class="page-wrap">
+    <div class="top-header">
+      <div class="header-back">
+        <button type="button" class="icon-btn" id="contactsBack" data-icon="arrowLeft" title="Indietro"></button>
+        <h1>Rubrica</h1>
+      </div>
+      <button type="button" class="topbar-btn primary" id="contactsAddBtn" data-icon="plus" data-label="Nuovo contatto"></button>
+    </div>
+    <input type="text" id="contactsSearchInput" class="np-search" placeholder="Cerca tra i contatti...">
+    <div id="contactsListContainer"></div>
+  </div>
+</div>
+
+<!-- ============ SCHEDULE LINK ============ -->
+<div id="screen-schedulelink" class="screen paper">
+  <div class="page-rings">__RINGS__</div>
+  <div class="page-wrap">
+    <div class="top-header">
+      <div class="header-back">
+        <button type="button" class="icon-btn" id="slBack" data-icon="arrowLeft" title="Indietro"></button>
+        <h1>Schedule link</h1>
+      </div>
+      <button type="button" class="topbar-btn primary" id="slAddBtn" data-icon="plus" data-label="Nuovo link"></button>
+    </div>
+    <input type="text" id="slSearchInput" class="np-search" placeholder="Cerca tra i link...">
+    <div id="slListContainer"></div>
+  </div>
 </div>
 
 <!-- ============ MODAL ============ -->
 <div id="modalOverlay">
   <div id="modalBox"></div>
 </div>
+
+<div id="regPrintArea"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
@@ -712,7 +910,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 import {
   getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc,
-  collection, writeBatch
+  collection, writeBatch, collectionGroup, query, where
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 (function(){
@@ -784,23 +982,39 @@ $('#modalOverlay').addEventListener('click', function(e){ if(e.target.id==='moda
 function agendasColl(){ return collection(db, 'users', state.uid, 'agendas'); }
 function agendaRef(id){ return doc(db, 'users', state.uid, 'agendas', id); }
 function daysColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'days'); }
-function elementsColl(agendaId, dKey){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'days', dKey, 'elements'); }
-function elementRef(agendaId, dKey, elId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'days', dKey, 'elements', elId); }
+var pageMode = 'day'; /* 'day' | 'notebook' */
+var currentPageKey = null; /* dateKey per 'day', id pagina per 'notebook' */
+function elementsColl(agendaId, pageKey){
+  var coll = (pageMode==='notebook') ? 'notebookPages' : 'days';
+  return collection(db, 'users', state.uid, 'agendas', agendaId, coll, pageKey, 'elements');
+}
+function elementRef(agendaId, pageKey, elId){
+  var coll = (pageMode==='notebook') ? 'notebookPages' : 'days';
+  return doc(db, 'users', state.uid, 'agendas', agendaId, coll, pageKey, 'elements', elId);
+}
+function notebookPagesColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'notebookPages'); }
+function notebookPageDocRef(agendaId, pageId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'notebookPages', pageId); }
+function registerSheetsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'registerSheets'); }
+function registerSheetDocRef(agendaId, sheetId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'registerSheets', sheetId); }
+function contactsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'contacts'); }
+function contactDocRef(agendaId, contactId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'contacts', contactId); }
+function scheduleLinksColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'scheduleLinks'); }
+function scheduleLinkDocRef(agendaId, linkId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'scheduleLinks', linkId); }
 
 /* ================= Icons ================= */
 var ICONS = {
   calendar:'<rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line>',
-  settings:'<circle cx="12" cy="12" r="3.1"></circle><rect x="10.4" y="1.3" width="3.2" height="3.6" rx="1"></rect><rect x="10.4" y="1.3" width="3.2" height="3.6" rx="1" transform="rotate(45 12 12)"></rect><rect x="10.4" y="1.3" width="3.2" height="3.6" rx="1" transform="rotate(90 12 12)"></rect><rect x="10.4" y="1.3" width="3.2" height="3.6" rx="1" transform="rotate(135 12 12)"></rect><rect x="10.4" y="1.3" width="3.2" height="3.6" rx="1" transform="rotate(180 12 12)"></rect><rect x="10.4" y="1.3" width="3.2" height="3.6" rx="1" transform="rotate(225 12 12)"></rect><rect x="10.4" y="1.3" width="3.2" height="3.6" rx="1" transform="rotate(270 12 12)"></rect><rect x="10.4" y="1.3" width="3.2" height="3.6" rx="1" transform="rotate(315 12 12)"></rect>',
+  settings:'<path fill="currentColor" stroke="none" fill-rule="evenodd" d="M 10.07 5.69 L 9.91 2.94 L 14.09 2.94 L 13.93 5.69 A 6.60 6.60 0 0 1 15.10 6.17 L 16.93 4.11 L 19.89 7.07 L 17.83 8.90 A 6.60 6.60 0 0 1 18.31 10.07 L 21.06 9.91 L 21.06 14.09 L 18.31 13.93 A 6.60 6.60 0 0 1 17.83 15.10 L 19.89 16.93 L 16.93 19.89 L 15.10 17.83 A 6.60 6.60 0 0 1 13.93 18.31 L 14.09 21.06 L 9.91 21.06 L 10.07 18.31 A 6.60 6.60 0 0 1 8.90 17.83 L 7.07 19.89 L 4.11 16.93 L 6.17 15.10 A 6.60 6.60 0 0 1 5.69 13.93 L 2.94 14.09 L 2.94 9.91 L 5.69 10.07 A 6.60 6.60 0 0 1 6.17 8.90 L 4.11 7.07 L 7.07 4.11 L 8.90 6.17 A 6.60 6.60 0 0 1 10.07 5.69 Z M 15.40 12.00 A 3.40 3.40 0 1 0 8.60 12.00 A 3.40 3.40 0 1 0 15.40 12.00 Z"></path>',
   home:'<path d="M3 11 L12 3 L21 11"></path><path d="M5 10 L5 21 L19 21 L19 10"></path><rect x="10" y="14" width="4" height="7"></rect>',
   save:'<path d="M4 4 H16 L20 8 V20 H4 Z"></path><rect x="7" y="4" width="8" height="5"></rect><rect x="7" y="14" width="10" height="6"></rect>',
   plus:'<line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>',
   close:'<line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line>',
   arrowLeft:'<polyline points="15 4 7 12 15 20"></polyline>',
   arrowRight:'<polyline points="9 4 17 12 9 20"></polyline>',
-  text:'<line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="16" y2="12"></line><line x1="4" y1="18" x2="12" y2="18"></line>',
+  text:'<path d="M5 6 H19 M12 6 V19"></path>',
   mic:'<rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11 A7 7 0 0 0 19 11"></path><line x1="12" y1="18" x2="12" y2="22"></line><line x1="8" y1="22" x2="16" y2="22"></line>',
   pencil:'<path d="M4 20 L4 16 L15 5 L19 9 L8 20 Z"></path><line x1="13" y1="7" x2="17" y2="11"></line>',
-  eraser:'<path d="M3 16 L11 8 L19 16 L14 21 L8 21 Z"></path><line x1="3" y1="16" x2="8" y2="21"></line>',
+  eraser:'<rect x="5" y="10" width="14" height="8" rx="2" transform="rotate(-25 12 14)"></rect><line x1="6" y1="20" x2="19" y2="20"></line>',
   image:'<rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="10" r="1.8"></circle><path d="M4 18 L9 12 L13 16 L16 13 L20 17"></path>',
   headphones:'<path d="M4 14 V12 A8 8 0 0 1 20 12 V14"></path><rect x="2" y="14" width="5" height="7" rx="2"></rect><rect x="17" y="14" width="5" height="7" rx="2"></rect>',
   film:'<rect x="3" y="5" width="14" height="14" rx="2"></rect><path d="M17 9 L21 6 V18 L17 15 Z"></path>',
@@ -810,7 +1024,16 @@ var ICONS = {
   externalLink:'<path d="M14 4 H20 V10"></path><line x1="20" y1="4" x2="11" y2="13"></line><path d="M18 14 V19 A1 1 0 0 1 17 20 H5 A1 1 0 0 1 4 19 V7 A1 1 0 0 1 5 6 H10"></path>',
   drag:'<circle cx="8" cy="6" r="1.2"></circle><circle cx="8" cy="12" r="1.2"></circle><circle cx="8" cy="18" r="1.2"></circle><circle cx="14" cy="6" r="1.2"></circle><circle cx="14" cy="12" r="1.2"></circle><circle cx="14" cy="18" r="1.2"></circle>',
   pause:'<rect x="7" y="5" width="3.5" height="14" rx="1"></rect><rect x="13.5" y="5" width="3.5" height="14" rx="1"></rect>',
-  pdf:'<path d="M6 2 H14 L19 7 V22 H6 Z"></path><path d="M14 2 V7 H19"></path><path d="M12 11 V17"></path><path d="M9 14 L12 17 L15 14"></path>'
+  pdf:'<path d="M6 2 H14 L19 7 V22 H6 Z"></path><path d="M14 2 V7 H19"></path><path d="M12 11 V17"></path><path d="M9 14 L12 17 L15 14"></path>',
+  phone:'<path fill="currentColor" stroke="none" d="M6.6 10.8c1.4 2.7 3.6 4.9 6.3 6.3l2.1-2.1c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1v3.4c0 .6-.4 1-1 1C10.6 21.6 2.4 13.4 2.4 3.5c0-.6.4-1 1-1H7c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1L6.6 10.8Z"></path>',
+  email:'<rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="12" cy="12" r="2.6"></circle><path d="M14.6 12 v1.2 a2 2 0 0 0 4 0 V12 a6.6 6.6 0 1 1 -2.6 -5.3"></path>',
+  duplicate:'<rect x="4" y="7" width="12" height="14" rx="2"></rect><path d="M9 4 H18 A2 2 0 0 1 20 6 V17"></path>',
+  list:'<line x1="8" y1="6" x2="20" y2="6"></line><line x1="8" y1="12" x2="20" y2="12"></line><line x1="8" y1="18" x2="20" y2="18"></line><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle>',
+  location:'<path d="M12 22 C12 22 5 14.3 5 9.3 A7 7 0 0 1 19 9.3 C19 14.3 12 22 12 22 Z"></path><circle cx="12" cy="9.3" r="2.5"></circle>',
+  rowplus:'<rect x="3" y="4" width="18" height="6" rx="1"></rect><rect x="3" y="13" width="18" height="6" rx="1"></rect><line x1="12" y1="10.5" x2="12" y2="10.5"></line><line x1="19" y1="1" x2="19" y2="7"></line><line x1="16" y1="4" x2="22" y2="4"></line>',
+  rowminus:'<rect x="3" y="6" width="18" height="6" rx="1"></rect><rect x="3" y="15" width="18" height="6" rx="1"></rect><line x1="15" y1="3" x2="21" y2="3"></line>',
+  colplus:'<rect x="4" y="3" width="6" height="18" rx="1"></rect><rect x="13" y="3" width="6" height="18" rx="1"></rect><line x1="19" y1="1" x2="19" y2="7"></line><line x1="16" y1="4" x2="22" y2="4"></line>',
+  colminus:'<rect x="6" y="3" width="6" height="18" rx="1"></rect><rect x="15" y="3" width="6" height="18" rx="1"></rect><line x1="15" y1="3" x2="21" y2="3"></line>'
 };
 function iconSvg(name){
   return ICONS[name] ? ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS[name]+'</svg>') : '';
@@ -823,6 +1046,14 @@ function initIcons(){
     el.innerHTML = svg + label;
   });
 }
+function setIconButton(id, iconName, title){
+  var el = $('#'+id);
+  if(!el) return;
+  el.dataset.icon = iconName;
+  el.title = title;
+  var label = el.dataset.label ? ('<span>'+el.dataset.label+'</span>') : '';
+  el.innerHTML = iconSvg(iconName) + label;
+}
 function ringsHTML(){
   var s='';
   for(var i=0;i<18;i++) s+='<span></span>';
@@ -833,7 +1064,7 @@ function ringsHTML(){
 var state = {
   uid:null, email:null, agende:[], currentAgendaId:null, currentAgenda:null,
   currentDate:null, dayElements:[], deletedElementIds:[], dirty:false,
-  drawColor:'#2E2A22', drawThickness:3,
+  drawColor:'#2E2A22', drawThickness:3, notebookPages:[],
   authMode:'login', coverMainImage:null, coverRoundImage:null
 };
 
@@ -1069,12 +1300,15 @@ function renderHomeList(){
     return '<div class="agenda-card" data-id="'+a.id+'" tabindex="0">'+
       '<button type="button" class="agenda-delete" data-id="'+a.id+'" title="Elimina agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
       renderCoverHTML(a.cover, true)+
-      '<div class="agenda-name">'+escapeHtml(a.nome)+'</div>'+
+      '<div class="agenda-name-row">'+
+        '<div class="agenda-name">'+escapeHtml(a.nome)+'</div>'+
+        '<button type="button" class="agenda-rename" data-id="'+a.id+'" title="Rinomina agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
+      '</div>'+
     '</div>';
   }).join('');
   $$('.agenda-card').forEach(function(card){
     card.addEventListener('click', async function(e){
-      if(e.target.closest('.agenda-delete')) return;
+      if(e.target.closest('.agenda-delete') || e.target.closest('.agenda-rename')) return;
       await openAgendaById(card.dataset.id);
       showMenuScreen();
     });
@@ -1094,6 +1328,12 @@ function renderHomeList(){
         console.error(err);
         showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error');
       }
+    });
+  });
+  $$('.agenda-rename').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      openRenameAgendaModal(btn.dataset.id);
     });
   });
 }
@@ -1139,6 +1379,37 @@ async function openAgendaById(id){
     if(snap.exists()){ var data=snap.data(); data.id=id; state.currentAgendaId=id; state.currentAgenda=data; }
   }catch(err){ console.error(err); showToast('Errore nel caricamento agenda.', 'error'); }
 }
+function openRenameAgendaModal(id){
+  var a = state.agende.find(function(x){ return x.id===id; });
+  if(!a) return;
+  openModal(
+    '<h3>Rinomina agenda</h3>'+
+    '<label for="renameAgendaInput">Nome dell\'agenda</label>'+
+    '<input type="text" id="renameAgendaInput" value="'+escapeAttr(a.nome)+'" maxlength="60">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="renameAgendaCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="renameAgendaConfirm">Salva</button>'+
+    '</div>'
+  );
+  var input = $('#renameAgendaInput');
+  setTimeout(function(){ input.focus(); input.select(); }, 60);
+  $('#renameAgendaCancel').onclick = closeModal;
+  $('#renameAgendaConfirm').onclick = async function(){
+    var nuovoNome = input.value.trim();
+    if(!nuovoNome){ showToast("Inserisci un nome per l'agenda.", 'error'); return; }
+    a.nome = nuovoNome;
+    if(state.currentAgenda && state.currentAgenda.id===id) state.currentAgenda.nome = nuovoNome;
+    try{
+      await updateDoc(agendaRef(id), {nome: nuovoNome});
+      closeModal();
+      renderHomeList();
+      showToast('Agenda rinominata.', 'success');
+    }catch(err){
+      console.error(err);
+      showToast('Errore nel salvataggio'+(err.message?(': '+err.message):'')+'.', 'error');
+    }
+  };
+}
 
 async function deleteAgendaCascade(agendaId){
   var daysSnap = await getDocs(daysColl(agendaId));
@@ -1150,6 +1421,33 @@ async function deleteAgendaCascade(agendaId){
     batch.delete(dayDoc.ref);
     await batch.commit();
   }
+  var npSnap = await getDocs(notebookPagesColl(agendaId));
+  for(var j=0;j<npSnap.docs.length;j++){
+    var npDoc = npSnap.docs[j];
+    var npElSnap = await getDocs(collection(db,'users',state.uid,'agendas',agendaId,'notebookPages',npDoc.id,'elements'));
+    var npBatch = writeBatch(db);
+    npElSnap.docs.forEach(function(e){ npBatch.delete(e.ref); });
+    npBatch.delete(npDoc.ref);
+    await npBatch.commit();
+  }
+  var ctSnap = await getDocs(contactsColl(agendaId));
+  if(ctSnap.docs.length>0){
+    var ctBatch = writeBatch(db);
+    ctSnap.docs.forEach(function(d){ ctBatch.delete(d.ref); });
+    await ctBatch.commit();
+  }
+  var slSnap = await getDocs(scheduleLinksColl(agendaId));
+  if(slSnap.docs.length>0){
+    var slBatch = writeBatch(db);
+    slSnap.docs.forEach(function(d){ slBatch.delete(d.ref); });
+    await slBatch.commit();
+  }
+  var regSnap = await getDocs(registerSheetsColl(agendaId));
+  if(regSnap.docs.length>0){
+    var regBatch = writeBatch(db);
+    regSnap.docs.forEach(function(d){ regBatch.delete(d.ref); });
+    await regBatch.commit();
+  }
   await deleteDoc(agendaRef(agendaId));
 }
 
@@ -1160,9 +1458,8 @@ function showMenuScreen(){
 }
 $('#menuBtnCover').addEventListener('click', function(){ showCoverEditor(); });
 $('#menuBtnCalendar').addEventListener('click', function(){ showCalendarScreen(); });
-$('#menuBtnRegistro').addEventListener('click', function(){ showScreen('screen-registro'); });
+$('#menuBtnRegistro').addEventListener('click', function(){ enterRegisterSection(); });
 $('#menuBackHome').addEventListener('click', function(){ showHomeScreen(); });
-$('#registroBack').addEventListener('click', function(){ showMenuScreen(); });
 
 function showHomeScreen(){
   state.currentAgendaId=null; state.currentAgenda=null;
@@ -1173,15 +1470,21 @@ function showHomeScreen(){
 /* ================= COVER ================= */
 function renderCoverHTML(cover, mini){
   var c = cover||{};
+  function line(cls, value, placeholder){
+    if(mini){
+      return value ? ('<div class="'+cls+'">'+escapeHtml(value)+'</div>') : '';
+    }
+    return '<div class="'+cls+'">'+escapeHtml(value||placeholder)+'</div>';
+  }
   return '<div class="cover-visual'+(mini?' mini':'')+'">'+
     (c.mainImage ? '<img class="cover-bg-img" src="'+c.mainImage+'">' : '')+
     '<div class="cover-overlay"></div>'+
     (c.roundImage ? '<img class="cover-round-img" src="'+c.roundImage+'">' : '<div class="cover-round-img cover-round-placeholder"></div>')+
     '<div class="cover-text">'+
-      '<div class="cover-subject">'+escapeHtml(c.materia||'Materia')+'</div>'+
-      '<div class="cover-name">'+escapeHtml(c.cognomeNome||'Nome Cognome')+'</div>'+
-      '<div class="cover-school">'+escapeHtml(c.scuola||'Scuola')+'</div>'+
-      '<div class="cover-year">'+escapeHtml(c.annoScolastico||'Anno scolastico')+'</div>'+
+      line('cover-subject', c.materia, 'Descrizione')+
+      line('cover-name', c.cognomeNome, 'Titolo')+
+      line('cover-school', c.scuola, 'Info secondarie')+
+      line('cover-year', c.annoScolastico, 'Anno')+
     '</div>'+
   '</div>';
 }
@@ -1252,45 +1555,98 @@ $('#coverBack').addEventListener('click', function(){ showMenuScreen(); });
 /* ================= CALENDAR ================= */
 function showCalendarScreen(){
   $('#calAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
-  $('#calYearInput').value = (state.currentAgenda && state.currentAgenda.schoolYear) || '';
-  if(state.currentAgenda && state.currentAgenda.schoolYear){ generateCalendar(state.currentAgenda.schoolYear); }
-  else { $('#calGrid').innerHTML = "<p class=\"cal-empty\">Inserisci l'anno scolastico e genera il calendario.</p>"; }
+  var agenda = state.currentAgenda;
+  if(!agenda.calendarType){
+    $('#calYearRow').style.display = 'none';
+    $('#calGrid').innerHTML = '';
+    showScreen('screen-calendar');
+    openCalendarTypeModal();
+    return;
+  }
+  updateCalendarYearRowUI();
+  $('#calYearInput').value = agenda.schoolYear || '';
+  if(agenda.schoolYear){ generateCalendar(agenda.schoolYear, agenda.calendarType); }
+  else { $('#calGrid').innerHTML = "<p class=\"cal-empty\">Inserisci l'anno e genera il calendario.</p>"; }
   showScreen('screen-calendar');
+}
+function updateCalendarYearRowUI(){
+  var type = state.currentAgenda.calendarType;
+  $('#calYearRow').style.display = 'flex';
+  if(type==='solar'){
+    $('#calYearLabel').textContent = 'Anno';
+    $('#calYearInput').placeholder = 'Es. 2026';
+  } else {
+    $('#calYearLabel').textContent = 'Anno scolastico';
+    $('#calYearInput').placeholder = 'Es. 2026-2027';
+  }
+}
+function openCalendarTypeModal(){
+  openModal(
+    '<h3>Che calendario vuoi creare?</h3>'+
+    '<div class="modal-choices">'+
+      '<button type="button" class="choice-btn" id="calTypeSchool">'+iconSvg('calendar')+'<span>Calendario scolastico (Settembre - Luglio)</span></button>'+
+      '<button type="button" class="choice-btn" id="calTypeSolar">'+iconSvg('calendar')+'<span>Calendario solare (Gennaio - Dicembre)</span></button>'+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="calTypeCancel">Annulla</button>'
+  );
+  $('#calTypeCancel').onclick = function(){ closeModal(); showMenuScreen(); };
+  $('#calTypeSchool').onclick = async function(){ await chooseCalendarType('school'); };
+  $('#calTypeSolar').onclick = async function(){ await chooseCalendarType('solar'); };
+}
+async function chooseCalendarType(type){
+  state.currentAgenda.calendarType = type;
+  try{
+    await updateDoc(agendaRef(state.currentAgendaId), {calendarType: type});
+    var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
+    if(listEntry) listEntry.calendarType = type;
+  }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
+  closeModal();
+  updateCalendarYearRowUI();
+  $('#calYearInput').value = '';
+  $('#calGrid').innerHTML = "<p class=\"cal-empty\">Inserisci l'anno e genera il calendario.</p>";
+  setTimeout(function(){ $('#calYearInput').focus(); }, 60);
 }
 $('#calGenerateBtn').addEventListener('click', async function(){
   var raw = $('#calYearInput').value.trim();
   var m = raw.match(/(\d{4})/);
-  if(!m){ showToast('Inserisci un anno valido, ad esempio 2026-2027.', 'error'); return; }
+  if(!m){ showToast('Inserisci un anno valido.', 'error'); return; }
   var startYear = parseInt(m[1],10);
-  var label = startYear+'-'+(startYear+1);
+  var type = state.currentAgenda.calendarType || 'school';
+  var label = (type==='solar') ? String(startYear) : (startYear+'-'+(startYear+1));
   $('#calYearInput').value = label;
   state.currentAgenda.schoolYear = label;
   try{
     await updateDoc(agendaRef(state.currentAgendaId), {schoolYear: label});
     var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
     if(listEntry) listEntry.schoolYear = label;
-  }catch(err){ console.error(err); showToast('Errore nel salvataggio anno scolastico.', 'error'); }
-  generateCalendar(label);
+  }catch(err){ console.error(err); showToast('Errore nel salvataggio anno.', 'error'); }
+  generateCalendar(label, type);
 });
 $('#calBack').addEventListener('click', function(){ showMenuScreen(); });
 
-function generateCalendar(label){
+function generateCalendar(label, type){
+  type = type || state.currentAgenda.calendarType || 'school';
   var m = label.match(/(\d{4})/);
   var startYear = parseInt(m[1],10);
-  var endYear = startYear+1;
   var months = [];
   var mi;
-  for(mi=8; mi<=11; mi++) months.push({y:startYear, m:mi});
-  for(mi=0; mi<=6; mi++) months.push({y:endYear, m:mi});
+  if(type==='solar'){
+    for(mi=0; mi<=11; mi++) months.push({y:startYear, m:mi});
+  } else {
+    var endYear = startYear+1;
+    for(mi=8; mi<=11; mi++) months.push({y:startYear, m:mi});
+    for(mi=0; mi<=6; mi++) months.push({y:endYear, m:mi});
+  }
   var todayStr = dateKey(new Date());
+  var contentDays = (state.currentAgenda && state.currentAgenda.daysWithContent) || [];
   var html='';
   months.forEach(function(mo){
     var y=mo.y, m2=mo.m;
-    var isJuly = (m2===6 && y===endYear);
+    var isJulyLimit = (type!=='solar') && m2===6 && y===(startYear+1);
     var firstDay = new Date(y,m2,1);
     var startOffset = firstDay.getDay();
     startOffset = (startOffset+6)%7;
-    var daysInMonth = isJuly ? 30 : new Date(y, m2+1, 0).getDate();
+    var daysInMonth = isJulyLimit ? 30 : new Date(y, m2+1, 0).getDate();
     var cells='';
     var i,d;
     for(i=0;i<startOffset;i++) cells += '<div class="cal-cell empty"></div>';
@@ -1298,7 +1654,8 @@ function generateCalendar(label){
       var dObj = new Date(y,m2,d);
       var key = dateKey(dObj);
       var isToday = key===todayStr;
-      cells += '<div class="cal-cell'+(isToday?' today':'')+'" data-date="'+key+'">'+d+'</div>';
+      var hasContent = contentDays.indexOf(key)>-1;
+      cells += '<div class="cal-cell'+(isToday?' today':'')+(hasContent?' has-content':'')+'" data-date="'+key+'">'+d+'</div>';
     }
     html += '<div class="cal-month">'+
       '<div class="cal-month-title">'+MONTH_NAMES[m2]+' '+y+'</div>'+
@@ -1322,7 +1679,7 @@ function markDirty(){
   if(el) el.classList.add('needs-save');
 }
 async function saveDayData(silent){
-  var dKey = dateKey(state.currentDate);
+  var dKey = (pageMode==='notebook') ? currentPageKey : dateKey(state.currentDate);
   try{
     var batch = writeBatch(db);
     state.deletedElementIds.forEach(function(elId){
@@ -1334,6 +1691,7 @@ async function saveDayData(silent){
       batch.set(elementRef(state.currentAgendaId, dKey, el.id), payload);
     });
     await batch.commit();
+    if(pageMode==='day'){ await updateDaysWithContent(dKey, state.dayElements.length>0); }
     state.deletedElementIds = [];
     state.dirty=false;
     var saveBtn = $('#btnSaveDay'); if(saveBtn) saveBtn.classList.remove('needs-save');
@@ -1347,6 +1705,233 @@ async function saveDayData(silent){
 }
 $('#btnSaveDay').addEventListener('click', function(){ saveDayData(false); });
 
+async function updateDaysWithContent(dKey, hasContent){
+  var agenda = state.currentAgenda;
+  if(!agenda) return;
+  var list = agenda.daysWithContent || [];
+  var idx = list.indexOf(dKey);
+  var changed = false;
+  if(hasContent && idx===-1){ list.push(dKey); changed=true; }
+  if(!hasContent && idx>-1){ list.splice(idx,1); changed=true; }
+  if(changed){
+    agenda.daysWithContent = list;
+    try{ await updateDoc(agendaRef(state.currentAgendaId), {daysWithContent: list}); }
+    catch(err){ console.error(err); }
+    var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
+    if(listEntry) listEntry.daysWithContent = list;
+  }
+}
+
+/* ---- duplicazione elementi ---- */
+function addDays(d,n){ var r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function addMonths(d,n){ var r=new Date(d); r.setMonth(r.getMonth()+n); return r; }
+function addYears(d,n){ var r=new Date(d); r.setFullYear(r.getFullYear()+n); return r; }
+function computeRecurringDates(original, type, until){
+  var dates = []; var cur = new Date(original); var guard=0;
+  while(guard++<400){
+    if(type==='daily') cur = addDays(cur,1);
+    else if(type==='weekly') cur = addDays(cur,7);
+    else if(type==='monthly') cur = addMonths(cur,1);
+    else if(type==='yearly') cur = addYears(cur,1);
+    if(cur > until) break;
+    dates.push(new Date(cur));
+  }
+  return dates;
+}
+function computeRangeDates(original, start, end){
+  var dates=[]; var cur=new Date(start); var origKey=dateKey(original); var guard=0;
+  while(cur<=end && guard++<400){
+    if(dateKey(cur)!==origKey) dates.push(new Date(cur));
+    cur=addDays(cur,1);
+  }
+  return dates;
+}
+function parseDateList(raw, original){
+  var origKey = dateKey(original);
+  var parts = raw.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+  var dates = [];
+  parts.forEach(function(p){
+    var m = p.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(m){
+      var d = new Date(+m[1], +m[2]-1, +m[3]);
+      if(dateKey(d)!==origKey) dates.push(d);
+    }
+  });
+  return dates;
+}
+function openDuplicateModal(data){
+  openModal(
+    '<h3>Duplica elemento</h3>'+
+    '<label for="dupType">Tipo di ripetizione</label>'+
+    '<select id="dupType">'+
+      '<option value="daily">Ogni giorno</option>'+
+      '<option value="weekly">Ogni settimana (stesso giorno)</option>'+
+      '<option value="monthly">Ogni mese (stesso giorno)</option>'+
+      '<option value="yearly">Ogni anno (stessa data)</option>'+
+      '<option value="range">Intervallo di date</option>'+
+      '<option value="list">Elenco di date specifiche</option>'+
+    '</select>'+
+    '<div id="dupFieldsRecurring">'+
+      '<label for="dupUntil">Ripeti fino al</label>'+
+      '<input type="date" id="dupUntil">'+
+    '</div>'+
+    '<div id="dupFieldsRange" style="display:none;">'+
+      '<label for="dupRangeStart">Dal</label>'+
+      '<input type="date" id="dupRangeStart">'+
+      '<label for="dupRangeEnd">Al</label>'+
+      '<input type="date" id="dupRangeEnd">'+
+    '</div>'+
+    '<div id="dupFieldsList" style="display:none;">'+
+      '<label for="dupListInput">Date separate da virgola (AAAA-MM-GG)</label>'+
+      '<input type="text" id="dupListInput" placeholder="2026-09-15, 2026-10-03">'+
+    '</div>'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="dupCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="dupConfirm">Duplica</button>'+
+    '</div>'
+  );
+  var typeSel = $('#dupType');
+  function updateFieldsVisibility(){
+    var v = typeSel.value;
+    $('#dupFieldsRecurring').style.display = (v==='range'||v==='list') ? 'none' : 'block';
+    $('#dupFieldsRange').style.display = (v==='range') ? 'block' : 'none';
+    $('#dupFieldsList').style.display = (v==='list') ? 'block' : 'none';
+  }
+  typeSel.addEventListener('change', updateFieldsVisibility);
+  updateFieldsVisibility();
+  $('#dupCancel').onclick = closeModal;
+  $('#dupConfirm').onclick = async function(){
+    var type = typeSel.value;
+    var originalDate = state.currentDate;
+    var targetDates = [];
+    if(type==='daily'||type==='weekly'||type==='monthly'||type==='yearly'){
+      var untilStr = $('#dupUntil').value;
+      if(!untilStr){ showToast('Scegli una data limite.', 'error'); return; }
+      targetDates = computeRecurringDates(originalDate, type, new Date(untilStr+'T00:00:00'));
+    } else if(type==='range'){
+      var s = $('#dupRangeStart').value, e = $('#dupRangeEnd').value;
+      if(!s||!e){ showToast("Scegli l'inizio e la fine dell'intervallo.", 'error'); return; }
+      targetDates = computeRangeDates(originalDate, new Date(s+'T00:00:00'), new Date(e+'T00:00:00'));
+    } else if(type==='list'){
+      var raw = $('#dupListInput').value.trim();
+      if(!raw){ showToast('Inserisci almeno una data.', 'error'); return; }
+      targetDates = parseDateList(raw, originalDate);
+    }
+    if(targetDates.length===0){ showToast('Nessuna data valida da aggiungere.', 'error'); return; }
+    if(targetDates.length>366){ showToast('Troppe date in una sola volta (massimo 366).', 'error'); return; }
+    closeModal();
+    await performDuplication(data, targetDates);
+  };
+}
+async function performDuplication(data, targetDates){
+  showToast('Duplicazione in corso...', 'info');
+  try{
+    if(!data.groupId){
+      data.groupId = uid();
+      await updateDoc(elementRef(state.currentAgendaId, dateKey(state.currentDate), data.id), {groupId: data.groupId});
+    }
+    var payload = Object.assign({}, data);
+    delete payload.id;
+    var batch = writeBatch(db);
+    var count = 0;
+    var newDaysAdded = [];
+    for(var i=0;i<targetDates.length;i++){
+      var dk = dateKey(targetDates[i]);
+      var newId = uid();
+      batch.set(elementRef(state.currentAgendaId, dk, newId), Object.assign({}, payload, {createdAt: Date.now()}));
+      newDaysAdded.push(dk);
+      count++;
+      if(count%450===0){ await batch.commit(); batch = writeBatch(db); }
+    }
+    await batch.commit();
+    var agenda = state.currentAgenda;
+    var list = agenda.daysWithContent || [];
+    var changed = false;
+    newDaysAdded.forEach(function(dk){ if(list.indexOf(dk)===-1){ list.push(dk); changed=true; } });
+    if(changed){
+      agenda.daysWithContent = list;
+      await updateDoc(agendaRef(state.currentAgendaId), {daysWithContent: list});
+      var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
+      if(listEntry) listEntry.daysWithContent = list;
+    }
+    showToast('Elemento duplicato su '+targetDates.length+' giorni.', 'success');
+  }catch(err){
+    console.error(err);
+    showToast('Errore durante la duplicazione'+(err.message?(': '+err.message):'')+'.', 'error');
+  }
+}
+function openDeleteGroupChoiceModal(data, wrapper){
+  openModal(
+    '<h3>Eliminare questo elemento</h3>'+
+    '<p style="color:var(--ink-soft);font-size:.85rem;">Questo elemento fa parte di una serie duplicata su più giorni.</p>'+
+    '<div class="modal-actions" style="flex-direction:column;align-items:stretch;gap:8px;">'+
+      '<button type="button" class="btn-primary" id="delOnlyThis">Elimina solo questo</button>'+
+      '<button type="button" class="btn-primary" id="delAllGroup" style="background:var(--accent-deep);">Elimina tutti i duplicati</button>'+
+      '<button type="button" class="btn-secondary" id="delCancel">Annulla</button>'+
+    '</div>'
+  );
+  $('#delCancel').onclick = closeModal;
+  $('#delOnlyThis').onclick = function(){ closeModal(); performLocalDelete(wrapper, data); };
+  $('#delAllGroup').onclick = async function(){ closeModal(); await deleteEntireGroup(data.groupId, wrapper, data); };
+}
+async function deleteEntireGroup(groupId, wrapper, data){
+  showToast('Eliminazione dei duplicati in corso...', 'info');
+  try{
+    var q = query(collectionGroup(db,'elements'), where('groupId','==',groupId));
+    var snap = await getDocs(q);
+    var affectedDays = {};
+    var batch = writeBatch(db);
+    var count = 0;
+    for(var i=0;i<snap.docs.length;i++){
+      var docSnap = snap.docs[i];
+      batch.delete(docSnap.ref);
+      count++;
+      var segs = docSnap.ref.path.split('/');
+      var dIdx = segs.indexOf('days');
+      if(dIdx>-1) affectedDays[segs[dIdx+1]] = true;
+      if(count%450===0){ await batch.commit(); batch = writeBatch(db); }
+    }
+    await batch.commit();
+    performLocalDelete(wrapper, data, true);
+    await refreshDaysWithContentAfterGroupDelete(Object.keys(affectedDays));
+    showToast('Duplicati eliminati.', 'success');
+  }catch(err){
+    console.error(err);
+    showToast('Errore durante l\'eliminazione dei duplicati'+(err.message?(': '+err.message):'')+'.', 'error');
+  }
+}
+async function refreshDaysWithContentAfterGroupDelete(dateKeys){
+  var agenda = state.currentAgenda;
+  if(!agenda) return;
+  var list = agenda.daysWithContent || [];
+  var changed = false;
+  for(var i=0;i<dateKeys.length;i++){
+    var dk = dateKeys[i];
+    try{
+      var snap = await getDocs(elementsColl(state.currentAgendaId, dk));
+      if(snap.empty && list.indexOf(dk)>-1){ list = list.filter(function(x){ return x!==dk; }); changed = true; }
+    }catch(e){ console.error(e); }
+  }
+  if(changed){
+    agenda.daysWithContent = list;
+    try{ await updateDoc(agendaRef(state.currentAgendaId), {daysWithContent: list}); }catch(e){ console.error(e); }
+    var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
+    if(listEntry) listEntry.daysWithContent = list;
+  }
+}
+function attachActionButtons(wrapper, data){
+  if(pageMode==='notebook') return;
+  var dupBtn = document.createElement('button');
+  dupBtn.type = 'button';
+  dupBtn.className = 'el-duplicate-btn';
+  dupBtn.title = 'Duplica';
+  dupBtn.innerHTML = iconSvg('duplicate');
+  wrapper.appendChild(dupBtn);
+  dupBtn.addEventListener('mousedown', function(e){ e.stopPropagation(); });
+  dupBtn.addEventListener('touchstart', function(e){ e.stopPropagation(); });
+  dupBtn.addEventListener('click', function(e){ e.stopPropagation(); hideDeleteX(); openDuplicateModal(data); });
+}
+
 async function openDayScreen(date){
   if(freeDrawOverlay) finishFreeDraw(false);
   if(eraserActive){ eraserActive=false; var eb=$('#btnEraser'); if(eb) eb.classList.remove('active'); }
@@ -1354,6 +1939,8 @@ async function openDayScreen(date){
     var doSave = confirm('Ci sono modifiche non salvate in questa pagina. Vuoi salvarle prima di continuare?');
     if(doSave) await saveDayData(true);
   }
+  pageMode = 'day';
+  currentPageKey = null;
   state.currentDate = date;
   state.deletedElementIds = [];
   disarmPlacement();
@@ -1384,12 +1971,853 @@ async function openDayScreen(date){
       attachElementInteractions(node, d);
     });
   }
+  $('#dateBar').style.display = 'flex';
+  $('#dayDateSub').style.display = 'block';
+  $('#notebookBar').style.display = 'none';
+  $('#notebookFooter').style.display = 'none';
+  setIconButton('btnGoCalendar', 'calendar', 'Calendario');
   $('#dayDateLabel').textContent = formatDateIt(state.currentDate);
   $('#dayDateSub').textContent = saintOfDay(state.currentDate);
   $('#dayAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
   showScreen('screen-day');
   growCanvasIfNeeded();
 }
+
+/* ================= BLOCCO NOTE ================= */
+$('#menuBtnNotebook').addEventListener('click', async function(){
+  await enterNotebookSection();
+});
+async function enterNotebookSection(){
+  try{
+    var snap = await getDocs(notebookPagesColl(state.currentAgendaId));
+    state.notebookPages = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+  }catch(err){ console.error(err); showToast('Errore nel caricamento del blocco note.', 'error'); state.notebookPages=[]; }
+  if(state.notebookPages.length===0){
+    openNewNotebookPageModal(true);
+  } else {
+    showNotebookListScreen();
+  }
+}
+function sortedNotebookPages(){
+  return (state.notebookPages||[]).slice().sort(function(a,b){
+    return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
+  });
+}
+function showNotebookListScreen(){
+  $('#npSearchInput').value = '';
+  renderNotebookList('');
+  showScreen('screen-notebook-list');
+}
+function renderNotebookList(filter){
+  var wrap = $('#npListContainer');
+  var pages = sortedNotebookPages();
+  var f = (filter||'').trim().toLowerCase();
+  if(f) pages = pages.filter(function(p){ return (p.name||'').toLowerCase().indexOf(f)>-1; });
+  if(pages.length===0){
+    wrap.innerHTML = '<p class="empty-hint">'+(f? 'Nessuna pagina corrisponde alla ricerca.' : 'Non hai ancora creato nessuna pagina.')+'</p>';
+    return;
+  }
+  wrap.innerHTML = pages.map(function(p){
+    return '<div class="np-list-item" data-id="'+p.id+'">'+
+      '<span class="np-item-name">'+escapeHtml(p.name||'Senza nome')+'</span>'+
+      '<button type="button" class="np-item-delete" data-id="'+p.id+'" title="Elimina pagina"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
+    '</div>';
+  }).join('');
+  $$('.np-list-item').forEach(function(item){
+    item.addEventListener('click', function(e){
+      if(e.target.closest('.np-item-delete')) return;
+      openNotebookPageScreen(item.dataset.id);
+    });
+  });
+  $$('.np-item-delete').forEach(function(btn){
+    btn.addEventListener('click', async function(e){
+      e.stopPropagation();
+      await deleteNotebookPage(btn.dataset.id);
+    });
+  });
+}
+$('#npSearchInput').addEventListener('input', function(e){ renderNotebookList(e.target.value); });
+$('#npListBack').addEventListener('click', function(){ showMenuScreen(); });
+$('#npListAddBtn').addEventListener('click', function(){ openNewNotebookPageModal(false); });
+
+function openNewNotebookPageModal(isFirst){
+  openModal(
+    '<h3>Nuova pagina</h3>'+
+    '<label for="npNameInput">Nome della pagina</label>'+
+    '<input type="text" id="npNameInput" placeholder="Es. Appunti riunione" maxlength="60">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="npNameCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="npNameConfirm">Crea</button>'+
+    '</div>'
+  );
+  var input = $('#npNameInput');
+  setTimeout(function(){ input.focus(); }, 60);
+  $('#npNameCancel').onclick = function(){ closeModal(); if(isFirst) showMenuScreen(); };
+  $('#npNameConfirm').onclick = async function(){
+    var name = input.value.trim();
+    if(!name){ showToast('Inserisci un nome per la pagina.', 'error'); return; }
+    try{
+      var newId = uid();
+      var pageData = {name:name, createdAt: Date.now()};
+      await setDoc(notebookPageDocRef(state.currentAgendaId, newId), pageData);
+      var entry = Object.assign({id:newId}, pageData);
+      state.notebookPages = state.notebookPages || [];
+      state.notebookPages.push(entry);
+      closeModal();
+      openNotebookPageScreen(newId);
+    }catch(err){ console.error(err); showToast('Errore nella creazione della pagina.', 'error'); }
+  };
+}
+async function deleteNotebookPage(pageId){
+  var page = (state.notebookPages||[]).find(function(p){ return p.id===pageId; });
+  if(!confirm('Eliminare definitivamente la pagina "'+(page?page.name:'')+'"? Questa azione non può essere annullata.')) return;
+  try{
+    var elSnap = await getDocs(collection(db,'users',state.uid,'agendas',state.currentAgendaId,'notebookPages',pageId,'elements'));
+    var batch = writeBatch(db);
+    elSnap.docs.forEach(function(e){ batch.delete(e.ref); });
+    batch.delete(notebookPageDocRef(state.currentAgendaId, pageId));
+    await batch.commit();
+    state.notebookPages = (state.notebookPages||[]).filter(function(p){ return p.id!==pageId; });
+    renderNotebookList($('#npSearchInput').value);
+    showToast('Pagina eliminata.', 'info');
+  }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error'); }
+}
+async function openNotebookPageScreen(pageId){
+  if(freeDrawOverlay) finishFreeDraw(false);
+  if(eraserActive){ eraserActive=false; var eb=$('#btnEraser'); if(eb) eb.classList.remove('active'); }
+  if(state.dirty && pageMode==='notebook' && currentPageKey){
+    var doSave = confirm('Ci sono modifiche non salvate in questa pagina. Vuoi salvarle prima di continuare?');
+    if(doSave) await saveDayData(true);
+  }
+  pageMode = 'notebook';
+  currentPageKey = pageId;
+  state.deletedElementIds = [];
+  disarmPlacement();
+  activeDeleteWrapper = null;
+  activeEditingText = null;
+  var canvas = $('#dayCanvas');
+  canvas.innerHTML = '<p class="empty-day-hint">Caricamento...</p>';
+  var pageInfo = (state.notebookPages||[]).find(function(p){ return p.id===pageId; });
+  if(!pageInfo){
+    try{
+      var pSnap = await getDoc(notebookPageDocRef(state.currentAgendaId, pageId));
+      if(pSnap.exists()){ pageInfo = pSnap.data(); pageInfo.id = pageId; state.notebookPages=state.notebookPages||[]; state.notebookPages.push(pageInfo); }
+    }catch(err){ console.error(err); }
+  }
+  try{
+    var elSnap = await getDocs(elementsColl(state.currentAgendaId, pageId));
+    var els = elSnap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+    els.sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+    state.dayElements = els;
+  }catch(err){
+    console.error(err);
+    showToast('Errore nel caricamento della pagina'+(err.message?(': '+err.message):'')+'.', 'error');
+    state.dayElements = [];
+  }
+  state.dirty = false;
+  var saveBtn = $('#btnSaveDay'); if(saveBtn) saveBtn.classList.remove('needs-save');
+  canvas.innerHTML='';
+  if(state.dayElements.length===0){
+    canvas.innerHTML = '<p class="empty-day-hint">Pagina vuota. Scegli uno strumento qui sopra, poi clicca sulla pagina per posizionare il primo elemento.</p>';
+  } else {
+    state.dayElements.forEach(function(d){
+      var node = renderCanvasElement(d);
+      canvas.appendChild(node);
+      attachElementInteractions(node, d);
+    });
+  }
+  $('#dateBar').style.display = 'none';
+  $('#dayDateSub').style.display = 'none';
+  $('#notebookBar').style.display = 'flex';
+  $('#notebookFooter').style.display = 'flex';
+  setIconButton('btnGoCalendar', 'list', 'Elenco pagine');
+  $('#npNameDisplay').textContent = pageInfo ? pageInfo.name : '';
+  $('#dayAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
+  showScreen('screen-day');
+  growCanvasIfNeeded();
+}
+$('#npRenameBtn').addEventListener('click', function(){
+  if(pageMode!=='notebook') return;
+  var page = (state.notebookPages||[]).find(function(p){ return p.id===currentPageKey; });
+  openModal(
+    '<h3>Rinomina pagina</h3>'+
+    '<label for="npRenameInput">Nome della pagina</label>'+
+    '<input type="text" id="npRenameInput" value="'+escapeAttr(page?page.name:'')+'" maxlength="60">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="npRenameCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="npRenameConfirm">Salva</button>'+
+    '</div>'
+  );
+  var input = $('#npRenameInput');
+  setTimeout(function(){ input.focus(); input.select(); }, 60);
+  $('#npRenameCancel').onclick = closeModal;
+  $('#npRenameConfirm').onclick = async function(){
+    var nuovoNome = input.value.trim();
+    if(!nuovoNome){ showToast('Inserisci un nome per la pagina.', 'error'); return; }
+    if(page) page.name = nuovoNome;
+    try{
+      await updateDoc(notebookPageDocRef(state.currentAgendaId, currentPageKey), {name: nuovoNome});
+      $('#npNameDisplay').textContent = nuovoNome;
+      closeModal();
+      showToast('Pagina rinominata.', 'success');
+    }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
+  };
+});
+$('#npAddBtn').addEventListener('click', function(){ openNewNotebookPageModal(false); });
+$('#npDeleteBtn').addEventListener('click', async function(){
+  if(pageMode!=='notebook') return;
+  var pageIdToDelete = currentPageKey;
+  var pages = sortedNotebookPages();
+  var idx = pages.findIndex(function(p){ return p.id===pageIdToDelete; });
+  await deleteNotebookPage(pageIdToDelete);
+  var remaining = sortedNotebookPages();
+  if(remaining.length===0){ showMenuScreen(); return; }
+  var nextIdx = Math.min(idx, remaining.length-1);
+  openNotebookPageScreen(remaining[nextIdx].id);
+});
+$('#npPrevBtn').addEventListener('click', function(){
+  var pages = sortedNotebookPages();
+  var idx = pages.findIndex(function(p){ return p.id===currentPageKey; });
+  if(idx<=0){ showToast('Questa è la prima pagina.', 'info'); return; }
+  openNotebookPageScreen(pages[idx-1].id);
+});
+$('#npNextBtn').addEventListener('click', function(){
+  var pages = sortedNotebookPages();
+  var idx = pages.findIndex(function(p){ return p.id===currentPageKey; });
+  if(idx===-1 || idx>=pages.length-1){ showToast("Questa è l'ultima pagina.", 'info'); return; }
+  openNotebookPageScreen(pages[idx+1].id);
+});
+
+/* ================= RUBRICA ================= */
+state.contacts = [];
+$('#menuBtnContacts').addEventListener('click', async function(){
+  try{
+    var snap = await getDocs(contactsColl(state.currentAgendaId));
+    state.contacts = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+  }catch(err){ console.error(err); showToast('Errore nel caricamento della rubrica.', 'error'); state.contacts=[]; }
+  $('#contactsSearchInput').value = '';
+  renderContactsList('');
+  showScreen('screen-contacts');
+});
+$('#contactsBack').addEventListener('click', function(){ showMenuScreen(); });
+$('#contactsSearchInput').addEventListener('input', function(e){ renderContactsList(e.target.value); });
+$('#contactsAddBtn').addEventListener('click', function(){ openContactEditModal(null); });
+
+function sortedContacts(){
+  return (state.contacts||[]).slice().sort(function(a,b){
+    return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
+  });
+}
+function renderContactsList(filter){
+  var wrap = $('#contactsListContainer');
+  var contacts = sortedContacts();
+  var f = (filter||'').trim().toLowerCase();
+  if(f){
+    contacts = contacts.filter(function(c){
+      return [c.name,c.phone,c.email,c.address].some(function(v){ return v && v.toLowerCase().indexOf(f)>-1; });
+    });
+  }
+  if(contacts.length===0){
+    wrap.innerHTML = '<p class="empty-hint">'+(f? 'Nessun contatto corrisponde alla ricerca.' : 'Non hai ancora aggiunto nessun contatto.')+'</p>';
+    return;
+  }
+  wrap.innerHTML = contacts.map(function(c){
+    return '<div class="np-list-item" data-id="'+c.id+'">'+
+      '<span class="np-item-name">'+escapeHtml(c.name||'Senza nome')+'</span>'+
+      '<button type="button" class="np-item-delete" data-id="'+c.id+'" title="Elimina contatto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
+    '</div>';
+  }).join('');
+  $$('#contactsListContainer .np-list-item').forEach(function(item){
+    item.addEventListener('click', function(e){
+      if(e.target.closest('.np-item-delete')) return;
+      var c = state.contacts.find(function(x){ return x.id===item.dataset.id; });
+      if(c) openContactDetailModal(c);
+    });
+  });
+  $$('#contactsListContainer .np-item-delete').forEach(function(btn){
+    btn.addEventListener('click', async function(e){
+      e.stopPropagation();
+      await deleteContact(btn.dataset.id);
+    });
+  });
+}
+function openContactDetailModal(c){
+  var rows = '';
+  if(c.phone){
+    rows += '<div class="contact-detail-row">'+
+      '<a href="tel:'+escapeAttr(c.phone)+'" class="contact-action-icon" title="Chiama">'+iconSvg('phone')+'</a>'+
+      '<span class="contact-detail-text">'+escapeHtml(c.phone)+'</span>'+
+    '</div>';
+  }
+  if(c.email){
+    rows += '<div class="contact-detail-row">'+
+      '<a href="mailto:'+escapeAttr(c.email)+'" class="contact-action-icon" title="Invia email">'+iconSvg('email')+'</a>'+
+      '<span class="contact-detail-text">'+escapeHtml(c.email)+'</span>'+
+    '</div>';
+  }
+  if(c.address){
+    rows += '<div class="contact-detail-row">'+
+      '<button type="button" class="contact-action-icon" id="contactNavBtn" title="Naviga verso l\'indirizzo">'+iconSvg('location')+'</button>'+
+      '<span class="contact-detail-text">'+escapeHtml(c.address)+'</span>'+
+    '</div>';
+  }
+  if(!rows) rows = '<p style="color:var(--ink-soft);font-size:.85rem;">Nessun altro dato salvato.</p>';
+  openModal(
+    '<div class="contact-detail-name">'+escapeHtml(c.name||'Senza nome')+'</div>'+
+    rows+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="contactDetailClose">Chiudi</button>'+
+      '<button type="button" class="btn-primary" id="contactDetailEdit">Modifica</button>'+
+    '</div>'
+  );
+  $('#contactDetailClose').onclick = closeModal;
+  $('#contactDetailEdit').onclick = function(){ closeModal(); openContactEditModal(c); };
+  var navBtn = $('#contactNavBtn');
+  if(navBtn){ navBtn.addEventListener('click', function(){ navigateToAddress(c.address); }); }
+}
+function navigateToAddress(address){
+  if(!navigator.geolocation){
+    window.open('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(address), '_blank');
+    return;
+  }
+  showToast('Richiesta della posizione in corso...', 'info');
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var origin = pos.coords.latitude+','+pos.coords.longitude;
+    window.open('https://www.google.com/maps/dir/?api=1&origin='+origin+'&destination='+encodeURIComponent(address), '_blank');
+  }, function(){
+    showToast('Posizione non disponibile: apro la mappa senza punto di partenza.', 'info');
+    window.open('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(address), '_blank');
+  });
+}
+function openContactEditModal(existing){
+  openModal(
+    '<h3>'+(existing?'Modifica contatto':'Nuovo contatto')+'</h3>'+
+    '<label for="ctName">Nome</label>'+
+    '<input type="text" id="ctName" placeholder="Es. Mario Rossi" value="'+(existing?escapeAttr(existing.name||''):'')+'">'+
+    '<label for="ctPhone">Numero di telefono</label>'+
+    '<input type="tel" id="ctPhone" placeholder="Es. 0801234567" value="'+(existing?escapeAttr(existing.phone||''):'')+'">'+
+    '<label for="ctEmail">Indirizzo email</label>'+
+    '<input type="email" id="ctEmail" placeholder="Es. nome@scuola.it" value="'+(existing?escapeAttr(existing.email||''):'')+'">'+
+    '<label for="ctAddress">Indirizzo</label>'+
+    '<input type="text" id="ctAddress" placeholder="Es. Via Roma 1, Bari" value="'+(existing?escapeAttr(existing.address||''):'')+'">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="ctCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="ctSave">Salva</button>'+
+    '</div>'
+  );
+  setTimeout(function(){ $('#ctName').focus(); }, 60);
+  $('#ctCancel').onclick = closeModal;
+  $('#ctSave').onclick = async function(){
+    var name = $('#ctName').value.trim();
+    var phone = $('#ctPhone').value.trim();
+    var email = $('#ctEmail').value.trim();
+    var address = $('#ctAddress').value.trim();
+    if(!name){ showToast('Inserisci almeno il nome.', 'error'); return; }
+    var payload = {name:name, phone:phone, email:email, address:address};
+    try{
+      if(existing){
+        await updateDoc(contactDocRef(state.currentAgendaId, existing.id), payload);
+        Object.assign(existing, payload);
+      } else {
+        var newId = uid();
+        payload.createdAt = Date.now();
+        await setDoc(contactDocRef(state.currentAgendaId, newId), payload);
+        var entry = Object.assign({id:newId}, payload);
+        state.contacts = state.contacts || [];
+        state.contacts.push(entry);
+      }
+      closeModal();
+      renderContactsList($('#contactsSearchInput').value);
+      showToast('Contatto salvato.', 'success');
+    }catch(err){ console.error(err); showToast('Errore nel salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); }
+  };
+}
+async function deleteContact(id){
+  var c = (state.contacts||[]).find(function(x){ return x.id===id; });
+  if(!confirm('Eliminare definitivamente il contatto "'+(c?c.name:'')+'"?')) return;
+  try{
+    await deleteDoc(contactDocRef(state.currentAgendaId, id));
+    state.contacts = (state.contacts||[]).filter(function(x){ return x.id!==id; });
+    renderContactsList($('#contactsSearchInput').value);
+    showToast('Contatto eliminato.', 'info');
+  }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error'); }
+}
+
+/* ================= SCHEDULE LINK ================= */
+state.scheduleLinks = [];
+$('#menuBtnScheduleLink').addEventListener('click', async function(){
+  try{
+    var snap = await getDocs(scheduleLinksColl(state.currentAgendaId));
+    state.scheduleLinks = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+  }catch(err){ console.error(err); showToast('Errore nel caricamento dei link.', 'error'); state.scheduleLinks=[]; }
+  $('#slSearchInput').value = '';
+  renderScheduleLinkList('');
+  showScreen('screen-schedulelink');
+});
+$('#slBack').addEventListener('click', function(){ showMenuScreen(); });
+$('#slSearchInput').addEventListener('input', function(e){ renderScheduleLinkList(e.target.value); });
+$('#slAddBtn').addEventListener('click', function(){ openScheduleLinkEditModal(null); });
+
+function sortedScheduleLinks(){
+  return (state.scheduleLinks||[]).slice().sort(function(a,b){
+    return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
+  });
+}
+function renderScheduleLinkList(filter){
+  var wrap = $('#slListContainer');
+  var links = sortedScheduleLinks();
+  var f = (filter||'').trim().toLowerCase();
+  if(f){
+    links = links.filter(function(l){
+      return (l.name && l.name.toLowerCase().indexOf(f)>-1) || (l.url && l.url.toLowerCase().indexOf(f)>-1);
+    });
+  }
+  if(links.length===0){
+    wrap.innerHTML = '<p class="empty-hint">'+(f? 'Nessun link corrisponde alla ricerca.' : 'Non hai ancora aggiunto nessun link.')+'</p>';
+    return;
+  }
+  wrap.innerHTML = links.map(function(l){
+    return '<div class="np-list-item" data-id="'+l.id+'">'+
+      '<span class="np-item-name">'+escapeHtml(l.name||'Senza nome')+'</span>'+
+      '<button type="button" class="np-item-delete" data-id="'+l.id+'" title="Elimina link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
+    '</div>';
+  }).join('');
+  $$('#slListContainer .np-list-item').forEach(function(item){
+    item.addEventListener('click', function(e){
+      if(e.target.closest('.np-item-delete')) return;
+      var l = state.scheduleLinks.find(function(x){ return x.id===item.dataset.id; });
+      if(l && l.url) window.open(l.url, '_blank', 'noopener');
+    });
+  });
+  $$('#slListContainer .np-item-delete').forEach(function(btn){
+    btn.addEventListener('click', async function(e){
+      e.stopPropagation();
+      await deleteScheduleLink(btn.dataset.id);
+    });
+  });
+}
+function openScheduleLinkEditModal(existing){
+  openModal(
+    '<h3>'+(existing?'Modifica link':'Nuovo link')+'</h3>'+
+    '<label for="slName">Nome</label>'+
+    '<input type="text" id="slName" placeholder="Es. Registro elettronico" value="'+(existing?escapeAttr(existing.name||''):'')+'">'+
+    '<label for="slUrl">Link</label>'+
+    '<input type="url" id="slUrl" placeholder="https://..." value="'+(existing?escapeAttr(existing.url||''):'')+'">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="slCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="slSave">Salva</button>'+
+    '</div>'
+  );
+  setTimeout(function(){ $('#slName').focus(); }, 60);
+  $('#slCancel').onclick = closeModal;
+  $('#slSave').onclick = async function(){
+    var name = $('#slName').value.trim();
+    var url = $('#slUrl').value.trim();
+    if(!name){ showToast('Inserisci un nome.', 'error'); return; }
+    if(!url){ showToast('Inserisci un link.', 'error'); return; }
+    if(!/^https?:\/\//i.test(url)) url = 'https://'+url;
+    try{
+      if(existing){
+        await updateDoc(scheduleLinkDocRef(state.currentAgendaId, existing.id), {name:name, url:url});
+        existing.name = name; existing.url = url;
+      } else {
+        var newId = uid();
+        var payload = {name:name, url:url, createdAt: Date.now()};
+        await setDoc(scheduleLinkDocRef(state.currentAgendaId, newId), payload);
+        state.scheduleLinks = state.scheduleLinks || [];
+        state.scheduleLinks.push(Object.assign({id:newId}, payload));
+      }
+      closeModal();
+      renderScheduleLinkList($('#slSearchInput').value);
+      showToast('Link salvato.', 'success');
+    }catch(err){ console.error(err); showToast('Errore nel salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); }
+  };
+}
+async function deleteScheduleLink(id){
+  var l = (state.scheduleLinks||[]).find(function(x){ return x.id===id; });
+  if(!confirm('Eliminare definitivamente il link "'+(l?l.name:'')+'"?')) return;
+  try{
+    await deleteDoc(scheduleLinkDocRef(state.currentAgendaId, id));
+    state.scheduleLinks = (state.scheduleLinks||[]).filter(function(x){ return x.id!==id; });
+    renderScheduleLinkList($('#slSearchInput').value);
+    showToast('Link eliminato.', 'info');
+  }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error'); }
+}
+
+/* ================= REGISTRO PERSONALE ================= */
+state.registerSheets = [];
+state.currentSheetId = null;
+var registerDirty = false;
+var REG_COLORS = ['#4E7FBD','#C0524B','#3E9C5C','#D08A3E','#8B5FBF','#2C5F79','#C25A8A'];
+
+function colLetter(i){ return String.fromCharCode(65+i); }
+function computeAvg(gradesRow){
+  var nums = gradesRow.map(function(v){ return parseFloat((v+'').replace(',','.')); }).filter(function(n){ return !isNaN(n); });
+  if(nums.length===0) return null;
+  var sum = nums.reduce(function(a,b){ return a+b; }, 0);
+  return Math.round((sum/nums.length)*10)/10;
+}
+function fmtAvg(v){ return (v+'').replace('.', ','); }
+function defaultSheetData(name, color){
+  return {
+    name:name, color:color, className:'', numRows:10,
+    names:new Array(10).fill(''),
+    numCols1:9, numCols2:9,
+    grades1:Array.from({length:10}, function(){ return new Array(9).fill(''); }),
+    grades2:Array.from({length:10}, function(){ return new Array(9).fill(''); }),
+    desc1:new Array(9).fill(''), desc2:new Array(9).fill(''),
+    createdAt: Date.now()
+  };
+}
+function getCurrentSheet(){ return (state.registerSheets||[]).find(function(s){ return s.id===state.currentSheetId; }); }
+function markRegisterDirty(){ registerDirty = true; var b=$('#regSaveBtn'); if(b) b.classList.add('needs-save'); }
+
+$('#menuBtnRegistro').addEventListener('click', function(){ enterRegisterSection(); });
+async function enterRegisterSection(){
+  try{
+    var snap = await getDocs(registerSheetsColl(state.currentAgendaId));
+    state.registerSheets = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+  }catch(err){ console.error(err); showToast('Errore nel caricamento del registro.', 'error'); state.registerSheets=[]; }
+  if(state.registerSheets.length===0){
+    await createRegisterSheet('1', REG_COLORS[0]);
+  } else {
+    state.currentSheetId = state.registerSheets[0].id;
+  }
+  registerDirty = false;
+  $('#regAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
+  renderRegisterTabs();
+  renderRegisterTable(getCurrentSheet());
+  showScreen('screen-registro');
+}
+async function createRegisterSheet(name, color){
+  var newId = uid();
+  var data = defaultSheetData(name, color || REG_COLORS[(state.registerSheets||[]).length % REG_COLORS.length]);
+  try{
+    await setDoc(registerSheetDocRef(state.currentAgendaId, newId), data);
+    var entry = Object.assign({id:newId}, data);
+    state.registerSheets = state.registerSheets || [];
+    state.registerSheets.push(entry);
+    state.currentSheetId = newId;
+    return entry;
+  }catch(err){ console.error(err); showToast('Errore nella creazione della scheda.', 'error'); }
+}
+
+function renderRegisterTabs(){
+  var wrap = $('#regTabs');
+  wrap.innerHTML = (state.registerSheets||[]).map(function(s){
+    return '<div class="reg-tab'+(s.id===state.currentSheetId?' active':'')+'" data-id="'+s.id+'" style="--tab-color:'+s.color+';">'+
+      '<button type="button" class="reg-tab-color" data-id="'+s.id+'" style="background:'+s.color+';" title="Cambia colore"></button>'+
+      '<span class="reg-tab-name" data-id="'+s.id+'">'+escapeHtml(s.name)+'</span>'+
+    '</div>';
+  }).join('');
+  $$('.reg-tab').forEach(function(tab){
+    tab.addEventListener('click', function(e){
+      if(e.target.closest('.reg-tab-color')) return;
+      switchRegisterSheet(tab.dataset.id);
+    });
+  });
+  $$('.reg-tab-name').forEach(function(nameEl){
+    nameEl.addEventListener('dblclick', function(e){ e.stopPropagation(); renameRegisterSheet(nameEl.dataset.id); });
+  });
+  $$('.reg-tab-color').forEach(function(swatch){
+    swatch.addEventListener('click', function(e){ e.stopPropagation(); openColorPickerForSheet(swatch.dataset.id); });
+  });
+}
+async function switchRegisterSheet(id){
+  if(registerDirty){
+    var doSave = confirm('Ci sono modifiche non salvate in questa scheda. Vuoi salvarle prima di continuare?');
+    if(doSave) await saveRegisterSheet(true);
+  }
+  state.currentSheetId = id;
+  registerDirty = false;
+  var b=$('#regSaveBtn'); if(b) b.classList.remove('needs-save');
+  renderRegisterTabs();
+  renderRegisterTable(getCurrentSheet());
+}
+function renameRegisterSheet(id){
+  var sheet = (state.registerSheets||[]).find(function(s){ return s.id===id; });
+  if(!sheet) return;
+  openModal(
+    '<h3>Rinomina scheda</h3>'+
+    '<label for="regRenameInput">Nome scheda</label>'+
+    '<input type="text" id="regRenameInput" value="'+escapeAttr(sheet.name)+'" maxlength="30">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="regRenameCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="regRenameConfirm">Salva</button>'+
+    '</div>'
+  );
+  var input = $('#regRenameInput');
+  setTimeout(function(){ input.focus(); input.select(); }, 60);
+  $('#regRenameCancel').onclick = closeModal;
+  $('#regRenameConfirm').onclick = async function(){
+    var nuovoNome = input.value.trim();
+    if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
+    sheet.name = nuovoNome;
+    try{
+      await updateDoc(registerSheetDocRef(state.currentAgendaId, id), {name: nuovoNome});
+      closeModal();
+      renderRegisterTabs();
+      showToast('Scheda rinominata.', 'success');
+    }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
+  };
+}
+function openColorPickerForSheet(id){
+  var sheet = (state.registerSheets||[]).find(function(s){ return s.id===id; });
+  if(!sheet) return;
+  openModal(
+    '<h3>Colore scheda</h3>'+
+    '<input type="color" id="regColorInput" value="'+sheet.color+'" style="width:100%;height:44px;border:none;cursor:pointer;">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="regColorCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="regColorConfirm">Salva</button>'+
+    '</div>'
+  );
+  $('#regColorCancel').onclick = closeModal;
+  $('#regColorConfirm').onclick = async function(){
+    var color = $('#regColorInput').value;
+    sheet.color = color;
+    try{
+      await updateDoc(registerSheetDocRef(state.currentAgendaId, id), {color: color});
+      closeModal();
+      renderRegisterTabs();
+      showToast('Colore aggiornato.', 'success');
+    }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
+  };
+}
+$('#regAddSheet').addEventListener('click', function(){
+  openModal(
+    '<h3>Nuova scheda</h3>'+
+    '<label for="regNewSheetName">Nome della scheda</label>'+
+    '<input type="text" id="regNewSheetName" placeholder="Es. 1B" maxlength="30">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="regNewSheetCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="regNewSheetConfirm">Crea</button>'+
+    '</div>'
+  );
+  var input = $('#regNewSheetName');
+  setTimeout(function(){ input.focus(); }, 60);
+  $('#regNewSheetCancel').onclick = closeModal;
+  $('#regNewSheetConfirm').onclick = async function(){
+    var name = input.value.trim();
+    if(!name){ showToast('Inserisci un nome.', 'error'); return; }
+    closeModal();
+    var entry = await createRegisterSheet(name);
+    renderRegisterTabs();
+    if(entry) renderRegisterTable(entry);
+  };
+});
+$('#regDupSheet').addEventListener('click', async function(){
+  var sheet = getCurrentSheet(); if(!sheet) return;
+  var newId = uid();
+  var copy = JSON.parse(JSON.stringify(sheet));
+  delete copy.id;
+  copy.name = sheet.name + ' (copia)';
+  copy.createdAt = Date.now();
+  try{
+    await setDoc(registerSheetDocRef(state.currentAgendaId, newId), copy);
+    var entry = Object.assign({id:newId}, copy);
+    state.registerSheets.push(entry);
+    state.currentSheetId = newId;
+    renderRegisterTabs();
+    renderRegisterTable(entry);
+    showToast('Scheda duplicata.', 'success');
+  }catch(err){ console.error(err); showToast('Errore nella duplicazione.', 'error'); }
+});
+$('#regDelSheet').addEventListener('click', async function(){
+  var sheet = getCurrentSheet(); if(!sheet) return;
+  if(state.registerSheets.length<=1){ showToast('Deve restare almeno una scheda.', 'info'); return; }
+  if(!confirm('Eliminare definitivamente la scheda "'+sheet.name+'"?')) return;
+  try{
+    await deleteDoc(registerSheetDocRef(state.currentAgendaId, sheet.id));
+    state.registerSheets = state.registerSheets.filter(function(s){ return s.id!==sheet.id; });
+    state.currentSheetId = state.registerSheets[0].id;
+    renderRegisterTabs();
+    renderRegisterTable(getCurrentSheet());
+    showToast('Scheda eliminata.', 'info');
+  }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione.', 'error'); }
+});
+$('#regBack').addEventListener('click', async function(){
+  if(registerDirty){
+    var doSave = confirm('Ci sono modifiche non salvate. Vuoi salvarle prima di uscire?');
+    if(doSave) await saveRegisterSheet(true);
+  }
+  showMenuScreen();
+});
+async function saveRegisterSheet(silent){
+  var sheet = getCurrentSheet();
+  if(!sheet) return false;
+  try{
+    var payload = Object.assign({}, sheet);
+    delete payload.id;
+    await setDoc(registerSheetDocRef(state.currentAgendaId, sheet.id), payload);
+    registerDirty = false;
+    var b=$('#regSaveBtn'); if(b) b.classList.remove('needs-save');
+    if(!silent) showToast('Modifiche salvate.', 'success');
+    return true;
+  }catch(err){ console.error(err); if(!silent) showToast('Errore durante il salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); return false; }
+}
+$('#regSaveBtn').addEventListener('click', function(){ saveRegisterSheet(false); });
+
+function renderRegisterTable(sheet){
+  if(!sheet) return;
+  $('#regTableContainer').innerHTML = buildRegisterTableInnerHTML(sheet, false);
+  wireRegisterTableEvents(sheet);
+}
+function buildRegisterTableInnerHTML(sheet, forPrint){
+  var n1 = sheet.numCols1, n2 = sheet.numCols2;
+  var totalCols = 2+n1+1+n2+1;
+  var html = '<table class="reg-table"><thead><tr>';
+  html += '<th class="reg-classe-cell" colspan="2">CLASSE: '+(forPrint ? escapeHtml(sheet.className||'') : '<input type="text" class="reg-input" id="regClassName" value="'+escapeAttr(sheet.className||'')+'">')+'</th>';
+  for(var i=0;i<n1;i++) html += '<th class="reg-hdr-grade"></th>';
+  html += '<th class="reg-hdr-media1">MEDIA 1Q</th>';
+  for(var j=0;j<n2;j++) html += '<th class="reg-hdr-grade"></th>';
+  html += '<th class="reg-hdr-media2">MEDIA 2Q</th></tr></thead><tbody>';
+  for(var r=0;r<sheet.numRows;r++){
+    html += '<tr class="reg-data-row" data-row="'+r+'">';
+    html += '<td class="reg-alt reg-name-cell">'+(forPrint ? escapeHtml(sheet.names[r]||'') : '<input type="text" class="reg-input reg-name-input" data-row="'+r+'" value="'+escapeAttr(sheet.names[r]||'')+'">')+'</td>';
+    html += '<td class="reg-alt">'+(forPrint ? '' : '<button type="button" class="reg-del-row-btn" data-row="'+r+'" title="Elimina riga">'+iconSvg('close')+'</button>')+'</td>';
+    for(var c1=0;c1<n1;c1++){
+      var v1 = sheet.grades1[r][c1]||'';
+      html += '<td class="reg-alt">'+(forPrint ? escapeHtml(v1) : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="1" data-row="'+r+'" data-col="'+c1+'" value="'+escapeAttr(v1)+'">')+'</td>';
+    }
+    var avg1 = computeAvg(sheet.grades1[r]);
+    html += '<td class="reg-media-cell'+(avg1!==null && avg1<5.5?' low':'')+'" data-media="1" data-row="'+r+'">'+(avg1!==null?fmtAvg(avg1):'')+'</td>';
+    for(var c2=0;c2<n2;c2++){
+      var v2 = sheet.grades2[r][c2]||'';
+      html += '<td class="reg-alt">'+(forPrint ? escapeHtml(v2) : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="2" data-row="'+r+'" data-col="'+c2+'" value="'+escapeAttr(v2)+'">')+'</td>';
+    }
+    var avg2 = computeAvg(sheet.grades2[r]);
+    html += '<td class="reg-media-cell'+(avg2!==null && avg2<5.5?' low':'')+'" data-media="2" data-row="'+r+'">'+(avg2!==null?fmtAvg(avg2):'')+'</td>';
+    html += '</tr>';
+  }
+  html += '<tr class="reg-separator-row"><td colspan="'+totalCols+'"></td></tr>';
+  var maxDesc = Math.max(n1,n2);
+  for(var d=0; d<maxDesc; d++){
+    html += '<tr>';
+    if(d===0) html += '<td class="reg-desc-label" colspan="2" rowspan="'+maxDesc+'">Descrizione voti</td>';
+    if(d<n1){
+      var dv1 = sheet.desc1[d]||'';
+      html += '<td class="reg-desc-letter">'+colLetter(3+d)+'</td><td class="reg-desc-text" colspan="'+n1+'">'+(forPrint?escapeHtml(dv1):'<input type="text" class="reg-input" data-desc-quarter="1" data-desc-index="'+d+'" value="'+escapeAttr(dv1)+'">')+'</td>';
+    } else { html += '<td colspan="'+(1+n1)+'"></td>'; }
+    if(d<n2){
+      var dv2 = sheet.desc2[d]||'';
+      html += '<td class="reg-desc-letter">'+colLetter(13+d)+'</td><td class="reg-desc-text" colspan="'+n2+'">'+(forPrint?escapeHtml(dv2):'<input type="text" class="reg-input" data-desc-quarter="2" data-desc-index="'+d+'" value="'+escapeAttr(dv2)+'">')+'</td>';
+    } else { html += '<td colspan="'+(1+n2)+'"></td>'; }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  if(forPrint){
+    return '<div class="reg-print-sheet"><h2 style="font-family:inherit;margin:0 0 8px;">'+escapeHtml(sheet.name)+'</h2>'+html+'</div>';
+  }
+  return html;
+}
+function wireRegisterTableEvents(sheet){
+  var cn = $('#regClassName');
+  if(cn) cn.addEventListener('input', function(e){ sheet.className = e.target.value; markRegisterDirty(); });
+  $$('.reg-name-input').forEach(function(inp){
+    inp.addEventListener('input', function(e){ sheet.names[+inp.dataset.row] = e.target.value; markRegisterDirty(); });
+  });
+  $$('.reg-del-row-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ deleteRegisterRow(sheet, +btn.dataset.row); });
+  });
+  $$('.reg-grade-input').forEach(function(inp){
+    inp.addEventListener('input', function(e){
+      var q = inp.dataset.quarter, r = +inp.dataset.row, c = +inp.dataset.col;
+      if(q==='1') sheet.grades1[r][c] = e.target.value; else sheet.grades2[r][c] = e.target.value;
+      updateRowMedia(sheet, r);
+      markRegisterDirty();
+    });
+  });
+  $$('[data-desc-quarter]').forEach(function(inp){
+    inp.addEventListener('input', function(e){
+      var q = inp.dataset.descQuarter, idx = +inp.dataset.descIndex;
+      if(q==='1') sheet.desc1[idx] = e.target.value; else sheet.desc2[idx] = e.target.value;
+      markRegisterDirty();
+    });
+  });
+}
+function updateRowMedia(sheet, r){
+  var avg1 = computeAvg(sheet.grades1[r]);
+  var cell1 = document.querySelector('.reg-media-cell[data-media="1"][data-row="'+r+'"]');
+  if(cell1){ cell1.textContent = avg1!==null?fmtAvg(avg1):''; cell1.classList.toggle('low', avg1!==null && avg1<5.5); }
+  var avg2 = computeAvg(sheet.grades2[r]);
+  var cell2 = document.querySelector('.reg-media-cell[data-media="2"][data-row="'+r+'"]');
+  if(cell2){ cell2.textContent = avg2!==null?fmtAvg(avg2):''; cell2.classList.toggle('low', avg2!==null && avg2<5.5); }
+}
+function addRegisterRow(){
+  var sheet = getCurrentSheet(); if(!sheet) return;
+  sheet.names.push('');
+  sheet.grades1.push(new Array(sheet.numCols1).fill(''));
+  sheet.grades2.push(new Array(sheet.numCols2).fill(''));
+  sheet.numRows++;
+  markRegisterDirty();
+  renderRegisterTable(sheet);
+}
+function deleteRegisterRow(sheet, r){
+  if(sheet.numRows<=1){ showToast('Deve restare almeno una riga.', 'info'); return; }
+  sheet.names.splice(r,1);
+  sheet.grades1.splice(r,1);
+  sheet.grades2.splice(r,1);
+  sheet.numRows--;
+  markRegisterDirty();
+  renderRegisterTable(sheet);
+}
+$('#regAddRow').addEventListener('click', addRegisterRow);
+$('#regDelRow').addEventListener('click', function(){
+  var sheet = getCurrentSheet(); if(!sheet) return;
+  deleteRegisterRow(sheet, sheet.numRows-1);
+});
+function addRegisterCol(quarter){
+  var sheet = getCurrentSheet(); if(!sheet) return;
+  if(quarter===1){ sheet.numCols1++; sheet.grades1.forEach(function(row){ row.push(''); }); sheet.desc1.push(''); }
+  else { sheet.numCols2++; sheet.grades2.forEach(function(row){ row.push(''); }); sheet.desc2.push(''); }
+  markRegisterDirty();
+  renderRegisterTable(sheet);
+}
+function delRegisterCol(quarter){
+  var sheet = getCurrentSheet(); if(!sheet) return;
+  if(quarter===1){
+    if(sheet.numCols1<=1){ showToast('Deve restare almeno una colonna.', 'info'); return; }
+    sheet.numCols1--; sheet.grades1.forEach(function(row){ row.pop(); }); sheet.desc1.pop();
+  } else {
+    if(sheet.numCols2<=1){ showToast('Deve restare almeno una colonna.', 'info'); return; }
+    sheet.numCols2--; sheet.grades2.forEach(function(row){ row.pop(); }); sheet.desc2.pop();
+  }
+  markRegisterDirty();
+  renderRegisterTable(sheet);
+}
+$('#regAddColQ1').addEventListener('click', function(){ addRegisterCol(1); });
+$('#regDelColQ1').addEventListener('click', function(){ delRegisterCol(1); });
+$('#regAddColQ2').addEventListener('click', function(){ addRegisterCol(2); });
+$('#regDelColQ2').addEventListener('click', function(){ delRegisterCol(2); });
+
+function setPrintPageSize(orientation){
+  var styleEl = document.getElementById('dynamicPageSize');
+  if(!styleEl){ styleEl = document.createElement('style'); styleEl.id='dynamicPageSize'; document.head.appendChild(styleEl); }
+  styleEl.textContent = '@page{ size: A4 '+orientation+'; margin: 10mm; }';
+}
+function printRegisterSheets(sheets){
+  var area = $('#regPrintArea');
+  area.innerHTML = sheets.map(function(s){ return buildRegisterTableInnerHTML(s, true); }).join('');
+  setPrintPageSize('landscape');
+  document.body.classList.add('printing-register');
+  window.print();
+  setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
+}
+$('#regExportPdf').addEventListener('click', function(){
+  openModal(
+    '<h3>Esporta in PDF</h3>'+
+    '<div class="modal-choices">'+
+      '<button type="button" class="choice-btn" id="regExpCurrent">'+iconSvg('pdf')+'<span>Solo questa scheda</span></button>'+
+      '<button type="button" class="choice-btn" id="regExpAll">'+iconSvg('pdf')+'<span>Tutte le schede</span></button>'+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="regExpCancel">Annulla</button>'
+  );
+  $('#regExpCancel').onclick = closeModal;
+  $('#regExpCurrent').onclick = function(){ closeModal(); printRegisterSheets([getCurrentSheet()]); };
+  $('#regExpAll').onclick = function(){ closeModal(); printRegisterSheets(state.registerSheets||[]); };
+});
+
 function clearEmptyHint(){
   var hint = $('#dayCanvas .empty-day-hint');
   if(hint) hint.remove();
@@ -1426,7 +2854,10 @@ async function guardNavigate(target){
   target();
   return true;
 }
-$('#btnGoCalendar').addEventListener('click', function(){ guardNavigate(function(){ showCalendarScreen(); }); });
+$('#btnGoCalendar').addEventListener('click', function(){
+  if(pageMode==='notebook'){ guardNavigate(function(){ showNotebookListScreen(); }); }
+  else { guardNavigate(function(){ showCalendarScreen(); }); }
+});
 $('#btnGoSettings').addEventListener('click', function(){ guardNavigate(function(){ showMenuScreen(); }); });
 $('#btnGoHome').addEventListener('click', function(){ guardNavigate(function(){ showHomeScreen(); }); });
 
@@ -1446,9 +2877,11 @@ var TOOL_HINTS = {
   dictation:"Clicca sulla pagina dove vuoi dettare.",
   image:"Clicca sulla pagina dove vuoi inserire l'immagine.",
   audio:"Clicca sulla pagina dove vuoi inserire l'audio.",
-  link:"Clicca sulla pagina dove vuoi inserire il link."
+  link:"Clicca sulla pagina dove vuoi inserire il link.",
+  phone:"Clicca sulla pagina dove vuoi inserire il numero di telefono.",
+  email:"Clicca sulla pagina dove vuoi inserire l'email."
 };
-var TOOL_BTN_ID = {text:'btnAddText', dictation:'btnDictation', image:'btnAddImage', audio:'btnAddAudio', link:'btnAddLink'};
+var TOOL_BTN_ID = {text:'btnAddText', dictation:'btnDictation', image:'btnAddImage', audio:'btnAddAudio', link:'btnAddLink', phone:'btnAddPhone', email:'btnAddEmail'};
 
 function armPlacement(type){
   if(placementMode===type){ disarmPlacement(); return; }
@@ -1513,6 +2946,8 @@ $('#btnAddDrawing').addEventListener('click', function(){
 $('#btnAddImage').addEventListener('click', function(){ armPlacement('image'); });
 $('#btnAddAudio').addEventListener('click', function(){ armPlacement('audio'); });
 $('#btnAddLink').addEventListener('click', function(){ armPlacement('link'); });
+$('#btnAddPhone').addEventListener('click', function(){ armPlacement('phone'); });
+$('#btnAddEmail').addEventListener('click', function(){ armPlacement('email'); });
 
 /* ---- gomma: cancella ciò che attraversa mentre è selezionata ---- */
 var eraserActive = false, erasing = false;
@@ -1577,6 +3012,7 @@ $('#btnExportPdf').addEventListener('click', function(){
   var naturalH = canvas.scrollHeight || naturalW;
   var scale = Math.min(printableWpx/naturalW, printableHpx/naturalH, 1);
   canvas.style.setProperty('--print-scale', scale);
+  setPrintPageSize('portrait');
   window.print();
 });
 
@@ -1611,6 +3047,10 @@ function placeElementAt(type, x, y){
     openMediaNameModal('audio', x, y);
   } else if(type==='link'){
     openLinkModal(x, y, null, null);
+  } else if(type==='phone'){
+    openPhoneModal(x, y, null, null);
+  } else if(type==='email'){
+    openEmailModal(x, y, null, null);
   }
 }
 function addCanvasElement(data, skipInteractions){
@@ -1624,40 +3064,49 @@ function addCanvasElement(data, skipInteractions){
   growCanvasIfNeeded();
 }
 function deleteElement(wrapper, data){
+  if(data.groupId){
+    openDeleteGroupChoiceModal(data, wrapper);
+    return;
+  }
+  performLocalDelete(wrapper, data);
+}
+function performLocalDelete(wrapper, data, skipDeletedTracking){
   var idx = state.dayElements.findIndex(function(d){ return d.id===data.id; });
   if(idx>-1) state.dayElements.splice(idx,1);
-  state.deletedElementIds.push(data.id);
+  if(!skipDeletedTracking) state.deletedElementIds.push(data.id);
   wrapper.remove();
   if(activeDeleteWrapper===wrapper) activeDeleteWrapper=null;
   if(activeEditingText===wrapper) activeEditingText=null;
   if(state.dayElements.length===0){
     $('#dayCanvas').innerHTML = '<p class="empty-day-hint">Pagina vuota. Scegli uno strumento qui sopra, poi clicca sulla pagina per posizionare il primo elemento.</p>';
   }
-  markDirty();
+  if(!skipDeletedTracking) markDirty();
   growCanvasIfNeeded();
 }
 
 /* ---- interazioni generiche: trascina, tieni premuto per eliminare, click breve per modificare ---- */
 function attachElementInteractions(wrapper, data){
   var target = wrapper;
-  var dragging=false, dragMoved=false, startX=0,startY=0,startLeft=0,startTop=0;
-  var longPressTimer=null, longPressFired=false;
+  var longPressActive=false, moved=false, abortedByEarlyMove=false;
+  var pressTimer=null, startX=0,startY=0,startLeft=0,startTop=0;
   var THRESH=6;
   function ignoreTarget(evt){
-    return evt.target.closest('.resize-handle') || evt.target.closest('.el-delete-x') ||
-           evt.target.closest('.link-open-btn') ||
+    return evt.target.closest('.resize-handle') || evt.target.closest('.el-delete-x') || evt.target.closest('.el-duplicate-btn') ||
+           evt.target.closest('.link-open-btn') || evt.target.closest('.phone-call-btn') || evt.target.closest('.email-open-btn') ||
            evt.target.closest('.play-toggle') || evt.target.closest('.text-mini-toolbar');
   }
   function down(evt){
     if(ignoreTarget(evt)) return;
     if(data.type==='text' && wrapper.classList.contains('editing') && evt.target.closest('.text-content')) return;
     evt.preventDefault();
-    dragging=true; dragMoved=false; longPressFired=false;
+    longPressActive=false; moved=false; abortedByEarlyMove=false;
     var clientX=evt.touches?evt.touches[0].clientX:evt.clientX;
     var clientY=evt.touches?evt.touches[0].clientY:evt.clientY;
     startX=clientX; startY=clientY; startLeft=data.x; startTop=data.y;
-    longPressTimer = setTimeout(function(){
-      if(!dragMoved){ longPressFired=true; showDeleteX(wrapper); }
+    pressTimer = setTimeout(function(){
+      longPressActive = true;
+      wrapper.classList.add('move-active');
+      showDeleteX(wrapper);
     }, 550);
     document.addEventListener('mousemove', move);
     document.addEventListener('mouseup', up);
@@ -1665,12 +3114,18 @@ function attachElementInteractions(wrapper, data){
     document.addEventListener('touchend', up);
   }
   function move(evt){
-    if(!dragging) return;
     var clientX=evt.touches?evt.touches[0].clientX:evt.clientX;
     var clientY=evt.touches?evt.touches[0].clientY:evt.clientY;
     var dx=clientX-startX, dy=clientY-startY;
+    if(!longPressActive){
+      if(Math.abs(dx)>THRESH || Math.abs(dy)>THRESH){
+        clearTimeout(pressTimer);
+        abortedByEarlyMove = true;
+      }
+      return;
+    }
     if(Math.abs(dx)>THRESH || Math.abs(dy)>THRESH){
-      if(!dragMoved){ dragMoved=true; clearTimeout(longPressTimer); hideDeleteX(); }
+      if(!moved){ moved=true; hideDeleteX(); }
       evt.preventDefault();
       var nx=Math.max(0,startLeft+dx), ny=Math.max(0,startTop+dy);
       data.x=nx; data.y=ny;
@@ -1678,14 +3133,17 @@ function attachElementInteractions(wrapper, data){
     }
   }
   function up(){
-    dragging=false;
-    clearTimeout(longPressTimer);
+    clearTimeout(pressTimer);
     document.removeEventListener('mousemove', move);
     document.removeEventListener('mouseup', up);
     document.removeEventListener('touchmove', move);
     document.removeEventListener('touchend', up);
-    if(dragMoved){ markDirty(); growCanvasIfNeeded(); return; }
-    if(longPressFired){ return; }
+    if(longPressActive){
+      wrapper.classList.remove('move-active');
+      if(moved){ markDirty(); growCanvasIfNeeded(); }
+      return;
+    }
+    if(abortedByEarlyMove) return;
     handleShortClick(data, wrapper);
   }
   target.addEventListener('mousedown', down);
@@ -1696,6 +3154,8 @@ function handleShortClick(data, wrapper){
   else if(data.type==='image' || data.type==='drawing'){ toggleSelect(wrapper); }
   else if(data.type==='audio'){ openRenameModal(data, wrapper); }
   else if(data.type==='link'){ openLinkModal(data.x, data.y, data, wrapper); }
+  else if(data.type==='phone'){ openPhoneModal(data.x, data.y, data, wrapper); }
+  else if(data.type==='email'){ openEmailModal(data.x, data.y, data, wrapper); }
 }
 function toggleSelect(wrapper){
   var wasSelected = wrapper.classList.contains('selected');
@@ -1808,6 +3268,7 @@ function renderTextEl(data){
   wrapper.querySelector('.t-color').addEventListener('input', function(e){ data.colorCustom=true; data.color=e.target.value; contentEl.style.color=data.color; markDirty(); });
   wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
   attachTextResizeHandle(wrapper.querySelector('.resize-handle-text'), wrapper, data);
+  attachActionButtons(wrapper, data);
   return wrapper;
 }
 function attachTextResizeHandle(handle, wrapper, data){
@@ -1853,6 +3314,7 @@ function renderDrawingEl(data){
     '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
   wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
   attachResizeHandles(wrapper, data, 40, 30, true);
+  attachActionButtons(wrapper, data);
   return wrapper;
 }
 
@@ -1967,6 +3429,7 @@ function renderImageEl(data){
     '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
   wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
   attachResizeHandles(wrapper, data, 60, 40, true);
+  attachActionButtons(wrapper, data);
   return wrapper;
 }
 function getImageNaturalSize(dataUrl){
@@ -2002,6 +3465,7 @@ function renderAudioEl(data){
   audioEl.addEventListener('play', function(){ playToggle.innerHTML = iconSvg('pause'); });
   audioEl.addEventListener('pause', function(){ playToggle.innerHTML = iconSvg('headphones'); });
   audioEl.addEventListener('ended', function(){ playToggle.innerHTML = iconSvg('headphones'); });
+  attachActionButtons(wrapper, data);
   return wrapper;
 }
 
@@ -2023,6 +3487,46 @@ function renderLinkEl(data){
   openBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
   openBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
   openBtn.addEventListener('click', function(evt){ evt.stopPropagation(); });
+  attachActionButtons(wrapper, data);
+  return wrapper;
+}
+
+function renderPhoneEl(data){
+  var wrapper = document.createElement('div');
+  wrapper.className = 'canvas-el canvas-phone';
+  wrapper.dataset.id = data.id;
+  wrapper.style.left=data.x+'px'; wrapper.style.top=data.y+'px';
+  wrapper.innerHTML =
+    '<div class="phone-badge">'+
+      '<a href="tel:'+escapeAttr(data.phone||'')+'" class="phone-call-btn phone-badge-icon" title="Chiama">'+iconSvg('phone')+'</a>'+
+      '<span class="el-media-label lbl-text">'+escapeHtml(data.label||'Contatto')+'</span>'+
+    '</div>'+
+    '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
+  wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
+  var callBtn = wrapper.querySelector('.phone-call-btn');
+  callBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
+  callBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
+  callBtn.addEventListener('click', function(evt){ evt.stopPropagation(); });
+  attachActionButtons(wrapper, data);
+  return wrapper;
+}
+function renderEmailEl(data){
+  var wrapper = document.createElement('div');
+  wrapper.className = 'canvas-el canvas-email';
+  wrapper.dataset.id = data.id;
+  wrapper.style.left=data.x+'px'; wrapper.style.top=data.y+'px';
+  wrapper.innerHTML =
+    '<div class="email-badge">'+
+      '<a href="mailto:'+escapeAttr(data.email||'')+'" class="email-open-btn email-badge-icon" title="Invia email">'+iconSvg('email')+'</a>'+
+      '<span class="el-media-label lbl-text">'+escapeHtml(data.label||'Contatto')+'</span>'+
+    '</div>'+
+    '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
+  wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
+  var openBtn = wrapper.querySelector('.email-open-btn');
+  openBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
+  openBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
+  openBtn.addEventListener('click', function(evt){ evt.stopPropagation(); });
+  attachActionButtons(wrapper, data);
   return wrapper;
 }
 
@@ -2033,6 +3537,8 @@ function renderCanvasElement(data){
     case 'image': return renderImageEl(data);
     case 'audio': return renderAudioEl(data);
     case 'link': return renderLinkEl(data);
+    case 'phone': return renderPhoneEl(data);
+    case 'email': return renderEmailEl(data);
     default: return document.createElement('div');
   }
 }
@@ -2093,6 +3599,68 @@ function openLinkModal(x, y, existingData, existingWrapper){
       markDirty();
     } else {
       addCanvasElement({id:uid(), type:'link', x:x, y:y, url:finalUrl, label: label||finalUrl});
+    }
+    closeModal();
+  };
+}
+function openPhoneModal(x, y, existingData, existingWrapper){
+  openModal(
+    '<h3>'+(existingData?'Modifica contatto':'Numero di telefono')+'</h3>'+
+    '<label for="phoneName">Nominativo</label>'+
+    '<input type="text" id="phoneName" placeholder="Es. Segreteria" value="'+(existingData?escapeAttr(existingData.label||''):'')+'">'+
+    '<label for="phoneNumber">Numero telefonico</label>'+
+    '<input type="tel" id="phoneNumber" placeholder="Es. 0801234567" value="'+(existingData?escapeAttr(existingData.phone||''):'')+'">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="phoneCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="phoneConfirm">'+(existingData?'Salva':'Inserisci')+'</button>'+
+    '</div>'
+  );
+  $('#phoneCancel').onclick = closeModal;
+  $('#phoneConfirm').onclick = function(){
+    var name = $('#phoneName').value.trim();
+    var number = $('#phoneNumber').value.trim();
+    if(!number){ showToast('Inserisci un numero di telefono.', 'error'); return; }
+    var label = name || number;
+    if(existingData){
+      existingData.label = label; existingData.phone = number;
+      if(existingWrapper){
+        var lbl = existingWrapper.querySelector('.lbl-text'); if(lbl) lbl.textContent = label;
+        var a = existingWrapper.querySelector('.phone-call-btn'); if(a) a.setAttribute('href', 'tel:'+number);
+      }
+      markDirty();
+    } else {
+      addCanvasElement({id:uid(), type:'phone', x:x, y:y, label:label, phone:number});
+    }
+    closeModal();
+  };
+}
+function openEmailModal(x, y, existingData, existingWrapper){
+  openModal(
+    '<h3>'+(existingData?'Modifica contatto':'Email')+'</h3>'+
+    '<label for="emailName">Nominativo</label>'+
+    '<input type="text" id="emailName" placeholder="Es. Segreteria" value="'+(existingData?escapeAttr(existingData.label||''):'')+'">'+
+    '<label for="emailAddress">Indirizzo email</label>'+
+    '<input type="email" id="emailAddress" placeholder="Es. nome@scuola.it" value="'+(existingData?escapeAttr(existingData.email||''):'')+'">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="emailCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="emailConfirm">'+(existingData?'Salva':'Inserisci')+'</button>'+
+    '</div>'
+  );
+  $('#emailCancel').onclick = closeModal;
+  $('#emailConfirm').onclick = function(){
+    var name = $('#emailName').value.trim();
+    var addr = $('#emailAddress').value.trim();
+    if(!addr){ showToast('Inserisci un indirizzo email.', 'error'); return; }
+    var label = name || addr;
+    if(existingData){
+      existingData.label = label; existingData.email = addr;
+      if(existingWrapper){
+        var lbl = existingWrapper.querySelector('.lbl-text'); if(lbl) lbl.textContent = label;
+        var a = existingWrapper.querySelector('.email-open-btn'); if(a) a.setAttribute('href', 'mailto:'+addr);
+      }
+      markDirty();
+    } else {
+      addCanvasElement({id:uid(), type:'email', x:x, y:y, label:label, email:addr});
     }
     closeModal();
   };
