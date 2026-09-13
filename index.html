@@ -574,13 +574,22 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .reg-table .reg-hdr-grade{background:#8FBF95;color:#1c3b24;font-weight:600;}
 .reg-table .reg-hdr-media1{background:#2E5E3E;color:#fff;font-weight:700;}
 .reg-table .reg-hdr-media2{background:#2C5F79;color:#fff;font-weight:700;}
+.reg-table .reg-hdr-grade[data-quarter]{cursor:pointer;}
+.reg-table .reg-hdr-grade[data-quarter]:hover{background:#79b382;}
 .reg-table .reg-name-cell{text-align:left;padding-left:8px;min-width:150px;}
-.reg-table .reg-del-row-btn{background:none;border:none;color:#a23a2c;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;}
-.reg-table .reg-del-row-btn svg{width:13px;height:13px;}
+.reg-table .reg-row-actions{display:flex;gap:2px;align-items:center;justify-content:center;}
+.reg-table .reg-del-row-btn,.reg-table .reg-add-row-btn{background:none;border:none;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;}
+.reg-table .reg-del-row-btn{color:#a23a2c;}
+.reg-table .reg-add-row-btn{color:#3E9C5C;}
+.reg-table .reg-del-row-btn svg,.reg-table .reg-add-row-btn svg{width:12px;height:12px;}
+.reg-toprow-insert td{border:none;padding:0;height:16px;background:transparent;}
+.reg-insert-row-top{background:none;border:1px dashed var(--paper-line);border-radius:4px;color:#3E9C5C;cursor:pointer;padding:0;width:100%;height:14px;display:flex;align-items:center;justify-content:center;}
+.reg-insert-row-top svg{width:11px;height:11px;}
 .reg-table input.reg-input{border:none;background:transparent;width:100%;text-align:inherit;font-size:inherit;font-family:inherit;color:inherit;}
 .reg-table input.reg-grade-input{text-align:center;width:30px;}
 .reg-table tbody tr.reg-data-row:nth-child(odd) td.reg-alt{background:#ffffff;}
 .reg-table tbody tr.reg-data-row:nth-child(even) td.reg-alt{background:#e4e4e4;}
+.reg-table tbody tr.reg-data-row td.reg-alt.low{background:#F5A623 !important;color:#5a2d00;}
 .reg-table td.reg-media-cell{background:#FFF3D6;font-weight:700;}
 .reg-table td.reg-media-cell.low{background:#F5A623;color:#5a2d00;}
 .reg-table tr.reg-separator-row td{background:#2b2b2b;height:8px;padding:0;border:none;}
@@ -589,11 +598,13 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .reg-table .reg-desc-text{text-align:left;}
 .reg-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 30px;align-items:center;}
 .reg-tab{
-  display:flex;align-items:center;padding:7px 12px;border-radius:8px 8px 0 0;border:1px solid var(--paper-line);
+  display:flex;align-items:center;gap:4px;padding:7px 12px;border-radius:8px 8px 0 0;border:1px solid var(--paper-line);
   border-bottom:3px solid var(--tab-color,#999);background:var(--surface);cursor:pointer;font-size:.8rem;white-space:nowrap;color:var(--ink);
 }
 .reg-tab.active{background:var(--surface-alt);font-weight:700;}
-.reg-tab-color{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle;cursor:pointer;border:1px solid rgba(0,0,0,.25);padding:0;}
+.reg-tab-color{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:2px;vertical-align:middle;cursor:pointer;border:1px solid rgba(0,0,0,.25);padding:0;}
+.reg-tab-rename{background:none;border:none;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
+.reg-tab-rename svg{width:12px;height:12px;}
 #regPrintArea{position:fixed;left:-99999px;top:0;}
 </style>
 </head>
@@ -2614,16 +2625,17 @@ function renderRegisterTabs(){
     return '<div class="reg-tab'+(s.id===state.currentSheetId?' active':'')+'" data-id="'+s.id+'" style="--tab-color:'+s.color+';">'+
       '<button type="button" class="reg-tab-color" data-id="'+s.id+'" style="background:'+s.color+';" title="Cambia colore"></button>'+
       '<span class="reg-tab-name" data-id="'+s.id+'">'+escapeHtml(s.name)+'</span>'+
+      '<button type="button" class="reg-tab-rename" data-id="'+s.id+'" title="Rinomina scheda">'+iconSvg('pencil')+'</button>'+
     '</div>';
   }).join('');
   $$('.reg-tab').forEach(function(tab){
     tab.addEventListener('click', function(e){
-      if(e.target.closest('.reg-tab-color')) return;
+      if(e.target.closest('.reg-tab-color') || e.target.closest('.reg-tab-rename')) return;
       switchRegisterSheet(tab.dataset.id);
     });
   });
-  $$('.reg-tab-name').forEach(function(nameEl){
-    nameEl.addEventListener('dblclick', function(e){ e.stopPropagation(); renameRegisterSheet(nameEl.dataset.id); });
+  $$('.reg-tab-rename').forEach(function(btn){
+    btn.addEventListener('click', function(e){ e.stopPropagation(); renameRegisterSheet(btn.dataset.id); });
   });
   $$('.reg-tab-color').forEach(function(swatch){
     swatch.addEventListener('click', function(e){ e.stopPropagation(); openColorPickerForSheet(swatch.dataset.id); });
@@ -2770,25 +2782,42 @@ function renderRegisterTable(sheet){
 function buildRegisterTableInnerHTML(sheet, forPrint){
   var n1 = sheet.numCols1, n2 = sheet.numCols2;
   var totalCols = 2+n1+1+n2+1;
-  var html = '<table class="reg-table"><thead><tr>';
+  var html = '<table class="reg-table"><thead>';
+  if(!forPrint){
+    html += '<tr class="reg-toprow-insert"><td colspan="2"></td>';
+    for(var ti=0;ti<n1;ti++) html += '<td></td>';
+    html += '<td></td>';
+    for(var tj=0;tj<n2;tj++) html += '<td></td>';
+    html += '<td><button type="button" class="reg-insert-row-top" title="Inserisci riga in cima">'+iconSvg('plus')+'</button></td></tr>';
+  }
+  html += '<tr>';
   html += '<th class="reg-classe-cell" colspan="2">CLASSE: '+(forPrint ? escapeHtml(sheet.className||'') : '<input type="text" class="reg-input" id="regClassName" value="'+escapeAttr(sheet.className||'')+'">')+'</th>';
-  for(var i=0;i<n1;i++) html += '<th class="reg-hdr-grade"></th>';
+  for(var i=0;i<n1;i++){
+    html += '<th class="reg-hdr-grade"'+(forPrint?'':' data-quarter="1" data-col="'+i+'"')+'>'+colLetter(i)+'</th>';
+  }
   html += '<th class="reg-hdr-media1">MEDIA 1Q</th>';
-  for(var j=0;j<n2;j++) html += '<th class="reg-hdr-grade"></th>';
+  for(var j=0;j<n2;j++){
+    html += '<th class="reg-hdr-grade"'+(forPrint?'':' data-quarter="2" data-col="'+j+'"')+'>'+colLetter(j)+'</th>';
+  }
   html += '<th class="reg-hdr-media2">MEDIA 2Q</th></tr></thead><tbody>';
   for(var r=0;r<sheet.numRows;r++){
     html += '<tr class="reg-data-row" data-row="'+r+'">';
     html += '<td class="reg-alt reg-name-cell">'+(forPrint ? escapeHtml(sheet.names[r]||'') : '<input type="text" class="reg-input reg-name-input" data-row="'+r+'" value="'+escapeAttr(sheet.names[r]||'')+'">')+'</td>';
-    html += '<td class="reg-alt">'+(forPrint ? '' : '<button type="button" class="reg-del-row-btn" data-row="'+r+'" title="Elimina riga">'+iconSvg('close')+'</button>')+'</td>';
+    html += '<td class="reg-alt reg-row-actions">'+(forPrint ? '' :
+      '<button type="button" class="reg-del-row-btn" data-row="'+r+'" title="Elimina questa riga">'+iconSvg('close')+'</button>'+
+      '<button type="button" class="reg-add-row-btn" data-row="'+r+'" title="Inserisci riga sotto">'+iconSvg('plus')+'</button>'
+    )+'</td>';
     for(var c1=0;c1<n1;c1++){
       var v1 = sheet.grades1[r][c1]||'';
-      html += '<td class="reg-alt">'+(forPrint ? escapeHtml(v1) : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="1" data-row="'+r+'" data-col="'+c1+'" value="'+escapeAttr(v1)+'">')+'</td>';
+      var low1 = isLowGrade(v1);
+      html += '<td class="reg-alt'+(low1?' low':'')+'" data-gcell="1-'+r+'-'+c1+'">'+(forPrint ? escapeHtml(v1) : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="1" data-row="'+r+'" data-col="'+c1+'" value="'+escapeAttr(v1)+'">')+'</td>';
     }
     var avg1 = computeAvg(sheet.grades1[r]);
     html += '<td class="reg-media-cell'+(avg1!==null && avg1<5.5?' low':'')+'" data-media="1" data-row="'+r+'">'+(avg1!==null?fmtAvg(avg1):'')+'</td>';
     for(var c2=0;c2<n2;c2++){
       var v2 = sheet.grades2[r][c2]||'';
-      html += '<td class="reg-alt">'+(forPrint ? escapeHtml(v2) : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="2" data-row="'+r+'" data-col="'+c2+'" value="'+escapeAttr(v2)+'">')+'</td>';
+      var low2 = isLowGrade(v2);
+      html += '<td class="reg-alt'+(low2?' low':'')+'" data-gcell="2-'+r+'-'+c2+'">'+(forPrint ? escapeHtml(v2) : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="2" data-row="'+r+'" data-col="'+c2+'" value="'+escapeAttr(v2)+'">')+'</td>';
     }
     var avg2 = computeAvg(sheet.grades2[r]);
     html += '<td class="reg-media-cell'+(avg2!==null && avg2<5.5?' low':'')+'" data-media="2" data-row="'+r+'">'+(avg2!==null?fmtAvg(avg2):'')+'</td>';
@@ -2801,11 +2830,11 @@ function buildRegisterTableInnerHTML(sheet, forPrint){
     if(d===0) html += '<td class="reg-desc-label" colspan="2" rowspan="'+maxDesc+'">Descrizione voti</td>';
     if(d<n1){
       var dv1 = sheet.desc1[d]||'';
-      html += '<td class="reg-desc-letter">'+colLetter(3+d)+'</td><td class="reg-desc-text" colspan="'+n1+'">'+(forPrint?escapeHtml(dv1):'<input type="text" class="reg-input" data-desc-quarter="1" data-desc-index="'+d+'" value="'+escapeAttr(dv1)+'">')+'</td>';
+      html += '<td class="reg-desc-letter">'+colLetter(d)+'</td><td class="reg-desc-text" colspan="'+n1+'">'+(forPrint?escapeHtml(dv1):'<input type="text" class="reg-input" data-desc-quarter="1" data-desc-index="'+d+'" value="'+escapeAttr(dv1)+'">')+'</td>';
     } else { html += '<td colspan="'+(1+n1)+'"></td>'; }
     if(d<n2){
       var dv2 = sheet.desc2[d]||'';
-      html += '<td class="reg-desc-letter">'+colLetter(13+d)+'</td><td class="reg-desc-text" colspan="'+n2+'">'+(forPrint?escapeHtml(dv2):'<input type="text" class="reg-input" data-desc-quarter="2" data-desc-index="'+d+'" value="'+escapeAttr(dv2)+'">')+'</td>';
+      html += '<td class="reg-desc-letter">'+colLetter(d)+'</td><td class="reg-desc-text" colspan="'+n2+'">'+(forPrint?escapeHtml(dv2):'<input type="text" class="reg-input" data-desc-quarter="2" data-desc-index="'+d+'" value="'+escapeAttr(dv2)+'">')+'</td>';
     } else { html += '<td colspan="'+(1+n2)+'"></td>'; }
     html += '</tr>';
   }
@@ -2814,6 +2843,10 @@ function buildRegisterTableInnerHTML(sheet, forPrint){
     return '<div class="reg-print-sheet"><h2 style="font-family:inherit;margin:0 0 8px;">'+escapeHtml(sheet.name)+'</h2>'+html+'</div>';
   }
   return html;
+}
+function isLowGrade(v){
+  var n = parseFloat((v+'').replace(',','.'));
+  return !isNaN(n) && n<5.5;
 }
 function wireRegisterTableEvents(sheet){
   var cn = $('#regClassName');
@@ -2824,13 +2857,21 @@ function wireRegisterTableEvents(sheet){
   $$('.reg-del-row-btn').forEach(function(btn){
     btn.addEventListener('click', function(){ deleteRegisterRow(sheet, +btn.dataset.row); });
   });
+  $$('.reg-add-row-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ insertRegisterRow(sheet, +btn.dataset.row+1); });
+  });
+  var topInsertBtn = $('.reg-insert-row-top');
+  if(topInsertBtn) topInsertBtn.addEventListener('click', function(){ insertRegisterRow(sheet, 0); });
   $$('.reg-grade-input').forEach(function(inp){
     inp.addEventListener('input', function(e){
       var q = inp.dataset.quarter, r = +inp.dataset.row, c = +inp.dataset.col;
       if(q==='1') sheet.grades1[r][c] = e.target.value; else sheet.grades2[r][c] = e.target.value;
       updateRowMedia(sheet, r);
+      var td = inp.closest('td');
+      if(td) td.classList.toggle('low', isLowGrade(e.target.value));
       markRegisterDirty();
     });
+    inp.addEventListener('keydown', handleGradeArrowNav);
   });
   $$('[data-desc-quarter]').forEach(function(inp){
     inp.addEventListener('input', function(e){
@@ -2839,6 +2880,33 @@ function wireRegisterTableEvents(sheet){
       markRegisterDirty();
     });
   });
+  $$('.reg-hdr-grade[data-quarter]').forEach(function(th){
+    th.addEventListener('click', function(){
+      openColumnActionsModal(sheet, th.dataset.quarter, +th.dataset.col);
+    });
+  });
+}
+function findGradeInput(quarter, row, col){
+  return document.querySelector('.reg-grade-input[data-quarter="'+quarter+'"][data-row="'+row+'"][data-col="'+col+'"]');
+}
+function handleGradeArrowNav(evt){
+  var key = evt.key;
+  if(key!=='ArrowUp' && key!=='ArrowDown' && key!=='ArrowLeft' && key!=='ArrowRight') return;
+  var input = evt.target;
+  var quarter = input.dataset.quarter, row = +input.dataset.row, col = +input.dataset.col;
+  var sheet = getCurrentSheet(); if(!sheet) return;
+  var target = null;
+  if(key==='ArrowUp'){ target = findGradeInput(quarter, row-1, col); }
+  else if(key==='ArrowDown'){ target = findGradeInput(quarter, row+1, col); }
+  else if(key==='ArrowLeft'){
+    if(col>0) target = findGradeInput(quarter, row, col-1);
+    else if(quarter==='2') target = findGradeInput('1', row, sheet.numCols1-1);
+  } else if(key==='ArrowRight'){
+    var maxCol = quarter==='1' ? sheet.numCols1-1 : sheet.numCols2-1;
+    if(col<maxCol) target = findGradeInput(quarter, row, col+1);
+    else if(quarter==='1') target = findGradeInput('2', row, 0);
+  }
+  if(target){ evt.preventDefault(); target.focus(); target.select(); }
 }
 function updateRowMedia(sheet, r){
   var avg1 = computeAvg(sheet.grades1[r]);
@@ -2850,9 +2918,12 @@ function updateRowMedia(sheet, r){
 }
 function addRegisterRow(){
   var sheet = getCurrentSheet(); if(!sheet) return;
-  sheet.names.push('');
-  sheet.grades1.push(new Array(sheet.numCols1).fill(''));
-  sheet.grades2.push(new Array(sheet.numCols2).fill(''));
+  insertRegisterRow(sheet, sheet.numRows);
+}
+function insertRegisterRow(sheet, atIndex){
+  sheet.names.splice(atIndex,0,'');
+  sheet.grades1.splice(atIndex,0,new Array(sheet.numCols1).fill(''));
+  sheet.grades2.splice(atIndex,0,new Array(sheet.numCols2).fill(''));
   sheet.numRows++;
   markRegisterDirty();
   renderRegisterTable(sheet);
@@ -2873,22 +2944,44 @@ $('#regDelRow').addEventListener('click', function(){
 });
 function addRegisterCol(quarter){
   var sheet = getCurrentSheet(); if(!sheet) return;
-  if(quarter===1){ sheet.numCols1++; sheet.grades1.forEach(function(row){ row.push(''); }); sheet.desc1.push(''); }
-  else { sheet.numCols2++; sheet.grades2.forEach(function(row){ row.push(''); }); sheet.desc2.push(''); }
+  insertRegisterCol(sheet, quarter, quarter===1?sheet.numCols1:sheet.numCols2);
+}
+function insertRegisterCol(sheet, quarter, atIndex){
+  if(quarter===1){ sheet.numCols1++; sheet.grades1.forEach(function(row){ row.splice(atIndex,0,''); }); sheet.desc1.splice(atIndex,0,''); }
+  else { sheet.numCols2++; sheet.grades2.forEach(function(row){ row.splice(atIndex,0,''); }); sheet.desc2.splice(atIndex,0,''); }
   markRegisterDirty();
   renderRegisterTable(sheet);
 }
 function delRegisterCol(quarter){
   var sheet = getCurrentSheet(); if(!sheet) return;
+  deleteRegisterColAt(sheet, quarter, (quarter===1?sheet.numCols1:sheet.numCols2)-1);
+}
+function deleteRegisterColAt(sheet, quarter, atIndex){
   if(quarter===1){
     if(sheet.numCols1<=1){ showToast('Deve restare almeno una colonna.', 'info'); return; }
-    sheet.numCols1--; sheet.grades1.forEach(function(row){ row.pop(); }); sheet.desc1.pop();
+    sheet.numCols1--; sheet.grades1.forEach(function(row){ row.splice(atIndex,1); }); sheet.desc1.splice(atIndex,1);
   } else {
     if(sheet.numCols2<=1){ showToast('Deve restare almeno una colonna.', 'info'); return; }
-    sheet.numCols2--; sheet.grades2.forEach(function(row){ row.pop(); }); sheet.desc2.pop();
+    sheet.numCols2--; sheet.grades2.forEach(function(row){ row.splice(atIndex,1); }); sheet.desc2.splice(atIndex,1);
   }
   markRegisterDirty();
   renderRegisterTable(sheet);
+}
+function openColumnActionsModal(sheet, quarter, colIndex){
+  quarter = +quarter;
+  openModal(
+    '<h3>Colonna '+colLetter(colIndex)+'</h3>'+
+    '<div class="modal-choices">'+
+      '<button type="button" class="choice-btn" id="colInsertLeft">'+iconSvg('plus')+'<span>Inserisci colonna a sinistra</span></button>'+
+      '<button type="button" class="choice-btn" id="colInsertRight">'+iconSvg('plus')+'<span>Inserisci colonna a destra</span></button>'+
+      '<button type="button" class="choice-btn" id="colDeleteThis">'+iconSvg('trash')+'<span>Elimina questa colonna</span></button>'+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="colActionsCancel">Annulla</button>'
+  );
+  $('#colActionsCancel').onclick = closeModal;
+  $('#colInsertLeft').onclick = function(){ closeModal(); insertRegisterCol(sheet, quarter, colIndex); };
+  $('#colInsertRight').onclick = function(){ closeModal(); insertRegisterCol(sheet, quarter, colIndex+1); };
+  $('#colDeleteThis').onclick = function(){ closeModal(); deleteRegisterColAt(sheet, quarter, colIndex); };
 }
 $('#regAddColQ1').addEventListener('click', function(){ addRegisterCol(1); });
 $('#regDelColQ1').addEventListener('click', function(){ delRegisterCol(1); });
