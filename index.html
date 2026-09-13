@@ -306,13 +306,14 @@ body.dark .theme-toggle .icon-moon{display:block;}
   padding:14px 16px;margin-bottom:10px;cursor:pointer;
 }
 .np-list-item:hover{background:var(--surface-alt);}
-.np-list-item .np-item-name{font-family:var(--font-display);font-weight:600;font-size:1.02rem;}
-.np-list-item .np-item-delete{
+.np-list-item .np-item-name{font-family:var(--font-display);font-weight:600;font-size:1.02rem;flex:1;}
+.np-list-item .np-item-delete,.np-list-item .np-item-rename{
   background:none;border:none;color:var(--ink-soft);cursor:pointer;flex-shrink:0;
   width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;
 }
 .np-list-item .np-item-delete:hover{background:rgba(162,58,44,.15);color:var(--accent);}
-.np-list-item .np-item-delete svg{width:15px;height:15px;}
+.np-list-item .np-item-rename:hover{background:var(--paper-deep);color:var(--ink);}
+.np-list-item .np-item-delete svg,.np-list-item .np-item-rename svg{width:15px;height:15px;}
 .contact-detail-row{
   display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--paper-line);
 }
@@ -485,8 +486,8 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 }
 #modalBox h3{margin-bottom:16px;font-size:1.15rem;}
 #modalBox label{display:block;font-size:.8rem;color:var(--ink-soft);margin:10px 0 5px;}
-#modalBox input[type=text],#modalBox input[type=url],#modalBox input[type=time]{
-  width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--paper-line);background:var(--surface);font-size:.92rem;
+#modalBox input[type=text],#modalBox input[type=url],#modalBox input[type=time],#modalBox input[type=email],#modalBox input[type=tel],#modalBox input[type=date]{
+  width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--paper-line);background:var(--surface);font-size:.92rem;color:var(--ink);
 }
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
 .btn-primary,.btn-secondary{padding:9px 16px;border-radius:8px;font-size:.86rem;cursor:pointer;font-weight:600;}
@@ -685,7 +686,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
       <button type="button" class="menu-tile" id="menuBtnCover">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="4" y1="7" x2="20" y2="7"></line></svg>
         <h3>Modifica copertina</h3>
-        <p>Personalizza nome, materia, scuola e foto</p>
+        <p>Personalizza nome, dati e foto</p>
       </button>
       <button type="button" class="menu-tile menu-tile-add" id="menuBtnAddSections">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -695,7 +696,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
       <button type="button" class="menu-tile" id="menuBtnCalendar">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
         <h3>Calendario</h3>
-        <p>Genera il calendario dell'anno scolastico</p>
+        <p>Genera il calendario dell'anno o dell'anno scolastico</p>
       </button>
       <button type="button" class="menu-tile" id="menuBtnNotebook">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="8" y1="8" x2="16" y2="8"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="16" x2="13" y2="16"></line></svg>
@@ -708,7 +709,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <p>Contatti: nome, telefono, email e indirizzo</p>
       </button>
       <button type="button" class="menu-tile" id="menuBtnScheduleLink">
-        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15 L15 9"></path><path d="M8 16 A4 4 0 0 1 8 8 L11 5"></path><path d="M16 8 A4 4 0 0 1 16 16 L13 19"></path></svg>
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="9" cy="9" rx="5" ry="3.2" transform="rotate(45 9 9)"></ellipse><ellipse cx="15" cy="15" rx="5" ry="3.2" transform="rotate(45 15 15)"></ellipse></svg>
         <h3>Schedule link</h3>
         <p>Elenco di link salvati con un nome</p>
       </button>
@@ -842,7 +843,6 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   <div class="date-sub" id="dayDateSub"></div>
   <div class="notebook-bar" id="notebookBar" style="display:none;">
     <div class="notebook-page-name" id="npNameDisplay"></div>
-    <button type="button" class="icon-btn" id="npRenameBtn" data-icon="pencil" title="Rinomina pagina"></button>
   </div>
   <div class="day-toolbar">
     <button type="button" class="icon-btn tool" id="btnAddText" data-icon="text" title="Inserisci testo"></button>
@@ -1512,6 +1512,10 @@ $('#menuBtnCover').addEventListener('click', function(){ showCoverEditor(); });
 $('#menuBtnCalendar').addEventListener('click', function(){ showCalendarScreen(); });
 $('#menuBackHome').addEventListener('click', function(){ showHomeScreen(); });
 $('#menuBtnAddSections').addEventListener('click', function(){ openAddSectionsModal(); });
+var SECTION_LABELS = {
+  calendar:'Calendario', notebook:'Blocco note', contacts:'Rubrica',
+  links:'Schedule link', register:'Registro personale'
+};
 function openAddSectionsModal(){
   var enabled = state.currentAgenda.enabledSections;
   if(!Array.isArray(enabled)) enabled = Object.keys(SECTION_TILES);
@@ -1526,8 +1530,8 @@ function openAddSectionsModal(){
     '</label>';
   }).join('');
   openModal(
-    '<h3>Aggiungi sezioni</h3>'+
-    '<p style="color:var(--ink-soft);font-size:.82rem;margin-bottom:6px;">Scegli quali sezioni mostrare per questa agenda, oltre a "Modifica copertina".</p>'+
+    '<h3>Aggiungi o rimuovi sezioni</h3>'+
+    '<p style="color:var(--ink-soft);font-size:.82rem;margin-bottom:6px;">Scegli quali sezioni mostrare per questa agenda, oltre a "Modifica copertina". Togliendo la spunta a una sezione già usata, i suoi dati salvati verranno eliminati.</p>'+
     rows+
     '<div class="modal-actions">'+
       '<button type="button" class="btn-secondary" id="addSectionsCancel">Annulla</button>'+
@@ -1537,16 +1541,77 @@ function openAddSectionsModal(){
   $('#addSectionsCancel').onclick = closeModal;
   $('#addSectionsConfirm').onclick = async function(){
     var selected = $$('.add-section-check').filter(function(c){ return c.checked; }).map(function(c){ return c.dataset.key; });
+    var removed = enabled.filter(function(k){ return selected.indexOf(k)===-1; });
+    if(removed.length>0){
+      var names = removed.map(function(k){ return SECTION_LABELS[k]; }).join(', ');
+      if(!confirm('Rimuovendo '+names+' perderai definitivamente i dati salvati in quella sezione per questa agenda. Continuare?')){
+        return;
+      }
+    }
     state.currentAgenda.enabledSections = selected;
     try{
       await updateDoc(agendaRef(state.currentAgendaId), {enabledSections: selected});
       var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
       if(listEntry) listEntry.enabledSections = selected;
+      for(var i=0;i<removed.length;i++){
+        await deleteSectionData(state.currentAgendaId, removed[i]);
+      }
       closeModal();
       showMenuScreen();
       showToast('Sezioni aggiornate.', 'success');
     }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
   };
+}
+async function deleteSectionData(agendaId, key){
+  try{
+    if(key==='calendar'){
+      await updateDoc(agendaRef(agendaId), {schoolYear:null, calendarType:null, daysWithContent:[]});
+      var daysSnap = await getDocs(daysColl(agendaId));
+      for(var i=0;i<daysSnap.docs.length;i++){
+        var dayDoc = daysSnap.docs[i];
+        var elSnap = await getDocs(collection(db,'users',state.uid,'agendas',agendaId,'days',dayDoc.id,'elements'));
+        var batch = writeBatch(db);
+        elSnap.docs.forEach(function(e){ batch.delete(e.ref); });
+        batch.delete(dayDoc.ref);
+        await batch.commit();
+      }
+    } else if(key==='notebook'){
+      var npSnap = await getDocs(notebookPagesColl(agendaId));
+      for(var j=0;j<npSnap.docs.length;j++){
+        var npDoc = npSnap.docs[j];
+        var npElSnap = await getDocs(collection(db,'users',state.uid,'agendas',agendaId,'notebookPages',npDoc.id,'elements'));
+        var npBatch = writeBatch(db);
+        npElSnap.docs.forEach(function(e){ npBatch.delete(e.ref); });
+        npBatch.delete(npDoc.ref);
+        await npBatch.commit();
+      }
+      state.notebookPages = [];
+    } else if(key==='contacts'){
+      var ctSnap = await getDocs(contactsColl(agendaId));
+      if(ctSnap.docs.length>0){
+        var ctBatch = writeBatch(db);
+        ctSnap.docs.forEach(function(d){ ctBatch.delete(d.ref); });
+        await ctBatch.commit();
+      }
+      state.contacts = [];
+    } else if(key==='links'){
+      var slSnap = await getDocs(scheduleLinksColl(agendaId));
+      if(slSnap.docs.length>0){
+        var slBatch = writeBatch(db);
+        slSnap.docs.forEach(function(d){ slBatch.delete(d.ref); });
+        await slBatch.commit();
+      }
+      state.scheduleLinks = [];
+    } else if(key==='register'){
+      var regSnap = await getDocs(registerSheetsColl(agendaId));
+      if(regSnap.docs.length>0){
+        var regBatch = writeBatch(db);
+        regSnap.docs.forEach(function(d){ regBatch.delete(d.ref); });
+        await regBatch.commit();
+      }
+      state.registerSheets = [];
+    }
+  }catch(err){ console.error(err); showToast('Errore durante la rimozione dei dati di "'+SECTION_LABELS[key]+'".', 'error'); }
 }
 
 function showHomeScreen(){
@@ -2108,14 +2173,18 @@ function renderNotebookList(filter){
   wrap.innerHTML = pages.map(function(p){
     return '<div class="np-list-item" data-id="'+p.id+'">'+
       '<span class="np-item-name">'+escapeHtml(p.name||'Senza nome')+'</span>'+
+      '<button type="button" class="np-item-rename" data-id="'+p.id+'" title="Rinomina pagina"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
       '<button type="button" class="np-item-delete" data-id="'+p.id+'" title="Elimina pagina"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
     '</div>';
   }).join('');
   $$('.np-list-item').forEach(function(item){
     item.addEventListener('click', function(e){
-      if(e.target.closest('.np-item-delete')) return;
+      if(e.target.closest('.np-item-delete') || e.target.closest('.np-item-rename')) return;
       openNotebookPageScreen(item.dataset.id);
     });
+  });
+  $$('.np-item-rename').forEach(function(btn){
+    btn.addEventListener('click', function(e){ e.stopPropagation(); renameNotebookPage(btn.dataset.id); });
   });
   $$('.np-item-delete').forEach(function(btn){
     btn.addEventListener('click', async function(e){
@@ -2224,13 +2293,13 @@ async function openNotebookPageScreen(pageId){
   showScreen('screen-day');
   growCanvasIfNeeded();
 }
-$('#npRenameBtn').addEventListener('click', function(){
-  if(pageMode!=='notebook') return;
-  var page = (state.notebookPages||[]).find(function(p){ return p.id===currentPageKey; });
+function renameNotebookPage(pageId){
+  var page = (state.notebookPages||[]).find(function(p){ return p.id===pageId; });
+  if(!page) return;
   openModal(
     '<h3>Rinomina pagina</h3>'+
     '<label for="npRenameInput">Nome della pagina</label>'+
-    '<input type="text" id="npRenameInput" value="'+escapeAttr(page?page.name:'')+'" maxlength="60">'+
+    '<input type="text" id="npRenameInput" value="'+escapeAttr(page.name||'')+'" maxlength="60">'+
     '<div class="modal-actions">'+
       '<button type="button" class="btn-secondary" id="npRenameCancel">Annulla</button>'+
       '<button type="button" class="btn-primary" id="npRenameConfirm">Salva</button>'+
@@ -2242,15 +2311,16 @@ $('#npRenameBtn').addEventListener('click', function(){
   $('#npRenameConfirm').onclick = async function(){
     var nuovoNome = input.value.trim();
     if(!nuovoNome){ showToast('Inserisci un nome per la pagina.', 'error'); return; }
-    if(page) page.name = nuovoNome;
+    page.name = nuovoNome;
     try{
-      await updateDoc(notebookPageDocRef(state.currentAgendaId, currentPageKey), {name: nuovoNome});
-      $('#npNameDisplay').textContent = nuovoNome;
+      await updateDoc(notebookPageDocRef(state.currentAgendaId, pageId), {name: nuovoNome});
+      if(pageMode==='notebook' && currentPageKey===pageId){ $('#npNameDisplay').textContent = nuovoNome; }
       closeModal();
+      renderNotebookList($('#npSearchInput').value);
       showToast('Pagina rinominata.', 'success');
     }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
   };
-});
+}
 $('#npAddBtn').addEventListener('click', function(){ openNewNotebookPageModal(false); });
 $('#npDeleteBtn').addEventListener('click', async function(){
   if(pageMode!=='notebook') return;
