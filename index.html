@@ -224,6 +224,9 @@ body.dark .theme-toggle .icon-moon{display:block;}
   padding:28px 22px;text-align:left;cursor:pointer;box-shadow:0 6px 16px rgba(46,32,20,.1);color:var(--ink);
 }
 .menu-tile:hover{box-shadow:0 10px 22px rgba(46,32,20,.16);}
+.menu-tile-add{border-style:dashed;background:transparent;box-shadow:none;}
+.menu-tile-add:hover{background:var(--surface);}
+.menu-tile-add .tile-icon{color:var(--ink-soft);}
 .menu-tile .tile-icon{width:34px;height:34px;color:var(--accent);margin-bottom:14px;}
 .menu-tile h3{font-size:1.15rem;margin-bottom:4px;}
 .menu-tile p{margin:0;color:var(--ink-soft);font-size:.85rem;}
@@ -364,7 +367,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
 #btnExportPdf{--tool-color:#5A6B7A;}
 
 /* --- the page canvas --- */
-.day-canvas-outer{width:100%;overflow-x:auto;padding:0 10px 60px;}
+.day-canvas-outer{width:100%;overflow:hidden;padding:0 10px 60px;-webkit-overflow-scrolling:touch;}
 .day-canvas{
   position:relative;width:760px;min-height:1000px;margin:0 auto;
   background:
@@ -478,7 +481,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #modalOverlay.active{display:flex;}
 #modalBox{
   background:var(--paper);border-radius:14px;padding:26px 24px;max-width:400px;width:100%;
-  box-shadow:0 24px 60px rgba(0,0,0,.4);
+  box-shadow:0 24px 60px rgba(0,0,0,.4);max-height:88vh;overflow-y:auto;
 }
 #modalBox h3{margin-bottom:16px;font-size:1.15rem;}
 #modalBox label{display:block;font-size:.8rem;color:var(--ink-soft);margin:10px 0 5px;}
@@ -511,6 +514,26 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 @media(max-width:600px){
   .date-bar .date-label{font-size:1.35rem;min-width:0;}
   .cover-preview-sticky .cover-visual{max-width:220px;}
+  .page-wrap{padding:16px 12px 40px;}
+  .day-topbar{padding:10px 12px;}
+  .top-header{gap:10px;}
+  .top-header h1{font-size:1.25rem;}
+  .auth-card{padding:28px 20px;}
+  .day-toolbar,.reg-toolbar{padding:8px 10px;gap:6px;}
+  .icon-btn.tool{width:42px;height:42px;}
+  .notebook-footer{padding:12px 8px;gap:8px;}
+  .notebook-page-name{font-size:1.15rem;}
+  .fab{right:18px;bottom:18px;width:54px;height:54px;}
+}
+@media(max-width:420px){
+  .day-toolbar,.reg-toolbar{justify-content:flex-start;}
+  .agenda-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;}
+  .menu-tiles{grid-template-columns:1fr;}
+}
+@media(orientation:landscape) and (max-height:480px){
+  .day-topbar{position:relative;}
+  .date-bar{padding:8px 16px 4px;}
+  .day-toolbar,.reg-toolbar{margin:6px 10px;padding:6px 10px;}
 }
 @media print{
   html, body{background:#fff !important;}
@@ -544,7 +567,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regAddColQ2{--tool-color:#2C5F79;}
 #regDelColQ2{--tool-color:#9c6b2c;}
 #regExportPdf{--tool-color:#5A6B7A;}
-.reg-table-outer{overflow:auto;padding:0 16px 10px;max-width:100%;}
+.reg-table-outer{overflow:auto;padding:0 16px 10px;max-width:100%;-webkit-overflow-scrolling:touch;}
 .reg-table{border-collapse:collapse;font-size:.82rem;background:#fff;margin:0 auto;color:#222;}
 .reg-table td,.reg-table th{border:1px solid #bbb;padding:3px 5px;text-align:center;min-width:32px;}
 .reg-table .reg-classe-cell{background:#2E5E3E;color:#fff;font-weight:700;text-align:left;padding-left:10px;}
@@ -652,6 +675,11 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="4" y1="7" x2="20" y2="7"></line></svg>
         <h3>Modifica copertina</h3>
         <p>Personalizza nome, materia, scuola e foto</p>
+      </button>
+      <button type="button" class="menu-tile menu-tile-add" id="menuBtnAddSections">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <h3>Aggiungi sezioni</h3>
+        <p>Scegli quali altre sezioni mostrare</p>
       </button>
       <button type="button" class="menu-tile" id="menuBtnCalendar">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
@@ -1356,7 +1384,7 @@ $('#btnNewAgenda').addEventListener('click', function(){
     var nome = input.value.trim();
     if(!nome){ showToast("Inserisci un nome per l'agenda.", 'error'); return; }
     var id = uid();
-    var agendaData = {nome:nome, createdAt:Date.now(), cover:{}, schoolYear:null};
+    var agendaData = {nome:nome, createdAt:Date.now(), cover:{}, schoolYear:null, enabledSections:[]};
     try{
       await setDoc(agendaRef(id), agendaData);
       var listEntry = Object.assign({id:id}, agendaData);
@@ -1452,14 +1480,63 @@ async function deleteAgendaCascade(agendaId){
 }
 
 /* ================= MENU ================= */
+var SECTION_TILES = {
+  calendar: 'menuBtnCalendar',
+  notebook: 'menuBtnNotebook',
+  contacts: 'menuBtnContacts',
+  links: 'menuBtnScheduleLink',
+  register: 'menuBtnRegistro'
+};
 function showMenuScreen(){
   $('#menuAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
+  var enabled = state.currentAgenda ? state.currentAgenda.enabledSections : null;
+  var showAll = !Array.isArray(enabled);
+  Object.keys(SECTION_TILES).forEach(function(key){
+    var el = $('#'+SECTION_TILES[key]);
+    if(el) el.style.display = (showAll || enabled.indexOf(key)>-1) ? '' : 'none';
+  });
   showScreen('screen-menu');
 }
 $('#menuBtnCover').addEventListener('click', function(){ showCoverEditor(); });
 $('#menuBtnCalendar').addEventListener('click', function(){ showCalendarScreen(); });
-$('#menuBtnRegistro').addEventListener('click', function(){ enterRegisterSection(); });
 $('#menuBackHome').addEventListener('click', function(){ showHomeScreen(); });
+$('#menuBtnAddSections').addEventListener('click', function(){ openAddSectionsModal(); });
+function openAddSectionsModal(){
+  var enabled = state.currentAgenda.enabledSections;
+  if(!Array.isArray(enabled)) enabled = Object.keys(SECTION_TILES);
+  var options = [
+    ['calendar','Calendario'], ['notebook','Blocco note'], ['contacts','Rubrica'],
+    ['links','Schedule link'], ['register','Registro personale']
+  ];
+  var rows = options.map(function(o){
+    var checked = enabled.indexOf(o[0])>-1 ? ' checked' : '';
+    return '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:.92rem;color:var(--ink);">'+
+      '<input type="checkbox" class="add-section-check" data-key="'+o[0]+'"'+checked+' style="width:18px;height:18px;">'+o[1]+
+    '</label>';
+  }).join('');
+  openModal(
+    '<h3>Aggiungi sezioni</h3>'+
+    '<p style="color:var(--ink-soft);font-size:.82rem;margin-bottom:6px;">Scegli quali sezioni mostrare per questa agenda, oltre a "Modifica copertina".</p>'+
+    rows+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="addSectionsCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="addSectionsConfirm">Salva</button>'+
+    '</div>'
+  );
+  $('#addSectionsCancel').onclick = closeModal;
+  $('#addSectionsConfirm').onclick = async function(){
+    var selected = $$('.add-section-check').filter(function(c){ return c.checked; }).map(function(c){ return c.dataset.key; });
+    state.currentAgenda.enabledSections = selected;
+    try{
+      await updateDoc(agendaRef(state.currentAgendaId), {enabledSections: selected});
+      var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
+      if(listEntry) listEntry.enabledSections = selected;
+      closeModal();
+      showMenuScreen();
+      showToast('Sezioni aggiornate.', 'success');
+    }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
+  };
+}
 
 function showHomeScreen(){
   state.currentAgendaId=null; state.currentAgenda=null;
@@ -2469,6 +2546,35 @@ function defaultSheetData(name, color){
     createdAt: Date.now()
   };
 }
+/* Firestore non ammette array-dentro-array: i voti (griglia riga/colonna)
+   vengono "appiattiti" in stringhe con separatore "|" solo per il
+   salvataggio, e ricostruiti in griglia subito dopo la lettura. */
+function serializeGradeGrid(grid){
+  return (grid||[]).map(function(row){ return (row||[]).join('|'); });
+}
+function deserializeGradeGrid(flat, numRows, numCols){
+  var result = [];
+  for(var r=0;r<numRows;r++){
+    var rowStr = (flat && flat[r]!==undefined && flat[r]!==null) ? String(flat[r]) : '';
+    var parts = rowStr.split('|');
+    var row = [];
+    for(var c=0;c<numCols;c++) row.push(parts[c]||'');
+    result.push(row);
+  }
+  return result;
+}
+function sheetForFirestore(sheet){
+  var payload = Object.assign({}, sheet);
+  delete payload.id;
+  payload.grades1 = serializeGradeGrid(sheet.grades1);
+  payload.grades2 = serializeGradeGrid(sheet.grades2);
+  return payload;
+}
+function sheetFromFirestore(data){
+  data.grades1 = deserializeGradeGrid(data.grades1, data.numRows, data.numCols1);
+  data.grades2 = deserializeGradeGrid(data.grades2, data.numRows, data.numCols2);
+  return data;
+}
 function getCurrentSheet(){ return (state.registerSheets||[]).find(function(s){ return s.id===state.currentSheetId; }); }
 function markRegisterDirty(){ registerDirty = true; var b=$('#regSaveBtn'); if(b) b.classList.add('needs-save'); }
 
@@ -2476,7 +2582,7 @@ $('#menuBtnRegistro').addEventListener('click', function(){ enterRegisterSection
 async function enterRegisterSection(){
   try{
     var snap = await getDocs(registerSheetsColl(state.currentAgendaId));
-    state.registerSheets = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+    state.registerSheets = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return sheetFromFirestore(data); });
   }catch(err){ console.error(err); showToast('Errore nel caricamento del registro.', 'error'); state.registerSheets=[]; }
   if(state.registerSheets.length===0){
     await createRegisterSheet('1', REG_COLORS[0]);
@@ -2493,13 +2599,13 @@ async function createRegisterSheet(name, color){
   var newId = uid();
   var data = defaultSheetData(name, color || REG_COLORS[(state.registerSheets||[]).length % REG_COLORS.length]);
   try{
-    await setDoc(registerSheetDocRef(state.currentAgendaId, newId), data);
+    await setDoc(registerSheetDocRef(state.currentAgendaId, newId), sheetForFirestore(data));
     var entry = Object.assign({id:newId}, data);
     state.registerSheets = state.registerSheets || [];
     state.registerSheets.push(entry);
     state.currentSheetId = newId;
     return entry;
-  }catch(err){ console.error(err); showToast('Errore nella creazione della scheda.', 'error'); }
+  }catch(err){ console.error(err); showToast('Errore nella creazione della scheda'+(err.message?(': '+err.message):'')+'.', 'error'); }
 }
 
 function renderRegisterTabs(){
@@ -2614,14 +2720,14 @@ $('#regDupSheet').addEventListener('click', async function(){
   copy.name = sheet.name + ' (copia)';
   copy.createdAt = Date.now();
   try{
-    await setDoc(registerSheetDocRef(state.currentAgendaId, newId), copy);
+    await setDoc(registerSheetDocRef(state.currentAgendaId, newId), sheetForFirestore(copy));
     var entry = Object.assign({id:newId}, copy);
     state.registerSheets.push(entry);
     state.currentSheetId = newId;
     renderRegisterTabs();
     renderRegisterTable(entry);
     showToast('Scheda duplicata.', 'success');
-  }catch(err){ console.error(err); showToast('Errore nella duplicazione.', 'error'); }
+  }catch(err){ console.error(err); showToast('Errore nella duplicazione'+(err.message?(': '+err.message):'')+'.', 'error'); }
 });
 $('#regDelSheet').addEventListener('click', async function(){
   var sheet = getCurrentSheet(); if(!sheet) return;
@@ -2647,9 +2753,7 @@ async function saveRegisterSheet(silent){
   var sheet = getCurrentSheet();
   if(!sheet) return false;
   try{
-    var payload = Object.assign({}, sheet);
-    delete payload.id;
-    await setDoc(registerSheetDocRef(state.currentAgendaId, sheet.id), payload);
+    await setDoc(registerSheetDocRef(state.currentAgendaId, sheet.id), sheetForFirestore(sheet));
     registerDirty = false;
     var b=$('#regSaveBtn'); if(b) b.classList.remove('needs-save');
     if(!silent) showToast('Modifiche salvate.', 'success');
@@ -2831,7 +2935,32 @@ function growCanvasIfNeeded(){
     if(bottom>maxBottom) maxBottom = bottom;
   });
   canvas.style.minHeight = Math.max(1000, maxBottom+150)+'px';
+  applyCanvasResponsiveScale();
 }
+function getCurrentCanvasScale(){
+  var canvas = $('#dayCanvas');
+  if(!canvas) return 1;
+  var m = (canvas.style.transform||'').match(/scale\(([\d.]+)\)/);
+  return m ? parseFloat(m[1]) : 1;
+}
+function applyCanvasResponsiveScale(){
+  var outer = document.querySelector('.day-canvas-outer');
+  var canvas = $('#dayCanvas');
+  if(!outer || !canvas) return;
+  var availableWidth = outer.clientWidth;
+  if(availableWidth<=0) return;
+  var scale = availableWidth < PAGE_WIDTH ? (availableWidth/PAGE_WIDTH) : 1;
+  if(scale<1){
+    canvas.style.transformOrigin = 'top left';
+    canvas.style.transform = 'scale('+scale+')';
+  } else {
+    canvas.style.transform = '';
+  }
+  var naturalHeight = parseFloat(canvas.style.minHeight) || canvas.scrollHeight;
+  outer.style.height = Math.ceil(naturalHeight*scale)+'px';
+}
+window.addEventListener('resize', function(){ applyCanvasResponsiveScale(); });
+window.addEventListener('orientationchange', function(){ setTimeout(applyCanvasResponsiveScale, 250); });
 function nextDropPosition(){
   var maxBottom = 40;
   $$('#dayCanvas .canvas-el').forEach(function(el){ maxBottom = Math.max(maxBottom, el.offsetTop+el.offsetHeight); });
@@ -3020,8 +3149,9 @@ $('#dayCanvas').addEventListener('click', function(evt){
   if(placementMode){
     if(evt.target.closest('.canvas-el')) return;
     var rect = $('#dayCanvas').getBoundingClientRect();
-    var x = evt.clientX - rect.left;
-    var y = evt.clientY - rect.top;
+    var scale0 = getCurrentCanvasScale();
+    var x = (evt.clientX - rect.left)/scale0;
+    var y = (evt.clientY - rect.top)/scale0;
     var type = placementMode;
     disarmPlacement();
     placeElementAt(type, x, y);
@@ -3127,7 +3257,8 @@ function attachElementInteractions(wrapper, data){
     if(Math.abs(dx)>THRESH || Math.abs(dy)>THRESH){
       if(!moved){ moved=true; hideDeleteX(); }
       evt.preventDefault();
-      var nx=Math.max(0,startLeft+dx), ny=Math.max(0,startTop+dy);
+      var scale0 = getCurrentCanvasScale();
+      var nx=Math.max(0,startLeft+dx/scale0), ny=Math.max(0,startTop+dy/scale0);
       data.x=nx; data.y=ny;
       wrapper.style.left=nx+'px'; wrapper.style.top=ny+'px';
     }
@@ -3184,7 +3315,8 @@ function attachResizeHandles(wrapper, data, minW, minH, lockAspect){
       evt.preventDefault();
       var clientX=evt.touches?evt.touches[0].clientX:evt.clientX;
       var clientY=evt.touches?evt.touches[0].clientY:evt.clientY;
-      var dx=clientX-startX, dy=clientY-startY;
+      var scale0 = getCurrentCanvasScale();
+      var dx=(clientX-startX)/scale0, dy=(clientY-startY)/scale0;
       var nw,nh,nx,ny;
       if(corner==='br'){ nw=startW+dx; nh=lockAspect?(nw/aspect):(startH+dy); nx=startLeft; ny=startTop; }
       else if(corner==='bl'){ nw=startW-dx; nh=lockAspect?(nw/aspect):(startH+dy); nx=startLeft+(startW-Math.max(minW,nw)); ny=startTop; }
@@ -3286,7 +3418,7 @@ function attachTextResizeHandle(handle, wrapper, data){
   function move(evt){
     if(!resizing) return; evt.preventDefault();
     var clientX = evt.touches?evt.touches[0].clientX:evt.clientX;
-    var nw = Math.max(80, startW + (clientX-startX));
+    var nw = Math.max(80, startW + (clientX-startX)/getCurrentCanvasScale());
     data.w = nw;
     wrapper.style.width = nw+'px';
   }
