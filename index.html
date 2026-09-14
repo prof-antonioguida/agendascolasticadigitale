@@ -3402,22 +3402,6 @@ function openBalanceInsertModal(sheet, rowIndex){
   $('#balInsertAbove').onclick = function(){ closeModal(); insertBalanceRow(sheet, rowIndex); };
   $('#balInsertBelow').onclick = function(){ closeModal(); insertBalanceRow(sheet, rowIndex+1); };
 }
-function openBalanceDeleteModal(sheet, rowIndex){
-  var hasAbove = rowIndex>0;
-  var hasBelow = rowIndex<sheet.rows.length-1;
-  openModal(
-    '<h3>Elimina riga</h3>'+
-    '<p style="color:var(--ink-soft);font-size:.85rem;">Quale riga vuoi eliminare, rispetto a quella selezionata?</p>'+
-    '<div class="modal-choices">'+
-      '<button type="button" class="choice-btn" id="balDeleteAbove"'+(hasAbove?'':' disabled style="opacity:.4;cursor:not-allowed;"')+'>'+iconSvg('trash')+'<span>Quella sopra</span></button>'+
-      '<button type="button" class="choice-btn" id="balDeleteBelow"'+(hasBelow?'':' disabled style="opacity:.4;cursor:not-allowed;"')+'>'+iconSvg('trash')+'<span>Quella sotto</span></button>'+
-    '</div>'+
-    '<button type="button" class="btn-secondary" id="balDeleteCancel">Annulla</button>'
-  );
-  $('#balDeleteCancel').onclick = closeModal;
-  if(hasAbove) $('#balDeleteAbove').onclick = function(){ closeModal(); deleteBalanceRow(sheet, rowIndex-1); };
-  if(hasBelow) $('#balDeleteBelow').onclick = function(){ closeModal(); deleteBalanceRow(sheet, rowIndex+1); };
-}
 function wireBalanceTableEvents(sheet){
   $$('.bal-date-input').forEach(function(inp){
     inp.addEventListener('input', function(e){ sheet.rows[+inp.dataset.row].date = e.target.value; markBalanceDirty(); });
@@ -3432,7 +3416,7 @@ function wireBalanceTableEvents(sheet){
     inp.addEventListener('input', function(e){ sheet.rows[+inp.dataset.row].entrata = e.target.value; updateBalanceTotalsUI(sheet); markBalanceDirty(); });
   });
   $$('.bal-del-row-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){ openBalanceDeleteModal(sheet, +btn.dataset.row); });
+    btn.addEventListener('click', function(){ deleteBalanceRow(sheet, +btn.dataset.row); });
   });
   $$('.bal-add-row-btn').forEach(function(btn){
     btn.addEventListener('click', function(){ openBalanceInsertModal(sheet, +btn.dataset.row); });
