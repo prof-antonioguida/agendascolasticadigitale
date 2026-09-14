@@ -615,20 +615,20 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .reg-table{border-collapse:collapse;font-size:.82rem;background:#fff;margin:0 auto;color:#222;}
 .reg-table td,.reg-table th{border:1px solid #bbb;padding:3px 5px;text-align:center;min-width:32px;}
 .reg-table .reg-classe-cell{background:#2E5E3E;color:#fff;font-weight:700;text-align:left;padding-left:10px;}
-.reg-table .reg-hdr-grade{background:#8FBF95;color:#1c3b24;font-weight:600;}
+.reg-table .reg-hdr-grade{background:#8FBF95;color:#1c3b24;font-weight:600;border-color:#fff;}
 .reg-table .reg-hdr-media1{background:#2E5E3E;color:#fff;font-weight:700;}
-.reg-table .reg-hdr-media2{background:#2C5F79;color:#fff;font-weight:700;}
+.reg-table .reg-hdr-media2{background:#2E5E3E;color:#fff;font-weight:700;}
 .reg-table .reg-hdr-grade[data-quarter]{cursor:pointer;}
+.reg-table .reg-hdr-grade.excluded{background:#c9c0a8;position:relative;}
+.reg-excl-mark{display:block;font-size:.65rem;color:#7a2f22;font-weight:700;line-height:1;margin-top:1px;}
+.reg-table td.reg-alt.excluded{background-image:repeating-linear-gradient(135deg, rgba(0,0,0,.05) 0px, rgba(0,0,0,.05) 4px, transparent 4px, transparent 8px);}
 .reg-table .reg-hdr-grade[data-quarter]:hover{background:#79b382;}
 .reg-table .reg-name-cell{text-align:left;padding-left:8px;min-width:150px;}
 .reg-table .reg-row-actions{display:flex;gap:2px;align-items:center;justify-content:center;}
-.reg-table .reg-del-row-btn,.reg-table .reg-add-row-btn{background:none;border:none;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;}
+.reg-table .reg-del-row-btn,.reg-table .reg-add-row-btn,.reg-table .reg-add-row-top-btn{background:none;border:none;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;}
 .reg-table .reg-del-row-btn{color:#a23a2c;}
-.reg-table .reg-add-row-btn{color:#3E9C5C;}
-.reg-table .reg-del-row-btn svg,.reg-table .reg-add-row-btn svg{width:12px;height:12px;}
-.reg-toprow-insert td{border:none;padding:0;height:16px;background:transparent;}
-.reg-insert-row-top{background:none;border:1px dashed var(--paper-line);border-radius:4px;color:#3E9C5C;cursor:pointer;padding:0;width:100%;height:14px;display:flex;align-items:center;justify-content:center;}
-.reg-insert-row-top svg{width:11px;height:11px;}
+.reg-table .reg-add-row-btn,.reg-table .reg-add-row-top-btn{color:#3E9C5C;}
+.reg-table .reg-del-row-btn svg,.reg-table .reg-add-row-btn svg,.reg-table .reg-add-row-top-btn svg{width:12px;height:12px;}
 .reg-table input.reg-input{border:none;background:transparent;width:100%;text-align:inherit;font-size:inherit;font-family:inherit;color:inherit;}
 .reg-table input.reg-grade-input{text-align:center;width:30px;}
 .reg-table tbody tr.reg-data-row:nth-child(odd) td.reg-alt{background:#ffffff;}
@@ -638,7 +638,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .reg-table td.reg-media-cell.low{background:#F5A623;color:#5a2d00;}
 .reg-table tr.reg-separator-row td{background:#2b2b2b;height:8px;padding:0;border:none;}
 .reg-table .reg-desc-label{background:#F5E9C8;font-weight:600;}
-.reg-table .reg-desc-letter{background:#8FBF95;font-weight:700;}
+.reg-table .reg-desc-letter{background:#8FBF95;font-weight:700;border-color:#fff;}
 .reg-table .reg-desc-text{text-align:left;}
 .reg-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 30px;align-items:center;}
 .reg-tab{
@@ -3026,8 +3026,11 @@ $('#regRedo').addEventListener('click', redoRegisterChange);
 var REG_COLORS = ['#4E7FBD','#C0524B','#3E9C5C','#D08A3E','#8B5FBF','#2C5F79','#C25A8A'];
 
 function colLetter(i){ return String.fromCharCode(65+i); }
-function computeAvg(gradesRow){
-  var nums = gradesRow.map(function(v){ return parseFloat((v+'').replace(',','.')); }).filter(function(n){ return !isNaN(n); });
+function computeAvg(gradesRow, excludedArr){
+  var nums = gradesRow
+    .filter(function(v, i){ return !(excludedArr && excludedArr[i]); })
+    .map(function(v){ return parseFloat((v+'').replace(',','.')); })
+    .filter(function(n){ return !isNaN(n); });
   if(nums.length===0) return null;
   var sum = nums.reduce(function(a,b){ return a+b; }, 0);
   return Math.round((sum/nums.length)*10)/10;
@@ -3041,6 +3044,7 @@ function defaultSheetData(name, color){
     grades1:Array.from({length:10}, function(){ return new Array(9).fill(''); }),
     grades2:Array.from({length:10}, function(){ return new Array(9).fill(''); }),
     desc1:new Array(9).fill(''), desc2:new Array(9).fill(''),
+    excluded1:new Array(9).fill(false), excluded2:new Array(9).fill(false),
     createdAt: Date.now()
   };
 }
@@ -3071,6 +3075,8 @@ function sheetForFirestore(sheet){
 function sheetFromFirestore(data){
   data.grades1 = deserializeGradeGrid(data.grades1, data.numRows, data.numCols1);
   data.grades2 = deserializeGradeGrid(data.grades2, data.numRows, data.numCols2);
+  if(!Array.isArray(data.excluded1) || data.excluded1.length!==data.numCols1) data.excluded1 = new Array(data.numCols1).fill(false);
+  if(!Array.isArray(data.excluded2) || data.excluded2.length!==data.numCols2) data.excluded2 = new Array(data.numCols2).fill(false);
   return data;
 }
 function getCurrentSheet(){ return (state.registerSheets||[]).find(function(s){ return s.id===state.currentSheetId; }); }
@@ -3272,43 +3278,41 @@ function buildRegisterTableInnerHTML(sheet, forPrint){
   var n1 = sheet.numCols1, n2 = sheet.numCols2;
   var totalCols = 2+n1+1+n2+1;
   var html = '<table class="reg-table"><thead>';
-  if(!forPrint){
-    html += '<tr class="reg-toprow-insert"><td colspan="2"></td>';
-    for(var ti=0;ti<n1;ti++) html += '<td></td>';
-    html += '<td></td>';
-    for(var tj=0;tj<n2;tj++) html += '<td></td>';
-    html += '<td><button type="button" class="reg-insert-row-top" title="Inserisci riga in cima">'+iconSvg('plus')+'</button></td></tr>';
-  }
   html += '<tr>';
   html += '<th class="reg-classe-cell" colspan="2">CLASSE: '+(forPrint ? escapeHtml(sheet.className||'') : '<input type="text" class="reg-input" id="regClassName" value="'+escapeAttr(sheet.className||'')+'">')+'</th>';
   for(var i=0;i<n1;i++){
-    html += '<th class="reg-hdr-grade"'+(forPrint?'':' data-quarter="1" data-col="'+i+'"')+'>'+colLetter(i)+'</th>';
+    var excl1 = !!(sheet.excluded1 && sheet.excluded1[i]);
+    html += '<th class="reg-hdr-grade'+(excl1?' excluded':'')+'"'+(forPrint?'':' data-quarter="1" data-col="'+i+'"')+' title="'+(excl1?'Colonna esclusa dalla media':'')+'">'+colLetter(i)+(excl1?'<span class="reg-excl-mark">✕</span>':'')+'</th>';
   }
   html += '<th class="reg-hdr-media1">MEDIA 1Q</th>';
   for(var j=0;j<n2;j++){
-    html += '<th class="reg-hdr-grade"'+(forPrint?'':' data-quarter="2" data-col="'+j+'"')+'>'+colLetter(j)+'</th>';
+    var excl2 = !!(sheet.excluded2 && sheet.excluded2[j]);
+    html += '<th class="reg-hdr-grade'+(excl2?' excluded':'')+'"'+(forPrint?'':' data-quarter="2" data-col="'+j+'"')+' title="'+(excl2?'Colonna esclusa dalla media':'')+'">'+colLetter(j)+(excl2?'<span class="reg-excl-mark">✕</span>':'')+'</th>';
   }
   html += '<th class="reg-hdr-media2">MEDIA 2Q</th></tr></thead><tbody>';
   for(var r=0;r<sheet.numRows;r++){
     html += '<tr class="reg-data-row" data-row="'+r+'">';
     html += '<td class="reg-alt reg-name-cell">'+(forPrint ? escapeHtml(sheet.names[r]||'') : '<input type="text" class="reg-input reg-name-input" data-row="'+r+'" value="'+escapeAttr(sheet.names[r]||'')+'">')+'</td>';
     html += '<td class="reg-alt reg-row-actions">'+(forPrint ? '' :
+      (r===0 ? '<button type="button" class="reg-add-row-top-btn" data-row="'+r+'" title="Inserisci riga sopra">'+iconSvg('arrowUp')+'</button>' : '')+
       '<button type="button" class="reg-del-row-btn" data-row="'+r+'" title="Elimina questa riga">'+iconSvg('close')+'</button>'+
       '<button type="button" class="reg-add-row-btn" data-row="'+r+'" title="Inserisci riga sotto">'+iconSvg('plus')+'</button>'
     )+'</td>';
     for(var c1=0;c1<n1;c1++){
       var v1 = sheet.grades1[r][c1]||'';
       var low1 = isLowGrade(v1);
-      html += '<td class="reg-alt'+(low1?' low':'')+'" data-gcell="1-'+r+'-'+c1+'">'+(forPrint ? escapeHtml(v1) : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="1" data-row="'+r+'" data-col="'+c1+'" value="'+escapeAttr(v1)+'">')+'</td>';
+      var excl1c = !!(sheet.excluded1 && sheet.excluded1[c1]);
+      html += '<td class="reg-alt'+(low1?' low':'')+(excl1c?' excluded':'')+'" data-gcell="1-'+r+'-'+c1+'">'+(forPrint ? escapeHtml(v1) : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="1" data-row="'+r+'" data-col="'+c1+'" value="'+escapeAttr(v1)+'">')+'</td>';
     }
-    var avg1 = computeAvg(sheet.grades1[r]);
+    var avg1 = computeAvg(sheet.grades1[r], sheet.excluded1);
     html += '<td class="reg-media-cell'+(avg1!==null && avg1<5.5?' low':'')+'" data-media="1" data-row="'+r+'">'+(avg1!==null?fmtAvg(avg1):'')+'</td>';
     for(var c2=0;c2<n2;c2++){
       var v2 = sheet.grades2[r][c2]||'';
       var low2 = isLowGrade(v2);
-      html += '<td class="reg-alt'+(low2?' low':'')+'" data-gcell="2-'+r+'-'+c2+'">'+(forPrint ? escapeHtml(v2) : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="2" data-row="'+r+'" data-col="'+c2+'" value="'+escapeAttr(v2)+'">')+'</td>';
+      var excl2c = !!(sheet.excluded2 && sheet.excluded2[c2]);
+      html += '<td class="reg-alt'+(low2?' low':'')+(excl2c?' excluded':'')+'" data-gcell="2-'+r+'-'+c2+'">'+(forPrint ? escapeHtml(v2) : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="2" data-row="'+r+'" data-col="'+c2+'" value="'+escapeAttr(v2)+'">')+'</td>';
     }
-    var avg2 = computeAvg(sheet.grades2[r]);
+    var avg2 = computeAvg(sheet.grades2[r], sheet.excluded2);
     html += '<td class="reg-media-cell'+(avg2!==null && avg2<5.5?' low':'')+'" data-media="2" data-row="'+r+'">'+(avg2!==null?fmtAvg(avg2):'')+'</td>';
     html += '</tr>';
   }
@@ -3353,8 +3357,9 @@ function wireRegisterTableEvents(sheet){
   $$('.reg-add-row-btn').forEach(function(btn){
     btn.addEventListener('click', function(){ insertRegisterRow(sheet, +btn.dataset.row+1); });
   });
-  var topInsertBtn = $('.reg-insert-row-top');
-  if(topInsertBtn) topInsertBtn.addEventListener('click', function(){ insertRegisterRow(sheet, 0); });
+  $$('.reg-add-row-top-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ insertRegisterRow(sheet, 0); });
+  });
   $$('.reg-grade-input').forEach(function(inp){
     inp.addEventListener('focus', function(){ pushRegisterHistory(); });
     inp.addEventListener('input', function(e){
@@ -3404,10 +3409,10 @@ function handleGradeArrowNav(evt){
   if(target){ evt.preventDefault(); target.focus(); target.select(); }
 }
 function updateRowMedia(sheet, r){
-  var avg1 = computeAvg(sheet.grades1[r]);
+  var avg1 = computeAvg(sheet.grades1[r], sheet.excluded1);
   var cell1 = document.querySelector('.reg-media-cell[data-media="1"][data-row="'+r+'"]');
   if(cell1){ cell1.textContent = avg1!==null?fmtAvg(avg1):''; cell1.classList.toggle('low', avg1!==null && avg1<5.5); }
-  var avg2 = computeAvg(sheet.grades2[r]);
+  var avg2 = computeAvg(sheet.grades2[r], sheet.excluded2);
   var cell2 = document.querySelector('.reg-media-cell[data-media="2"][data-row="'+r+'"]');
   if(cell2){ cell2.textContent = avg2!==null?fmtAvg(avg2):''; cell2.classList.toggle('low', avg2!==null && avg2<5.5); }
 }
@@ -3432,8 +3437,15 @@ function deleteRegisterRow(sheet, r){
 }
 function insertRegisterCol(sheet, quarter, atIndex){
   pushRegisterHistory();
-  if(quarter===1){ sheet.numCols1++; sheet.grades1.forEach(function(row){ row.splice(atIndex,0,''); }); sheet.desc1.splice(atIndex,0,''); }
-  else { sheet.numCols2++; sheet.grades2.forEach(function(row){ row.splice(atIndex,0,''); }); sheet.desc2.splice(atIndex,0,''); }
+  if(quarter===1){
+    sheet.numCols1++; sheet.grades1.forEach(function(row){ row.splice(atIndex,0,''); }); sheet.desc1.splice(atIndex,0,'');
+    if(!Array.isArray(sheet.excluded1)) sheet.excluded1 = new Array(sheet.numCols1-1).fill(false);
+    sheet.excluded1.splice(atIndex,0,false);
+  } else {
+    sheet.numCols2++; sheet.grades2.forEach(function(row){ row.splice(atIndex,0,''); }); sheet.desc2.splice(atIndex,0,'');
+    if(!Array.isArray(sheet.excluded2)) sheet.excluded2 = new Array(sheet.numCols2-1).fill(false);
+    sheet.excluded2.splice(atIndex,0,false);
+  }
   markRegisterDirty();
   renderRegisterTable(sheet);
 }
@@ -3443,24 +3455,39 @@ function deleteRegisterColAt(sheet, quarter, atIndex){
   pushRegisterHistory();
   if(quarter===1){
     sheet.numCols1--; sheet.grades1.forEach(function(row){ row.splice(atIndex,1); }); sheet.desc1.splice(atIndex,1);
+    if(Array.isArray(sheet.excluded1)) sheet.excluded1.splice(atIndex,1);
   } else {
     sheet.numCols2--; sheet.grades2.forEach(function(row){ row.splice(atIndex,1); }); sheet.desc2.splice(atIndex,1);
+    if(Array.isArray(sheet.excluded2)) sheet.excluded2.splice(atIndex,1);
   }
+  markRegisterDirty();
+  renderRegisterTable(sheet);
+}
+function toggleColumnExcluded(sheet, quarter, colIndex){
+  pushRegisterHistory();
+  var arrName = quarter===1 ? 'excluded1' : 'excluded2';
+  var numCols = quarter===1 ? sheet.numCols1 : sheet.numCols2;
+  if(!Array.isArray(sheet[arrName]) || sheet[arrName].length!==numCols) sheet[arrName] = new Array(numCols).fill(false);
+  sheet[arrName][colIndex] = !sheet[arrName][colIndex];
   markRegisterDirty();
   renderRegisterTable(sheet);
 }
 function openColumnActionsModal(sheet, quarter, colIndex){
   quarter = +quarter;
+  var arrName = quarter===1 ? 'excluded1' : 'excluded2';
+  var isExcluded = !!(sheet[arrName] && sheet[arrName][colIndex]);
   openModal(
     '<h3>Colonna '+colLetter(colIndex)+'</h3>'+
     '<div class="modal-choices">'+
       '<button type="button" class="choice-btn" id="colInsertLeft">'+iconSvg('plus')+'<span>Inserisci colonna a sinistra</span></button>'+
       '<button type="button" class="choice-btn" id="colInsertRight">'+iconSvg('plus')+'<span>Inserisci colonna a destra</span></button>'+
+      '<button type="button" class="choice-btn" id="colToggleExcl">'+iconSvg('close')+'<span>'+(isExcluded?'Includi questa colonna nel calcolo della media':'Escludi questa colonna dal calcolo della media')+'</span></button>'+
       '<button type="button" class="choice-btn" id="colDeleteThis">'+iconSvg('trash')+'<span>Elimina questa colonna</span></button>'+
     '</div>'+
     '<button type="button" class="btn-secondary" id="colActionsCancel">Annulla</button>'
   );
   $('#colActionsCancel').onclick = closeModal;
+  $('#colToggleExcl').onclick = function(){ closeModal(); toggleColumnExcluded(sheet, quarter, colIndex); };
   $('#colInsertLeft').onclick = function(){ closeModal(); insertRegisterCol(sheet, quarter, colIndex); };
   $('#colInsertRight').onclick = function(){ closeModal(); insertRegisterCol(sheet, quarter, colIndex+1); };
   $('#colDeleteThis').onclick = function(){ closeModal(); deleteRegisterColAt(sheet, quarter, colIndex); };
