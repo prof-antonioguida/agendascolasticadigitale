@@ -370,7 +370,8 @@ body.dark .theme-toggle .icon-moon{display:block;}
 #btnRedo{--tool-color:#7A8A99;}
 
 /* --- the page canvas --- */
-.day-canvas-outer{width:100%;overflow:hidden;padding:0 10px 60px;-webkit-overflow-scrolling:touch;}
+.day-canvas-outer{width:100%;overflow:auto;padding:0 10px 60px;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;}
+.day-canvas-spacer{position:relative;}
 .day-canvas{
   position:relative;width:760px;min-height:1000px;margin:0 auto;
   background:
@@ -575,6 +576,8 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regExportPdf{--tool-color:#5A6B7A;}
 #regUndo{--tool-color:#7A8A99;}
 #regRedo{--tool-color:#7A8A99;}
+#balAddRow{--tool-color:#4E7FBD;}
+#balDelRow{--tool-color:#C0524B;}
 .reg-table-outer{overflow:auto;padding:0 16px 10px;max-width:100%;-webkit-overflow-scrolling:touch;}
 .reg-table{border-collapse:collapse;font-size:.82rem;background:#fff;margin:0 auto;color:#222;}
 .reg-table td,.reg-table th{border:1px solid #bbb;padding:3px 5px;text-align:center;min-width:32px;}
@@ -614,6 +617,25 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .reg-tab-rename{background:none;border:none;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
 .reg-tab-rename svg{width:12px;height:12px;}
 #regPrintArea{position:fixed;left:-99999px;top:0;}
+
+/* ---------- Bilancio ---------- */
+.bal-table{border-collapse:collapse;font-size:.88rem;background:#fff;margin:0 auto;color:#222;width:100%;max-width:900px;}
+.bal-table td,.bal-table th{border:1px solid #bbb;padding:6px 8px;text-align:center;}
+.bal-table thead th{background:#F3CE7C;color:#4a3410;font-weight:700;}
+.bal-table .bal-desc-cell{text-align:left;min-width:220px;}
+.bal-table .bal-date-cell{min-width:130px;}
+.bal-table input.bal-input{border:none;background:transparent;width:100%;text-align:inherit;font-size:inherit;font-family:inherit;color:inherit;}
+.bal-table input.bal-num-input{text-align:right;}
+.bal-table .bal-row-actions{display:flex;gap:2px;align-items:center;justify-content:center;}
+.bal-table .bal-del-row-btn,.bal-table .bal-add-row-btn{background:none;border:none;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;}
+.bal-table .bal-del-row-btn{color:#a23a2c;}
+.bal-table .bal-add-row-btn{color:#3E9C5C;}
+.bal-table .bal-del-row-btn svg,.bal-table .bal-add-row-btn svg{width:12px;height:12px;}
+.bal-toprow-insert td{border:none;padding:0;height:16px;background:transparent;}
+.bal-insert-row-top{background:none;border:1px dashed var(--paper-line);border-radius:4px;color:#3E9C5C;cursor:pointer;padding:0;width:100%;height:14px;display:flex;align-items:center;justify-content:center;}
+.bal-insert-row-top svg{width:11px;height:11px;}
+.bal-table tr.bal-total-row td,.bal-table tr.bal-diff-row td{background:#CFE8CB;font-weight:700;color:#1f3d1c;}
+.bal-table tr.bal-total-row td.bal-label,.bal-table tr.bal-diff-row td.bal-label{text-align:left;}
 </style>
 </head>
 <body>
@@ -730,6 +752,11 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <h3>Registro personale</h3>
         <p>Voti, medie e schede per classe</p>
       </button>
+      <button type="button" class="menu-tile" id="menuBtnBalance">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+        <h3>Bilancio</h3>
+        <p>Entrate, uscite e totali</p>
+      </button>
     </div>
   </div>
 </div>
@@ -764,6 +791,39 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <div id="regTableContainer"></div>
   </div>
   <div class="reg-tabs" id="regTabs"></div>
+</div>
+
+<!-- ============ BILANCIO - elenco ============ -->
+<div id="screen-balance-list" class="screen paper">
+  <div class="page-rings">__RINGS__</div>
+  <div class="page-wrap">
+    <div class="top-header">
+      <div class="header-back">
+        <button type="button" class="icon-btn" id="balListBack" data-icon="arrowLeft" title="Indietro"></button>
+        <h1>Bilancio</h1>
+      </div>
+      <button type="button" class="topbar-btn primary" id="balListAddBtn" data-icon="plus" data-label="Nuovo bilancio"></button>
+    </div>
+    <div id="balListContainer"></div>
+  </div>
+</div>
+
+<!-- ============ BILANCIO - tabella ============ -->
+<div id="screen-balance" class="screen paper">
+  <div class="day-topbar">
+    <div class="nav-group">
+      <button type="button" class="icon-btn" id="balBack" data-icon="arrowLeft" title="Indietro"></button>
+      <span class="day-agenda-tag" id="balName"></span>
+    </div>
+    <button type="button" class="topbar-btn primary" id="balSaveBtn" data-icon="save" data-label="Salva"></button>
+  </div>
+  <div class="reg-toolbar">
+    <button type="button" class="icon-btn tool" id="balAddRow" data-icon="rowplus" title="Aggiungi riga"></button>
+    <button type="button" class="icon-btn tool" id="balDelRow" data-icon="rowminus" title="Elimina ultima riga"></button>
+  </div>
+  <div class="reg-table-outer">
+    <div id="balTableContainer"></div>
+  </div>
 </div>
 
 <!-- ============ COVER EDITOR ============ -->
@@ -893,8 +953,10 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" id="ptItalic" title="Corsivo" style="font-style:italic;">C</button>
     <button type="button" id="ptUnderline" title="Sottolineato" style="text-decoration:underline;">S</button>
   </div>
-  <div class="day-canvas-outer">
-    <div class="day-canvas" id="dayCanvas"></div>
+  <div class="day-canvas-outer" id="dayCanvasOuter">
+    <div class="day-canvas-spacer" id="dayCanvasSpacer">
+      <div class="day-canvas" id="dayCanvas"></div>
+    </div>
   </div>
   <div class="notebook-footer" id="notebookFooter" style="display:none;">
     <button type="button" class="icon-btn" id="npPrevBtn" data-icon="arrowLeft" title="Pagina precedente"></button>
@@ -1053,6 +1115,8 @@ function notebookPagesColl(agendaId){ return collection(db, 'users', state.uid, 
 function notebookPageDocRef(agendaId, pageId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'notebookPages', pageId); }
 function registerSheetsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'registerSheets'); }
 function registerSheetDocRef(agendaId, sheetId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'registerSheets', sheetId); }
+function balanceSheetsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'balanceSheets'); }
+function balanceSheetDocRef(agendaId, sheetId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'balanceSheets', sheetId); }
 function contactsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'contacts'); }
 function contactDocRef(agendaId, contactId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'contacts', contactId); }
 function scheduleLinksColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'scheduleLinks'); }
@@ -1507,6 +1571,12 @@ async function deleteAgendaCascade(agendaId){
     regSnap.docs.forEach(function(d){ regBatch.delete(d.ref); });
     await regBatch.commit();
   }
+  var balSnap = await getDocs(balanceSheetsColl(agendaId));
+  if(balSnap.docs.length>0){
+    var balBatch = writeBatch(db);
+    balSnap.docs.forEach(function(d){ balBatch.delete(d.ref); });
+    await balBatch.commit();
+  }
   await deleteDoc(agendaRef(agendaId));
 }
 
@@ -1517,7 +1587,8 @@ var SECTION_TILES = {
   notebook: 'menuBtnNotebook',
   contacts: 'menuBtnContacts',
   links: 'menuBtnScheduleLink',
-  register: 'menuBtnRegistro'
+  register: 'menuBtnRegistro',
+  balance: 'menuBtnBalance'
 };
 function showMenuScreen(){
   $('#menuAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
@@ -1536,14 +1607,14 @@ $('#menuBackHome').addEventListener('click', function(){ showHomeScreen(); });
 $('#menuBtnAddSections').addEventListener('click', function(){ openAddSectionsModal(); });
 var SECTION_LABELS = {
   calendar:'Calendario', schoolCalendar:'Calendario scolastico', notebook:'Blocco note', contacts:'Rubrica',
-  links:'Schedule link', register:'Registro personale'
+  links:'Schedule link', register:'Registro personale', balance:'Bilancio'
 };
 function openAddSectionsModal(){
   var enabled = state.currentAgenda.enabledSections;
   if(!Array.isArray(enabled)) enabled = Object.keys(SECTION_TILES);
   var options = [
     ['calendar','Calendario'], ['schoolCalendar','Calendario scolastico'], ['notebook','Blocco note'], ['contacts','Rubrica'],
-    ['links','Schedule link'], ['register','Registro personale']
+    ['links','Schedule link'], ['register','Registro personale'], ['balance','Bilancio']
   ];
   var rows = options.map(function(o){
     var checked = enabled.indexOf(o[0])>-1 ? ' checked' : '';
@@ -1627,6 +1698,14 @@ async function deleteSectionData(agendaId, key){
         await regBatch.commit();
       }
       state.registerSheets = [];
+    } else if(key==='balance'){
+      var balSnap = await getDocs(balanceSheetsColl(agendaId));
+      if(balSnap.docs.length>0){
+        var balBatch = writeBatch(db);
+        balSnap.docs.forEach(function(d){ balBatch.delete(d.ref); });
+        await balBatch.commit();
+      }
+      state.balanceSheets = [];
     }
   }catch(err){ console.error(err); showToast('Errore durante la rimozione dei dati di "'+SECTION_LABELS[key]+'".', 'error'); }
 }
@@ -2087,6 +2166,7 @@ async function openDayScreen(date){
   activeDeleteWrapper = null;
   activeEditingText = null;
   resetDayHistory();
+  canvasZoom = 1;
   var dKey = dateKey(date);
   var canvas = $('#dayCanvas');
   canvas.innerHTML = '<p class="empty-day-hint">Caricamento...</p>';
@@ -2241,6 +2321,7 @@ async function openNotebookPageScreen(pageId){
   activeDeleteWrapper = null;
   activeEditingText = null;
   resetDayHistory();
+  canvasZoom = 1;
   var canvas = $('#dayCanvas');
   canvas.innerHTML = '<p class="empty-day-hint">Caricamento...</p>';
   var pageInfo = (state.notebookPages||[]).find(function(p){ return p.id===pageId; });
@@ -3118,6 +3199,258 @@ $('#regExportPdf').addEventListener('click', function(){
   $('#regExpAll').onclick = function(){ closeModal(); printRegisterSheets(state.registerSheets||[]); };
 });
 
+/* ================= BILANCIO ================= */
+state.balanceSheets = [];
+state.currentBalanceId = null;
+var balanceDirty = false;
+function markBalanceDirty(){ balanceDirty = true; var b=$('#balSaveBtn'); if(b) b.classList.add('needs-save'); }
+function getCurrentBalance(){ return (state.balanceSheets||[]).find(function(b){ return b.id===state.currentBalanceId; }); }
+function defaultBalanceRows(){
+  var rows = [];
+  for(var i=0;i<10;i++) rows.push({date:'', description:'', uscita:'', entrata:''});
+  return rows;
+}
+function sortedBalanceSheets(){
+  return (state.balanceSheets||[]).slice().sort(function(a,b){
+    return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
+  });
+}
+$('#menuBtnBalance').addEventListener('click', async function(){
+  try{
+    var snap = await getDocs(balanceSheetsColl(state.currentAgendaId));
+    state.balanceSheets = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+  }catch(err){ console.error(err); showToast('Errore nel caricamento del bilancio.', 'error'); state.balanceSheets=[]; }
+  if(state.balanceSheets.length===0){
+    openNewBalanceModal(true);
+  } else {
+    showBalanceListScreen();
+  }
+});
+function showBalanceListScreen(){
+  renderBalanceList();
+  showScreen('screen-balance-list');
+}
+function renderBalanceList(){
+  var wrap = $('#balListContainer');
+  var sheets = sortedBalanceSheets();
+  if(sheets.length===0){
+    wrap.innerHTML = '<p class="empty-hint">Non hai ancora creato nessun bilancio.</p>';
+    return;
+  }
+  wrap.innerHTML = sheets.map(function(s){
+    return '<div class="np-list-item" data-id="'+s.id+'">'+
+      '<span class="np-item-name">'+escapeHtml(s.name||'Senza nome')+'</span>'+
+      '<button type="button" class="np-item-rename" data-id="'+s.id+'" title="Rinomina bilancio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
+      '<button type="button" class="np-item-delete" data-id="'+s.id+'" title="Elimina bilancio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
+    '</div>';
+  }).join('');
+  $$('#balListContainer .np-list-item').forEach(function(item){
+    item.addEventListener('click', function(e){
+      if(e.target.closest('.np-item-delete') || e.target.closest('.np-item-rename')) return;
+      openBalanceScreen(item.dataset.id);
+    });
+  });
+  $$('#balListContainer .np-item-rename').forEach(function(btn){
+    btn.addEventListener('click', function(e){ e.stopPropagation(); renameBalanceSheet(btn.dataset.id); });
+  });
+  $$('#balListContainer .np-item-delete').forEach(function(btn){
+    btn.addEventListener('click', async function(e){ e.stopPropagation(); await deleteBalanceSheet(btn.dataset.id); });
+  });
+}
+$('#balListBack').addEventListener('click', function(){ showMenuScreen(); });
+$('#balListAddBtn').addEventListener('click', function(){ openNewBalanceModal(false); });
+function openNewBalanceModal(isFirst){
+  openModal(
+    '<h3>Nuovo bilancio</h3>'+
+    '<label for="balNameInput">Nome del bilancio</label>'+
+    '<input type="text" id="balNameInput" placeholder="Es. Gite scolastiche" maxlength="60">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="balNameCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="balNameConfirm">Crea</button>'+
+    '</div>'
+  );
+  var input = $('#balNameInput');
+  setTimeout(function(){ input.focus(); }, 60);
+  $('#balNameCancel').onclick = function(){ closeModal(); if(isFirst) showMenuScreen(); };
+  $('#balNameConfirm').onclick = async function(){
+    var name = input.value.trim();
+    if(!name){ showToast('Inserisci un nome per il bilancio.', 'error'); return; }
+    try{
+      var newId = uid();
+      var data = {name:name, rows:defaultBalanceRows(), createdAt: Date.now()};
+      await setDoc(balanceSheetDocRef(state.currentAgendaId, newId), data);
+      var entry = Object.assign({id:newId}, data);
+      state.balanceSheets = state.balanceSheets || [];
+      state.balanceSheets.push(entry);
+      closeModal();
+      openBalanceScreen(newId);
+    }catch(err){ console.error(err); showToast('Errore nella creazione del bilancio.', 'error'); }
+  };
+}
+function renameBalanceSheet(id){
+  var sheet = (state.balanceSheets||[]).find(function(s){ return s.id===id; });
+  if(!sheet) return;
+  openModal(
+    '<h3>Rinomina bilancio</h3>'+
+    '<label for="balRenameInput">Nome del bilancio</label>'+
+    '<input type="text" id="balRenameInput" value="'+escapeAttr(sheet.name||'')+'" maxlength="60">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="balRenameCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="balRenameConfirm">Salva</button>'+
+    '</div>'
+  );
+  var input = $('#balRenameInput');
+  setTimeout(function(){ input.focus(); input.select(); }, 60);
+  $('#balRenameCancel').onclick = closeModal;
+  $('#balRenameConfirm').onclick = async function(){
+    var nuovoNome = input.value.trim();
+    if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
+    sheet.name = nuovoNome;
+    try{
+      await updateDoc(balanceSheetDocRef(state.currentAgendaId, id), {name: nuovoNome});
+      if(state.currentBalanceId===id) $('#balName').textContent = nuovoNome;
+      closeModal();
+      renderBalanceList();
+      showToast('Bilancio rinominato.', 'success');
+    }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
+  };
+}
+async function deleteBalanceSheet(id){
+  var sheet = (state.balanceSheets||[]).find(function(s){ return s.id===id; });
+  if(!confirm('Eliminare definitivamente il bilancio "'+(sheet?sheet.name:'')+'"? Questa azione non può essere annullata.')) return;
+  try{
+    await deleteDoc(balanceSheetDocRef(state.currentAgendaId, id));
+    state.balanceSheets = (state.balanceSheets||[]).filter(function(s){ return s.id!==id; });
+    renderBalanceList();
+    showToast('Bilancio eliminato.', 'info');
+  }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error'); }
+}
+function openBalanceScreen(id){
+  state.currentBalanceId = id;
+  balanceDirty = false;
+  var b=$('#balSaveBtn'); if(b) b.classList.remove('needs-save');
+  var sheet = getCurrentBalance();
+  $('#balName').textContent = sheet ? sheet.name : '';
+  renderBalanceTable(sheet);
+  showScreen('screen-balance');
+}
+$('#balBack').addEventListener('click', async function(){
+  if(balanceDirty){
+    var doSave = confirm('Ci sono modifiche non salvate in questo bilancio. Vuoi salvarle prima di continuare?');
+    if(doSave) await saveBalanceSheet(true);
+  }
+  showBalanceListScreen();
+});
+function parseNum(v){
+  var n = parseFloat((v+'').replace(',','.'));
+  return isNaN(n) ? 0 : n;
+}
+function fmtMoney(n){
+  return n.toFixed(2).replace('.', ',');
+}
+function computeBalanceTotals(sheet){
+  var totUscite=0, totEntrate=0;
+  (sheet.rows||[]).forEach(function(r){ totUscite += parseNum(r.uscita); totEntrate += parseNum(r.entrata); });
+  return {uscite: totUscite, entrate: totEntrate, diff: totEntrate-totUscite};
+}
+function renderBalanceTable(sheet){
+  if(!sheet){ $('#balTableContainer').innerHTML=''; return; }
+  var rows = sheet.rows||[];
+  var html = '<table class="bal-table"><thead><tr>'+
+    '<th>Data</th><th>Descrizione</th><th>Uscite</th><th>Entrate</th><th></th>'+
+  '</tr></thead><tbody>';
+  html += '<tr class="bal-toprow-insert"><td colspan="4"></td><td><button type="button" class="bal-insert-row-top" title="Inserisci riga in cima">'+iconSvg('plus')+'</button></td></tr>';
+  rows.forEach(function(r, i){
+    html += '<tr data-row="'+i+'">'+
+      '<td class="bal-date-cell"><input type="date" class="bal-input bal-date-input" data-row="'+i+'" value="'+escapeAttr(r.date||'')+'"></td>'+
+      '<td class="bal-desc-cell"><input type="text" class="bal-input bal-desc-input" data-row="'+i+'" value="'+escapeAttr(r.description||'')+'"></td>'+
+      '<td><input type="number" step="0.01" inputmode="decimal" class="bal-input bal-num-input bal-uscita-input" data-row="'+i+'" value="'+escapeAttr(r.uscita||'')+'"></td>'+
+      '<td><input type="number" step="0.01" inputmode="decimal" class="bal-input bal-num-input bal-entrata-input" data-row="'+i+'" value="'+escapeAttr(r.entrata||'')+'"></td>'+
+      '<td class="bal-row-actions">'+
+        '<button type="button" class="bal-del-row-btn" data-row="'+i+'" title="Elimina questa riga">'+iconSvg('close')+'</button>'+
+        '<button type="button" class="bal-add-row-btn" data-row="'+i+'" title="Inserisci riga sotto">'+iconSvg('plus')+'</button>'+
+      '</td>'+
+    '</tr>';
+  });
+  var totals = computeBalanceTotals(sheet);
+  html += '<tr class="bal-total-row">'+
+      '<td class="bal-label" colspan="2">Totali</td>'+
+      '<td id="balTotUscite">'+fmtMoney(totals.uscite)+'</td>'+
+      '<td id="balTotEntrate">'+fmtMoney(totals.entrate)+'</td>'+
+      '<td></td>'+
+    '</tr>'+
+    '<tr class="bal-diff-row">'+
+      '<td class="bal-label" colspan="2">Differenza (Entrate - Uscite)</td>'+
+      '<td id="balDiff" colspan="2">'+fmtMoney(totals.diff)+'</td>'+
+      '<td></td>'+
+    '</tr>';
+  html += '</tbody></table>';
+  $('#balTableContainer').innerHTML = html;
+  wireBalanceTableEvents(sheet);
+}
+function wireBalanceTableEvents(sheet){
+  $$('.bal-date-input').forEach(function(inp){
+    inp.addEventListener('input', function(e){ sheet.rows[+inp.dataset.row].date = e.target.value; markBalanceDirty(); });
+  });
+  $$('.bal-desc-input').forEach(function(inp){
+    inp.addEventListener('input', function(e){ sheet.rows[+inp.dataset.row].description = e.target.value; markBalanceDirty(); });
+  });
+  $$('.bal-uscita-input').forEach(function(inp){
+    inp.addEventListener('input', function(e){ sheet.rows[+inp.dataset.row].uscita = e.target.value; updateBalanceTotalsUI(sheet); markBalanceDirty(); });
+  });
+  $$('.bal-entrata-input').forEach(function(inp){
+    inp.addEventListener('input', function(e){ sheet.rows[+inp.dataset.row].entrata = e.target.value; updateBalanceTotalsUI(sheet); markBalanceDirty(); });
+  });
+  $$('.bal-del-row-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ deleteBalanceRow(sheet, +btn.dataset.row); });
+  });
+  $$('.bal-add-row-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ insertBalanceRow(sheet, +btn.dataset.row+1); });
+  });
+  var topBtn = $('.bal-insert-row-top');
+  if(topBtn) topBtn.addEventListener('click', function(){ insertBalanceRow(sheet, 0); });
+}
+function updateBalanceTotalsUI(sheet){
+  var totals = computeBalanceTotals(sheet);
+  var u=$('#balTotUscite'), e=$('#balTotEntrate'), d=$('#balDiff');
+  if(u) u.textContent = fmtMoney(totals.uscite);
+  if(e) e.textContent = fmtMoney(totals.entrate);
+  if(d) d.textContent = fmtMoney(totals.diff);
+}
+function insertBalanceRow(sheet, atIndex){
+  sheet.rows.splice(atIndex, 0, {date:'', description:'', uscita:'', entrata:''});
+  markBalanceDirty();
+  renderBalanceTable(sheet);
+}
+function deleteBalanceRow(sheet, r){
+  if(sheet.rows.length<=1){ showToast('Deve restare almeno una riga.', 'info'); return; }
+  sheet.rows.splice(r,1);
+  markBalanceDirty();
+  renderBalanceTable(sheet);
+}
+$('#balAddRow').addEventListener('click', function(){
+  var sheet = getCurrentBalance(); if(!sheet) return;
+  insertBalanceRow(sheet, sheet.rows.length);
+});
+$('#balDelRow').addEventListener('click', function(){
+  var sheet = getCurrentBalance(); if(!sheet) return;
+  deleteBalanceRow(sheet, sheet.rows.length-1);
+});
+async function saveBalanceSheet(silent){
+  var sheet = getCurrentBalance();
+  if(!sheet) return false;
+  try{
+    var payload = Object.assign({}, sheet);
+    delete payload.id;
+    await setDoc(balanceSheetDocRef(state.currentAgendaId, sheet.id), payload);
+    balanceDirty = false;
+    var b=$('#balSaveBtn'); if(b) b.classList.remove('needs-save');
+    if(!silent) showToast('Modifiche salvate.', 'success');
+    return true;
+  }catch(err){ console.error(err); if(!silent) showToast('Errore durante il salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); return false; }
+}
+$('#balSaveBtn').addEventListener('click', function(){ saveBalanceSheet(false); });
+
 function clearEmptyHint(){
   var hint = $('#dayCanvas .empty-day-hint');
   if(hint) hint.remove();
@@ -3182,6 +3515,8 @@ function growCanvasIfNeeded(){
   canvas.style.minHeight = Math.max(1000, maxBottom+150)+'px';
   applyCanvasResponsiveScale();
 }
+var canvasZoom = 1; /* moltiplicatore di zoom controllato dall'utente (pinch) */
+var canvasFitScale = 1; /* scala "adatta alla larghezza" calcolata automaticamente */
 function getCurrentCanvasScale(){
   var canvas = $('#dayCanvas');
   if(!canvas) return 1;
@@ -3189,23 +3524,54 @@ function getCurrentCanvasScale(){
   return m ? parseFloat(m[1]) : 1;
 }
 function applyCanvasResponsiveScale(){
-  var outer = document.querySelector('.day-canvas-outer');
+  var outer = $('#dayCanvasOuter');
+  var spacer = $('#dayCanvasSpacer');
   var canvas = $('#dayCanvas');
-  if(!outer || !canvas) return;
+  if(!outer || !spacer || !canvas) return;
   var availableWidth = outer.clientWidth;
   if(availableWidth<=0) return;
-  var scale = availableWidth < PAGE_WIDTH ? (availableWidth/PAGE_WIDTH) : 1;
-  if(scale<1){
-    canvas.style.transformOrigin = 'top left';
-    canvas.style.transform = 'scale('+scale+')';
-  } else {
-    canvas.style.transform = '';
-  }
+  canvasFitScale = availableWidth < PAGE_WIDTH ? (availableWidth/PAGE_WIDTH) : 1;
+  var effectiveScale = canvasFitScale * canvasZoom;
+  canvas.style.transformOrigin = 'top left';
+  canvas.style.transform = (effectiveScale!==1) ? 'scale('+effectiveScale+')' : '';
   var naturalHeight = parseFloat(canvas.style.minHeight) || canvas.scrollHeight;
-  outer.style.height = Math.ceil(naturalHeight*scale)+'px';
+  var naturalWidth = PAGE_WIDTH;
+  spacer.style.width = Math.ceil(naturalWidth*effectiveScale)+'px';
+  spacer.style.height = Math.ceil(naturalHeight*effectiveScale)+'px';
+  outer.style.height = Math.ceil(naturalHeight*canvasFitScale)+'px';
 }
 window.addEventListener('resize', function(){ applyCanvasResponsiveScale(); });
 window.addEventListener('orientationchange', function(){ setTimeout(applyCanvasResponsiveScale, 250); });
+
+/* ---- pinch-to-zoom (due dita) sulle pagine del blocco note e dei giorni ---- */
+var pinchState = null;
+function touchDistance(touches){
+  var dx = touches[0].clientX - touches[1].clientX;
+  var dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx*dx+dy*dy);
+}
+(function attachPinchZoom(){
+  var outer = $('#dayCanvasOuter');
+  if(!outer) return;
+  outer.addEventListener('touchstart', function(evt){
+    if(evt.touches.length===2){
+      pinchState = { startDist: touchDistance(evt.touches), startZoom: canvasZoom };
+    }
+  }, {passive:true});
+  outer.addEventListener('touchmove', function(evt){
+    if(evt.touches.length===2 && pinchState){
+      evt.preventDefault();
+      var ratio = touchDistance(evt.touches) / pinchState.startDist;
+      canvasZoom = Math.min(3, Math.max(0.6, pinchState.startZoom * ratio));
+      applyCanvasResponsiveScale();
+    }
+  }, {passive:false});
+  outer.addEventListener('touchend', function(evt){
+    if(evt.touches.length<2) pinchState = null;
+  });
+  outer.addEventListener('touchcancel', function(){ pinchState = null; });
+})();
+
 function nextDropPosition(){
   var maxBottom = 40;
   $$('#dayCanvas .canvas-el').forEach(function(el){ maxBottom = Math.max(maxBottom, el.offsetTop+el.offsetHeight); });
