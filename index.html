@@ -578,6 +578,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regRedo{--tool-color:#7A8A99;}
 #balAddRow{--tool-color:#4E7FBD;}
 #balDelRow{--tool-color:#C0524B;}
+#balExportPdf{--tool-color:#5A6B7A;}
 .reg-table-outer{overflow:auto;padding:0 16px 10px;max-width:100%;-webkit-overflow-scrolling:touch;}
 .reg-table{border-collapse:collapse;font-size:.82rem;background:#fff;margin:0 auto;color:#222;}
 .reg-table td,.reg-table th{border:1px solid #bbb;padding:3px 5px;text-align:center;min-width:32px;}
@@ -619,11 +620,12 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regPrintArea{position:fixed;left:-99999px;top:0;}
 
 /* ---------- Bilancio ---------- */
-.bal-table{border-collapse:collapse;font-size:.88rem;background:#fff;margin:0 auto;color:#222;width:100%;max-width:900px;}
-.bal-table td,.bal-table th{border:1px solid #bbb;padding:6px 8px;text-align:center;}
+.bal-table{border-collapse:collapse;font-size:.88rem;background:#fff;margin:0 auto;color:#222;width:100%;max-width:1000px;table-layout:fixed;}
+.bal-table td,.bal-table th{border:1px solid #bbb;padding:6px 8px;text-align:center;overflow:hidden;text-overflow:ellipsis;}
 .bal-table thead th{background:#F3CE7C;color:#4a3410;font-weight:700;}
-.bal-table .bal-desc-cell{text-align:left;min-width:220px;}
-.bal-table .bal-date-cell{min-width:130px;}
+.bal-table .bal-desc-cell{text-align:left;width:52%;}
+.bal-table .bal-date-cell{width:16%;}
+.bal-table .bal-num-cell{width:11%;}
 .bal-table input.bal-input{border:none;background:transparent;width:100%;text-align:inherit;font-size:inherit;font-family:inherit;color:inherit;}
 .bal-table input.bal-num-input{text-align:right;}
 .bal-table .bal-row-actions{display:flex;gap:2px;align-items:center;justify-content:center;}
@@ -631,9 +633,6 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .bal-table .bal-del-row-btn{color:#a23a2c;}
 .bal-table .bal-add-row-btn{color:#3E9C5C;}
 .bal-table .bal-del-row-btn svg,.bal-table .bal-add-row-btn svg{width:12px;height:12px;}
-.bal-toprow-insert td{border:none;padding:0;height:16px;background:transparent;}
-.bal-insert-row-top{background:none;border:1px dashed var(--paper-line);border-radius:4px;color:#3E9C5C;cursor:pointer;padding:0;width:100%;height:14px;display:flex;align-items:center;justify-content:center;}
-.bal-insert-row-top svg{width:11px;height:11px;}
 .bal-table tr.bal-total-row td,.bal-table tr.bal-diff-row td{background:#CFE8CB;font-weight:700;color:#1f3d1c;}
 .bal-table tr.bal-total-row td.bal-label,.bal-table tr.bal-diff-row td.bal-label{text-align:left;}
 </style>
@@ -820,6 +819,8 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   <div class="reg-toolbar">
     <button type="button" class="icon-btn tool" id="balAddRow" data-icon="rowplus" title="Aggiungi riga"></button>
     <button type="button" class="icon-btn tool" id="balDelRow" data-icon="rowminus" title="Elimina ultima riga"></button>
+    <span class="reg-sep"></span>
+    <button type="button" class="icon-btn tool" id="balExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
   </div>
   <div class="reg-table-outer">
     <div id="balTableContainer"></div>
@@ -3357,36 +3358,65 @@ function renderBalanceTable(sheet){
   if(!sheet){ $('#balTableContainer').innerHTML=''; return; }
   var rows = sheet.rows||[];
   var html = '<table class="bal-table"><thead><tr>'+
-    '<th>Data</th><th>Descrizione</th><th>Uscite</th><th>Entrate</th><th></th>'+
+    '<th class="bal-date-cell">Data</th><th class="bal-desc-cell">Descrizione</th><th class="bal-num-cell">Uscite</th><th class="bal-num-cell">Entrate</th><th></th>'+
   '</tr></thead><tbody>';
-  html += '<tr class="bal-toprow-insert"><td colspan="4"></td><td><button type="button" class="bal-insert-row-top" title="Inserisci riga in cima">'+iconSvg('plus')+'</button></td></tr>';
   rows.forEach(function(r, i){
     html += '<tr data-row="'+i+'">'+
       '<td class="bal-date-cell"><input type="date" class="bal-input bal-date-input" data-row="'+i+'" value="'+escapeAttr(r.date||'')+'"></td>'+
       '<td class="bal-desc-cell"><input type="text" class="bal-input bal-desc-input" data-row="'+i+'" value="'+escapeAttr(r.description||'')+'"></td>'+
-      '<td><input type="number" step="0.01" inputmode="decimal" class="bal-input bal-num-input bal-uscita-input" data-row="'+i+'" value="'+escapeAttr(r.uscita||'')+'"></td>'+
-      '<td><input type="number" step="0.01" inputmode="decimal" class="bal-input bal-num-input bal-entrata-input" data-row="'+i+'" value="'+escapeAttr(r.entrata||'')+'"></td>'+
+      '<td class="bal-num-cell"><input type="number" step="0.01" inputmode="decimal" class="bal-input bal-num-input bal-uscita-input" data-row="'+i+'" value="'+escapeAttr(r.uscita||'')+'"></td>'+
+      '<td class="bal-num-cell"><input type="number" step="0.01" inputmode="decimal" class="bal-input bal-num-input bal-entrata-input" data-row="'+i+'" value="'+escapeAttr(r.entrata||'')+'"></td>'+
       '<td class="bal-row-actions">'+
         '<button type="button" class="bal-del-row-btn" data-row="'+i+'" title="Elimina questa riga">'+iconSvg('close')+'</button>'+
-        '<button type="button" class="bal-add-row-btn" data-row="'+i+'" title="Inserisci riga sotto">'+iconSvg('plus')+'</button>'+
+        '<button type="button" class="bal-add-row-btn" data-row="'+i+'" title="Inserisci riga">'+iconSvg('plus')+'</button>'+
       '</td>'+
     '</tr>';
   });
   var totals = computeBalanceTotals(sheet);
   html += '<tr class="bal-total-row">'+
       '<td class="bal-label" colspan="2">Totali</td>'+
-      '<td id="balTotUscite">'+fmtMoney(totals.uscite)+'</td>'+
-      '<td id="balTotEntrate">'+fmtMoney(totals.entrate)+'</td>'+
+      '<td class="bal-num-cell" id="balTotUscite">'+fmtMoney(totals.uscite)+'</td>'+
+      '<td class="bal-num-cell" id="balTotEntrate">'+fmtMoney(totals.entrate)+'</td>'+
       '<td></td>'+
     '</tr>'+
     '<tr class="bal-diff-row">'+
       '<td class="bal-label" colspan="2">Differenza (Entrate - Uscite)</td>'+
-      '<td id="balDiff" colspan="2">'+fmtMoney(totals.diff)+'</td>'+
+      '<td class="bal-num-cell" id="balDiff" colspan="2">'+fmtMoney(totals.diff)+'</td>'+
       '<td></td>'+
     '</tr>';
   html += '</tbody></table>';
   $('#balTableContainer').innerHTML = html;
   wireBalanceTableEvents(sheet);
+}
+function openBalanceInsertModal(sheet, rowIndex){
+  openModal(
+    '<h3>Inserisci riga</h3>'+
+    '<p style="color:var(--ink-soft);font-size:.85rem;">Dove vuoi inserire la nuova riga, rispetto a quella selezionata?</p>'+
+    '<div class="modal-choices">'+
+      '<button type="button" class="choice-btn" id="balInsertAbove">'+iconSvg('plus')+'<span>Sopra</span></button>'+
+      '<button type="button" class="choice-btn" id="balInsertBelow">'+iconSvg('plus')+'<span>Sotto</span></button>'+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="balInsertCancel">Annulla</button>'
+  );
+  $('#balInsertCancel').onclick = closeModal;
+  $('#balInsertAbove').onclick = function(){ closeModal(); insertBalanceRow(sheet, rowIndex); };
+  $('#balInsertBelow').onclick = function(){ closeModal(); insertBalanceRow(sheet, rowIndex+1); };
+}
+function openBalanceDeleteModal(sheet, rowIndex){
+  var hasAbove = rowIndex>0;
+  var hasBelow = rowIndex<sheet.rows.length-1;
+  openModal(
+    '<h3>Elimina riga</h3>'+
+    '<p style="color:var(--ink-soft);font-size:.85rem;">Quale riga vuoi eliminare, rispetto a quella selezionata?</p>'+
+    '<div class="modal-choices">'+
+      '<button type="button" class="choice-btn" id="balDeleteAbove"'+(hasAbove?'':' disabled style="opacity:.4;cursor:not-allowed;"')+'>'+iconSvg('trash')+'<span>Quella sopra</span></button>'+
+      '<button type="button" class="choice-btn" id="balDeleteBelow"'+(hasBelow?'':' disabled style="opacity:.4;cursor:not-allowed;"')+'>'+iconSvg('trash')+'<span>Quella sotto</span></button>'+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="balDeleteCancel">Annulla</button>'
+  );
+  $('#balDeleteCancel').onclick = closeModal;
+  if(hasAbove) $('#balDeleteAbove').onclick = function(){ closeModal(); deleteBalanceRow(sheet, rowIndex-1); };
+  if(hasBelow) $('#balDeleteBelow').onclick = function(){ closeModal(); deleteBalanceRow(sheet, rowIndex+1); };
 }
 function wireBalanceTableEvents(sheet){
   $$('.bal-date-input').forEach(function(inp){
@@ -3402,13 +3432,11 @@ function wireBalanceTableEvents(sheet){
     inp.addEventListener('input', function(e){ sheet.rows[+inp.dataset.row].entrata = e.target.value; updateBalanceTotalsUI(sheet); markBalanceDirty(); });
   });
   $$('.bal-del-row-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){ deleteBalanceRow(sheet, +btn.dataset.row); });
+    btn.addEventListener('click', function(){ openBalanceDeleteModal(sheet, +btn.dataset.row); });
   });
   $$('.bal-add-row-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){ insertBalanceRow(sheet, +btn.dataset.row+1); });
+    btn.addEventListener('click', function(){ openBalanceInsertModal(sheet, +btn.dataset.row); });
   });
-  var topBtn = $('.bal-insert-row-top');
-  if(topBtn) topBtn.addEventListener('click', function(){ insertBalanceRow(sheet, 0); });
 }
 function updateBalanceTotalsUI(sheet){
   var totals = computeBalanceTotals(sheet);
@@ -3450,6 +3478,46 @@ async function saveBalanceSheet(silent){
   }catch(err){ console.error(err); if(!silent) showToast('Errore durante il salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); return false; }
 }
 $('#balSaveBtn').addEventListener('click', function(){ saveBalanceSheet(false); });
+function buildBalanceTableForPrint(sheet){
+  var rows = sheet.rows||[];
+  var totals = computeBalanceTotals(sheet);
+  var html = '<table class="bal-table"><thead><tr>'+
+    '<th class="bal-date-cell">Data</th><th class="bal-desc-cell">Descrizione</th><th class="bal-num-cell">Uscite</th><th class="bal-num-cell">Entrate</th>'+
+  '</tr></thead><tbody>';
+  rows.forEach(function(r){
+    html += '<tr>'+
+      '<td class="bal-date-cell">'+escapeHtml(r.date||'')+'</td>'+
+      '<td class="bal-desc-cell">'+escapeHtml(r.description||'')+'</td>'+
+      '<td class="bal-num-cell">'+escapeHtml(r.uscita||'')+'</td>'+
+      '<td class="bal-num-cell">'+escapeHtml(r.entrata||'')+'</td>'+
+    '</tr>';
+  });
+  html += '<tr class="bal-total-row"><td class="bal-label" colspan="2">Totali</td><td class="bal-num-cell">'+fmtMoney(totals.uscite)+'</td><td class="bal-num-cell">'+fmtMoney(totals.entrate)+'</td></tr>';
+  html += '<tr class="bal-diff-row"><td class="bal-label" colspan="2">Differenza (Entrate - Uscite)</td><td class="bal-num-cell" colspan="2">'+fmtMoney(totals.diff)+'</td></tr>';
+  html += '</tbody></table>';
+  return '<div class="reg-print-sheet"><h2 style="font-family:inherit;margin:0 0 8px;">'+escapeHtml(sheet.name)+'</h2>'+html+'</div>';
+}
+function printBalanceSheets(sheets){
+  var area = $('#regPrintArea');
+  area.innerHTML = sheets.map(function(s){ return buildBalanceTableForPrint(s); }).join('');
+  setPrintPageSize('portrait');
+  document.body.classList.add('printing-register');
+  window.print();
+  setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
+}
+$('#balExportPdf').addEventListener('click', function(){
+  openModal(
+    '<h3>Esporta in PDF</h3>'+
+    '<div class="modal-choices">'+
+      '<button type="button" class="choice-btn" id="balExpCurrent">'+iconSvg('pdf')+'<span>Solo questo bilancio</span></button>'+
+      '<button type="button" class="choice-btn" id="balExpAll">'+iconSvg('pdf')+'<span>Tutti i bilanci</span></button>'+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="balExpCancel">Annulla</button>'
+  );
+  $('#balExpCancel').onclick = closeModal;
+  $('#balExpCurrent').onclick = function(){ closeModal(); printBalanceSheets([getCurrentBalance()]); };
+  $('#balExpAll').onclick = function(){ closeModal(); printBalanceSheets(state.balanceSheets||[]); };
+});
 
 function clearEmptyHint(){
   var hint = $('#dayCanvas .empty-day-hint');
