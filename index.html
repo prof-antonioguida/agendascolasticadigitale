@@ -290,7 +290,8 @@ body.dark .theme-toggle .icon-moon{display:block;}
 }
 .date-bar .date-label{font-family:var(--font-display);font-weight:600;font-size:1.5rem;letter-spacing:.01em;text-align:center;min-width:280px;}
 .date-sub{text-align:center;font-size:.8rem;color:var(--ink-soft);margin-top:2px;font-style:italic;}
-.notebook-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:18px 16px 6px;}
+.notebook-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:18px 16px 6px;position:relative;}
+.notebook-bar-actions{position:absolute;right:16px;top:50%;transform:translateY(-50%);display:flex;gap:8px;}
 .notebook-page-name{font-family:var(--font-display);font-weight:600;font-size:1.4rem;text-align:center;}
 .notebook-footer{
   display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
@@ -370,7 +371,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
 #btnRedo{--tool-color:#7A8A99;}
 
 /* --- the page canvas --- */
-.day-canvas-outer{width:100%;overflow:auto;padding:0 10px 60px;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;}
+.day-canvas-outer{width:100%;overflow:auto;padding:0 10px 60px;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;display:flex;justify-content:center;}
 .day-canvas-spacer{position:relative;}
 .day-canvas{
   position:relative;width:760px;min-height:1000px;margin:0 auto;
@@ -379,6 +380,41 @@ body.dark .theme-toggle .icon-moon{display:block;}
     var(--surface);
   border:1px solid var(--paper-line);border-radius:14px;box-shadow:0 14px 30px rgba(0,0,0,.15);
 }
+.day-canvas.bg-righi{
+  background:
+    repeating-linear-gradient(180deg, rgba(217,203,166,0) 0px, rgba(217,203,166,0) 31px, var(--paper-line) 32px),
+    var(--surface);
+}
+.day-canvas.bg-quadretti{
+  background:
+    repeating-linear-gradient(180deg, transparent 0px, transparent 23px, var(--paper-line) 24px),
+    repeating-linear-gradient(90deg, transparent 0px, transparent 23px, var(--paper-line) 24px),
+    var(--surface);
+}
+.day-canvas.bg-millimetrata{
+  background:
+    repeating-linear-gradient(180deg, transparent 0px, transparent 9px, rgba(120,170,190,.4) 10px),
+    repeating-linear-gradient(90deg, transparent 0px, transparent 9px, rgba(120,170,190,.4) 10px),
+    repeating-linear-gradient(180deg, transparent 0px, transparent 49px, rgba(70,140,170,.6) 50px),
+    repeating-linear-gradient(90deg, transparent 0px, transparent 49px, rgba(70,140,170,.6) 50px),
+    var(--surface);
+}
+.day-canvas.bg-pentagrammato{
+  background:
+    repeating-linear-gradient(180deg,
+      transparent 0px, transparent 6px,
+      var(--ink-soft) 6px, var(--ink-soft) 7px,
+      transparent 7px, transparent 13px,
+      var(--ink-soft) 13px, var(--ink-soft) 14px,
+      transparent 14px, transparent 20px,
+      var(--ink-soft) 20px, var(--ink-soft) 21px,
+      transparent 21px, transparent 27px,
+      var(--ink-soft) 27px, var(--ink-soft) 28px,
+      transparent 28px, transparent 80px
+    ),
+    var(--surface);
+}
+.day-canvas.bg-vuoto{ background: var(--surface); }
 .day-canvas.placing{cursor:crosshair;outline:2px dashed var(--accent);outline-offset:-2px;}
 .day-canvas.erasing{cursor:crosshair;outline:2px dashed #8A7F68;outline-offset:-2px;}
 
@@ -506,6 +542,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   background:var(--surface);cursor:pointer;font-size:.9rem;color:var(--ink);text-align:left;
 }
 .choice-btn:hover{background:var(--surface-alt);}
+.choice-btn.active{border-color:var(--accent);background:var(--surface-alt);}
 .choice-btn svg{width:20px;height:20px;color:var(--accent);flex-shrink:0;}
 
 /* ---------- Toast ---------- */
@@ -655,7 +692,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .shop-item-toggle svg{width:22px;height:22px;}
 .shop-item.done .shop-item-toggle{color:#3E9C5C;}
 .shop-item-name{flex:1;font-size:.95rem;color:var(--ink);}
-.shop-item.done .shop-item-name{color:var(--ink-soft);text-decoration:line-through;}
+.shop-item.done .shop-item-name{color:var(--ink-soft);}
 .shop-item-rename,.shop-item-delete{
   background:none;border:none;color:var(--ink-soft);cursor:pointer;flex-shrink:0;
   width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;
@@ -664,6 +701,9 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .shop-item-delete:hover{background:rgba(162,58,44,.15);color:var(--accent);}
 .shop-item-rename svg,.shop-item-delete svg{width:14px;height:14px;}
 .shop-empty-hint{color:var(--ink-soft);font-size:.85rem;padding:6px 4px;}
+.shop-print-list{list-style:none;padding:0;margin:0;font-size:1rem;}
+.shop-print-list li{padding:8px 4px;border-bottom:1px solid #ccc;}
+.shop-print-list li::before{content:"\2610";margin-right:10px;}
 </style>
 
 <style>
@@ -764,11 +804,6 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <h3>Modifica copertina</h3>
         <p>Personalizza nome, dati e foto</p>
       </button>
-      <button type="button" class="menu-tile menu-tile-add" id="menuBtnAddSections">
-        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        <h3>Aggiungi/rimuovi sezioni</h3>
-        <p>Scegli quali altre sezioni mostrare</p>
-      </button>
       <button type="button" class="menu-tile" id="menuBtnCalendar">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
         <h3>Calendario</h3>
@@ -813,6 +848,11 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4 H10 A1.5 1.5 0 0 1 11.5 5.5 V20 H5.5 A1.5 1.5 0 0 1 4 18.5 Z"></path><path d="M20 4 H14 A1.5 1.5 0 0 0 12.5 5.5 V20 H18.5 A1.5 1.5 0 0 0 20 18.5 Z"></path><line x1="12" y1="7" x2="12" y2="20"></line></svg>
         <h3>Libreria</h3>
         <p>Catalogo libri con ricerca e ordinamento</p>
+      </button>
+      <button type="button" class="menu-tile menu-tile-add" id="menuBtnAddSections">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <h3>Aggiungi/rimuovi sezioni</h3>
+        <p>Scegli quali altre sezioni mostrare</p>
       </button>
     </div>
   </div>
@@ -906,7 +946,10 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <button type="button" class="icon-btn" id="shopBack" data-icon="arrowLeft" title="Indietro"></button>
         <h1 id="shopListName"></h1>
       </div>
-      <button type="button" class="topbar-btn primary" id="shopAddItemBtn" data-icon="plus" data-label="Nuovo articolo"></button>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="icon-btn" id="shopExportPdf" data-icon="pdf" title="Scarica in PDF"></button>
+        <button type="button" class="topbar-btn primary" id="shopAddItemBtn" data-icon="plus" data-label="Nuovo articolo"></button>
+      </div>
     </div>
     <div class="shop-section">
       <div class="shop-section-header shop-header-todo" id="shopTodoHeader">Da acquistare</div>
@@ -1044,6 +1087,10 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   <div class="date-sub" id="dayDateSub"></div>
   <div class="notebook-bar" id="notebookBar" style="display:none;">
     <div class="notebook-page-name" id="npNameDisplay"></div>
+    <div class="notebook-bar-actions">
+      <button type="button" class="icon-btn" id="npBackgroundBtn" data-icon="background" title="Sfondo"></button>
+      <button type="button" class="icon-btn" id="npDeletePageBtn" data-icon="trash" title="Elimina pagina"></button>
+    </div>
   </div>
   <div class="day-toolbar">
     <button type="button" class="icon-btn tool" id="btnAddText" data-icon="text" title="Inserisci testo"></button>
@@ -1087,7 +1134,6 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   <div class="notebook-footer" id="notebookFooter" style="display:none;">
     <button type="button" class="icon-btn" id="npPrevBtn" data-icon="arrowLeft" title="Pagina precedente"></button>
     <button type="button" class="topbar-btn" id="npAddBtn" data-icon="plus" data-label="Nuova pagina"></button>
-    <button type="button" class="topbar-btn" id="npDeleteBtn" data-icon="trash" data-label="Elimina pagina"></button>
     <button type="button" class="icon-btn" id="npNextBtn" data-icon="arrowRight" title="Pagina successiva"></button>
   </div>
 </div>
@@ -1290,7 +1336,8 @@ var ICONS = {
   colplus:'<rect x="4" y="3" width="6" height="18" rx="1"></rect><rect x="13" y="3" width="6" height="18" rx="1"></rect><line x1="19" y1="1" x2="19" y2="7"></line><line x1="16" y1="4" x2="22" y2="4"></line>',
   colminus:'<rect x="6" y="3" width="6" height="18" rx="1"></rect><rect x="15" y="3" width="6" height="18" rx="1"></rect><line x1="15" y1="3" x2="21" y2="3"></line>',
   circleEmpty:'<circle cx="12" cy="12" r="9"></circle>',
-  circleCheck:'<circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"></circle><path d="M8 12 L11 15 L16 9" stroke="#fff" stroke-width="2" fill="none"></path>'
+  circleCheck:'<circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"></circle><path d="M8 12 L11 15 L16 9" stroke="#fff" stroke-width="2" fill="none"></path>',
+  background:'<rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="14" x2="21" y2="14"></line>'
 };
 function iconSvg(name){
   return ICONS[name] ? ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS[name]+'</svg>') : '';
@@ -2331,6 +2378,7 @@ async function openDayScreen(date){
   activeDeleteWrapper = null;
   activeEditingText = null;
   resetDayHistory();
+  applyNotebookBackground('righi');
   canvasZoom = 1;
   var dKey = dateKey(date);
   var canvas = $('#dayCanvas');
@@ -2448,7 +2496,7 @@ function openNewNotebookPageModal(isFirst){
     if(!name){ showToast('Inserisci un nome per la pagina.', 'error'); return; }
     try{
       var newId = uid();
-      var pageData = {name:name, createdAt: Date.now()};
+      var pageData = {name:name, createdAt: Date.now(), background:'righi'};
       await setDoc(notebookPageDocRef(state.currentAgendaId, newId), pageData);
       var entry = Object.assign({id:newId}, pageData);
       state.notebookPages = state.notebookPages || [];
@@ -2496,6 +2544,7 @@ async function openNotebookPageScreen(pageId){
       if(pSnap.exists()){ pageInfo = pSnap.data(); pageInfo.id = pageId; state.notebookPages=state.notebookPages||[]; state.notebookPages.push(pageInfo); }
     }catch(err){ console.error(err); }
   }
+  applyNotebookBackground(pageInfo ? pageInfo.background : 'righi');
   try{
     var elSnap = await getDocs(elementsColl(state.currentAgendaId, pageId));
     var els = elSnap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
@@ -2557,7 +2606,7 @@ function renameNotebookPage(pageId){
   };
 }
 $('#npAddBtn').addEventListener('click', function(){ openNewNotebookPageModal(false); });
-$('#npDeleteBtn').addEventListener('click', async function(){
+$('#npDeletePageBtn').addEventListener('click', async function(){
   if(pageMode!=='notebook') return;
   var pageIdToDelete = currentPageKey;
   var pages = sortedNotebookPages();
@@ -2567,6 +2616,43 @@ $('#npDeleteBtn').addEventListener('click', async function(){
   if(remaining.length===0){ showMenuScreen(); return; }
   var nextIdx = Math.min(idx, remaining.length-1);
   openNotebookPageScreen(remaining[nextIdx].id);
+});
+var NP_BACKGROUNDS = [
+  ['righi','A righi'], ['quadretti','A quadretti'], ['millimetrata','Carta millimetrata'],
+  ['pentagrammato','Pentagrammato'], ['vuoto','Vuoto']
+];
+function applyNotebookBackground(bg){
+  var canvas = $('#dayCanvas');
+  if(!canvas) return;
+  NP_BACKGROUNDS.forEach(function(b){ canvas.classList.remove('bg-'+b[0]); });
+  canvas.classList.add('bg-'+(bg||'righi'));
+}
+$('#npBackgroundBtn').addEventListener('click', function(){
+  if(pageMode!=='notebook') return;
+  var pageInfo = (state.notebookPages||[]).find(function(p){ return p.id===currentPageKey; });
+  var current = pageInfo ? (pageInfo.background||'righi') : 'righi';
+  openModal(
+    '<h3>Sfondo della pagina</h3>'+
+    '<div class="modal-choices">'+
+      NP_BACKGROUNDS.map(function(b){
+        return '<button type="button" class="choice-btn np-bg-choice'+(b[0]===current?' active':'')+'" data-bg="'+b[0]+'">'+iconSvg('background')+'<span>'+b[1]+'</span></button>';
+      }).join('')+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="npBgCancel">Chiudi</button>'
+  );
+  $('#npBgCancel').onclick = closeModal;
+  $$('.np-bg-choice').forEach(function(btn){
+    btn.addEventListener('click', async function(){
+      var bg = btn.dataset.bg;
+      applyNotebookBackground(bg);
+      closeModal();
+      if(pageInfo){
+        pageInfo.background = bg;
+        try{ await updateDoc(notebookPageDocRef(state.currentAgendaId, currentPageKey), {background: bg}); }
+        catch(err){ console.error(err); showToast('Errore nel salvataggio dello sfondo.', 'error'); }
+      }
+    });
+  });
 });
 $('#npPrevBtn').addEventListener('click', function(){
   var pages = sortedNotebookPages();
@@ -3890,6 +3976,28 @@ $('#shopAddItemBtn').addEventListener('click', function(){
     await saveShoppingListItems(list);
   };
 });
+function buildShoppingListForPrint(list){
+  var todo = sortedItems((list.items||[]).filter(function(it){ return !it.bought; }));
+  var html = '<div class="reg-print-sheet"><h2 style="font-family:inherit;margin:0 0 14px;">'+escapeHtml(list.name)+'</h2>';
+  if(todo.length===0){
+    html += '<p>Nessun articolo da acquistare.</p>';
+  } else {
+    html += '<ul class="shop-print-list">';
+    todo.forEach(function(it){ html += '<li>'+escapeHtml(it.name||'')+'</li>'; });
+    html += '</ul>';
+  }
+  html += '</div>';
+  return html;
+}
+$('#shopExportPdf').addEventListener('click', function(){
+  var list = getCurrentShoppingList(); if(!list) return;
+  var area = $('#regPrintArea');
+  area.innerHTML = buildShoppingListForPrint(list);
+  setPrintPageSize('portrait');
+  document.body.classList.add('printing-register');
+  window.print();
+  setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
+});
 
 /* ================= LIBRERIA ================= */
 state.libraries = [];
@@ -4035,6 +4143,7 @@ async function saveLibraryBooks(lib){
     return true;
   }catch(err){ console.error(err); showToast('Errore durante il salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); return false; }
 }
+var LIB_NUMERIC_FIELDS = ['isbn', 'prezzo'];
 function getFilteredSortedBooks(lib, filter){
   var books = (lib.books||[]).slice();
   var f = (filter||'').trim().toLowerCase();
@@ -4044,11 +4153,23 @@ function getFilteredSortedBooks(lib, filter){
     });
   }
   if(libSortField){
-    books.sort(function(a,b){
-      var va = (a[libSortField]||''), vb = (b[libSortField]||'');
-      var cmp = (va+'').localeCompare((vb+''), 'it', {numeric:true, sensitivity:'base'});
-      return libSortDir==='asc' ? cmp : -cmp;
-    });
+    if(LIB_NUMERIC_FIELDS.indexOf(libSortField)>-1){
+      var isValidNum = function(b){ return !isNaN(parseFloat((b[libSortField]+'').replace(',','.'))); };
+      var valid = books.filter(isValidNum);
+      var invalid = books.filter(function(b){ return !isValidNum(b); });
+      valid.sort(function(a,b){
+        var na = parseFloat((a[libSortField]+'').replace(',','.'));
+        var nb = parseFloat((b[libSortField]+'').replace(',','.'));
+        return libSortDir==='asc' ? na-nb : nb-na;
+      });
+      books = valid.concat(invalid);
+    } else {
+      books.sort(function(a,b){
+        var va = (a[libSortField]||''), vb = (b[libSortField]||'');
+        var cmp = (va+'').localeCompare((vb+''), 'it', {sensitivity:'base'});
+        return libSortDir==='asc' ? cmp : -cmp;
+      });
+    }
   }
   return books;
 }
@@ -4058,9 +4179,12 @@ function renderLibraryTable(filter){
   var books = getFilteredSortedBooks(lib, filter);
   var html = '<table class="lib-table"><thead><tr>';
   LIB_FIELDS.forEach(function(fld){
+    var isNum = LIB_NUMERIC_FIELDS.indexOf(fld.key)>-1;
+    var ascTitle = isNum ? 'Ordina dal più piccolo al più grande' : 'Ordina A-Z';
+    var descTitle = isNum ? 'Ordina dal più grande al più piccolo' : 'Ordina Z-A';
     html += '<th><div class="lib-th-inner"><span>'+fld.label+'</span><span class="lib-sort-btns">'+
-      '<button type="button" class="lib-sort-btn'+(libSortField===fld.key && libSortDir==='asc'?' active':'')+'" data-field="'+fld.key+'" data-dir="asc" title="Ordina A-Z">'+iconSvg('arrowUp')+'</button>'+
-      '<button type="button" class="lib-sort-btn'+(libSortField===fld.key && libSortDir==='desc'?' active':'')+'" data-field="'+fld.key+'" data-dir="desc" title="Ordina Z-A">'+iconSvg('arrowDown')+'</button>'+
+      '<button type="button" class="lib-sort-btn'+(libSortField===fld.key && libSortDir==='asc'?' active':'')+'" data-field="'+fld.key+'" data-dir="asc" title="'+ascTitle+'">'+iconSvg('arrowUp')+'</button>'+
+      '<button type="button" class="lib-sort-btn'+(libSortField===fld.key && libSortDir==='desc'?' active':'')+'" data-field="'+fld.key+'" data-dir="desc" title="'+descTitle+'">'+iconSvg('arrowDown')+'</button>'+
     '</span></div></th>';
   });
   html += '<th></th></tr></thead><tbody>';
