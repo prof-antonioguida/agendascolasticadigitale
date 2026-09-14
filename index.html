@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Agenda Didattica</title>
+<title>Super organizer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Work+Sans:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
@@ -402,15 +402,16 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .day-canvas.bg-pentagrammato{
   background:
     repeating-linear-gradient(180deg,
-      transparent 0px, transparent 6px,
-      var(--ink-soft) 6px, var(--ink-soft) 7px,
-      transparent 7px, transparent 13px,
-      var(--ink-soft) 13px, var(--ink-soft) 14px,
-      transparent 14px, transparent 20px,
-      var(--ink-soft) 20px, var(--ink-soft) 21px,
-      transparent 21px, transparent 27px,
-      var(--ink-soft) 27px, var(--ink-soft) 28px,
-      transparent 28px, transparent 80px
+      var(--ink) 0px, var(--ink) 1px,
+      transparent 1px, transparent 8.56px,
+      var(--ink) 8.56px, var(--ink) 9.56px,
+      transparent 9.56px, transparent 17.12px,
+      var(--ink) 17.12px, var(--ink) 18.12px,
+      transparent 18.12px, transparent 25.68px,
+      var(--ink) 25.68px, var(--ink) 26.68px,
+      transparent 26.68px, transparent 34.24px,
+      var(--ink) 34.24px, var(--ink) 35.24px,
+      transparent 35.24px, transparent 110px
     ),
     var(--surface);
 }
@@ -586,7 +587,8 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   body:not(.printing-register) #dayCanvas{
     position:absolute; left:0; top:0;
     transform:scale(var(--print-scale, 1)); transform-origin:top left;
-    box-shadow:none; border:none; background:#fff;
+    box-shadow:none; border:none;
+    --surface:#FFFDF8; --paper-line:#D9CBA6; --ink-soft:#6B6250; --ink:#2E2A22;
   }
   body:not(.printing-register) .day-canvas-outer{overflow:visible;background:#fff;}
 }
@@ -604,12 +606,6 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regAddSheet{--tool-color:#3E9C5C;}
 #regDupSheet{--tool-color:#8B5FBF;}
 #regDelSheet{--tool-color:#A23A2C;}
-#regAddRow{--tool-color:#4E7FBD;}
-#regDelRow{--tool-color:#C0524B;}
-#regAddColQ1{--tool-color:#4E7FBD;}
-#regDelColQ1{--tool-color:#C0524B;}
-#regAddColQ2{--tool-color:#2C5F79;}
-#regDelColQ2{--tool-color:#9c6b2c;}
 #regExportPdf{--tool-color:#5A6B7A;}
 #regUndo{--tool-color:#7A8A99;}
 #regRedo{--tool-color:#7A8A99;}
@@ -656,7 +652,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regPrintArea{position:fixed;left:-99999px;top:0;}
 
 /* ---------- Bilancio ---------- */
-.bal-table{border-collapse:collapse;font-size:.88rem;background:#fff;margin:0 auto;color:#222;width:100%;max-width:1000px;table-layout:fixed;}
+.bal-table{border-collapse:collapse;font-size:.88rem;background:#fff;margin:0 auto;color:#222;width:100%;min-width:680px;max-width:1000px;table-layout:fixed;}
 .bal-table td,.bal-table th{border:1px solid #bbb;padding:6px 8px;text-align:center;overflow:hidden;text-overflow:ellipsis;}
 .bal-table thead th{background:#F3CE7C;color:#4a3410;font-weight:700;}
 .bal-table .bal-desc-cell{text-align:left;width:52%;}
@@ -739,7 +735,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   <div class="auth-card">
     <div class="auth-brand">
       <svg class="book-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="4" y1="7" x2="20" y2="7"></line></svg>
-      <h1>Agenda Didattica</h1>
+      <h1>Super organizer</h1>
       <p>la tua agenda, sempre con te</p>
     </div>
     <div class="auth-tabs">
@@ -762,7 +758,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
       <div class="auth-error" id="authError"></div>
       <button type="submit" class="auth-submit" id="authSubmitBtn">Accedi</button>
     </form>
-    <div class="auth-footer">Agenda Didattica &middot; del prof. Antonio Guida<br><a href="mailto:furtwangler900@gmail.com">furtwangler900@gmail.com</a></div>
+    <div class="auth-footer">Super organizer &middot; del prof. Antonio Guida<br><a href="mailto:furtwangler900@gmail.com">furtwangler900@gmail.com</a></div>
   </div>
 </div>
 
@@ -871,13 +867,6 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" class="icon-btn tool" id="regAddSheet" data-icon="plus" title="Nuova scheda"></button>
     <button type="button" class="icon-btn tool" id="regDupSheet" data-icon="duplicate" title="Duplica scheda"></button>
     <button type="button" class="icon-btn tool" id="regDelSheet" data-icon="trash" title="Elimina scheda"></button>
-    <span class="reg-sep"></span>
-    <button type="button" class="icon-btn tool" id="regAddRow" data-icon="rowplus" title="Aggiungi riga"></button>
-    <button type="button" class="icon-btn tool" id="regDelRow" data-icon="rowminus" title="Elimina ultima riga"></button>
-    <button type="button" class="icon-btn tool" id="regAddColQ1" data-icon="colplus" title="Aggiungi colonna voto (1° quadrimestre)"></button>
-    <button type="button" class="icon-btn tool" id="regDelColQ1" data-icon="colminus" title="Elimina colonna voto (1° quadrimestre)"></button>
-    <button type="button" class="icon-btn tool" id="regAddColQ2" data-icon="colplus" title="Aggiungi colonna voto (2° quadrimestre)"></button>
-    <button type="button" class="icon-btn tool" id="regDelColQ2" data-icon="colminus" title="Elimina colonna voto (2° quadrimestre)"></button>
     <span class="reg-sep"></span>
     <button type="button" class="icon-btn tool" id="regExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
     <span class="reg-sep"></span>
@@ -2654,7 +2643,8 @@ async function openNotebookPageScreen(notebookId, pageId){
   $('#dayDateSub').style.display = 'none';
   $('#notebookBar').style.display = 'flex';
   $('#notebookFooter').style.display = 'flex';
-  $('#dayAgendaName').style.display = 'none';
+  $('#dayAgendaName').style.display = '';
+  $('#dayAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
   setIconButton('btnGoCalendar', 'list', 'Elenco blocchi note');
   updateNotebookBarName();
   showScreen('screen-day');
@@ -3421,10 +3411,6 @@ function updateRowMedia(sheet, r){
   var cell2 = document.querySelector('.reg-media-cell[data-media="2"][data-row="'+r+'"]');
   if(cell2){ cell2.textContent = avg2!==null?fmtAvg(avg2):''; cell2.classList.toggle('low', avg2!==null && avg2<5.5); }
 }
-function addRegisterRow(){
-  var sheet = getCurrentSheet(); if(!sheet) return;
-  insertRegisterRow(sheet, sheet.numRows);
-}
 function insertRegisterRow(sheet, atIndex){
   pushRegisterHistory();
   sheet.names.splice(atIndex,0,'');
@@ -3444,25 +3430,12 @@ function deleteRegisterRow(sheet, r){
   markRegisterDirty();
   renderRegisterTable(sheet);
 }
-$('#regAddRow').addEventListener('click', addRegisterRow);
-$('#regDelRow').addEventListener('click', function(){
-  var sheet = getCurrentSheet(); if(!sheet) return;
-  deleteRegisterRow(sheet, sheet.numRows-1);
-});
-function addRegisterCol(quarter){
-  var sheet = getCurrentSheet(); if(!sheet) return;
-  insertRegisterCol(sheet, quarter, quarter===1?sheet.numCols1:sheet.numCols2);
-}
 function insertRegisterCol(sheet, quarter, atIndex){
   pushRegisterHistory();
   if(quarter===1){ sheet.numCols1++; sheet.grades1.forEach(function(row){ row.splice(atIndex,0,''); }); sheet.desc1.splice(atIndex,0,''); }
   else { sheet.numCols2++; sheet.grades2.forEach(function(row){ row.splice(atIndex,0,''); }); sheet.desc2.splice(atIndex,0,''); }
   markRegisterDirty();
   renderRegisterTable(sheet);
-}
-function delRegisterCol(quarter){
-  var sheet = getCurrentSheet(); if(!sheet) return;
-  deleteRegisterColAt(sheet, quarter, (quarter===1?sheet.numCols1:sheet.numCols2)-1);
 }
 function deleteRegisterColAt(sheet, quarter, atIndex){
   if(quarter===1 && sheet.numCols1<=1){ showToast('Deve restare almeno una colonna.', 'info'); return; }
@@ -3492,10 +3465,6 @@ function openColumnActionsModal(sheet, quarter, colIndex){
   $('#colInsertRight').onclick = function(){ closeModal(); insertRegisterCol(sheet, quarter, colIndex+1); };
   $('#colDeleteThis').onclick = function(){ closeModal(); deleteRegisterColAt(sheet, quarter, colIndex); };
 }
-$('#regAddColQ1').addEventListener('click', function(){ addRegisterCol(1); });
-$('#regDelColQ1').addEventListener('click', function(){ delRegisterCol(1); });
-$('#regAddColQ2').addEventListener('click', function(){ addRegisterCol(2); });
-$('#regDelColQ2').addEventListener('click', function(){ delRegisterCol(2); });
 
 function setPrintPageSize(orientation){
   var styleEl = document.getElementById('dynamicPageSize');
