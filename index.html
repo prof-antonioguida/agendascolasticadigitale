@@ -1147,9 +1147,9 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <button type="button" class="icon-btn" id="npListBack" data-icon="arrowLeft" title="Indietro"></button>
         <h1>Blocco note</h1>
       </div>
-      <button type="button" class="topbar-btn primary" id="npListAddBtn" data-icon="plus" data-label="Nuova pagina"></button>
+      <button type="button" class="topbar-btn primary" id="npListAddBtn" data-icon="plus" data-label="Nuovo blocco note"></button>
     </div>
-    <input type="text" id="npSearchInput" class="np-search" placeholder="Cerca tra i nomi delle pagine...">
+    <input type="text" id="npSearchInput" class="np-search" placeholder="Cerca tra i nomi dei blocchi note...">
     <div id="npListContainer"></div>
   </div>
 </div>
@@ -1274,17 +1274,24 @@ function agendasColl(){ return collection(db, 'users', state.uid, 'agendas'); }
 function agendaRef(id){ return doc(db, 'users', state.uid, 'agendas', id); }
 function daysColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'days'); }
 var pageMode = 'day'; /* 'day' | 'notebook' */
-var currentPageKey = null; /* dateKey per 'day', id pagina per 'notebook' */
+var currentPageKey = null; /* dateKey per 'day', id della singola pagina per 'notebook' */
+var currentNotebookId = null; /* id del blocco note (contenitore) quando pageMode è 'notebook' */
 function elementsColl(agendaId, pageKey){
-  var coll = (pageMode==='notebook') ? 'notebookPages' : 'days';
-  return collection(db, 'users', state.uid, 'agendas', agendaId, coll, pageKey, 'elements');
+  if(pageMode==='notebook'){
+    return collection(db, 'users', state.uid, 'agendas', agendaId, 'notebooks', currentNotebookId, 'pages', pageKey, 'elements');
+  }
+  return collection(db, 'users', state.uid, 'agendas', agendaId, 'days', pageKey, 'elements');
 }
 function elementRef(agendaId, pageKey, elId){
-  var coll = (pageMode==='notebook') ? 'notebookPages' : 'days';
-  return doc(db, 'users', state.uid, 'agendas', agendaId, coll, pageKey, 'elements', elId);
+  if(pageMode==='notebook'){
+    return doc(db, 'users', state.uid, 'agendas', agendaId, 'notebooks', currentNotebookId, 'pages', pageKey, 'elements', elId);
+  }
+  return doc(db, 'users', state.uid, 'agendas', agendaId, 'days', pageKey, 'elements', elId);
 }
-function notebookPagesColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'notebookPages'); }
-function notebookPageDocRef(agendaId, pageId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'notebookPages', pageId); }
+function notebooksColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'notebooks'); }
+function notebookDocRef(agendaId, notebookId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'notebooks', notebookId); }
+function notebookPagesColl(agendaId, notebookId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'notebooks', notebookId, 'pages'); }
+function notebookPageDocRef(agendaId, notebookId, pageId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'notebooks', notebookId, 'pages', pageId); }
 function registerSheetsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'registerSheets'); }
 function registerSheetDocRef(agendaId, sheetId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'registerSheets', sheetId); }
 function balanceSheetsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'balanceSheets'); }
@@ -1725,14 +1732,19 @@ async function deleteAgendaCascade(agendaId){
     batch.delete(dayDoc.ref);
     await batch.commit();
   }
-  var npSnap = await getDocs(notebookPagesColl(agendaId));
-  for(var j=0;j<npSnap.docs.length;j++){
-    var npDoc = npSnap.docs[j];
-    var npElSnap = await getDocs(collection(db,'users',state.uid,'agendas',agendaId,'notebookPages',npDoc.id,'elements'));
-    var npBatch = writeBatch(db);
-    npElSnap.docs.forEach(function(e){ npBatch.delete(e.ref); });
-    npBatch.delete(npDoc.ref);
-    await npBatch.commit();
+  var nbSnap = await getDocs(notebooksColl(agendaId));
+  for(var j=0;j<nbSnap.docs.length;j++){
+    var nbDoc = nbSnap.docs[j];
+    var npSnap = await getDocs(notebookPagesColl(agendaId, nbDoc.id));
+    for(var k=0;k<npSnap.docs.length;k++){
+      var npDoc = npSnap.docs[k];
+      var npElSnap = await getDocs(collection(db,'users',state.uid,'agendas',agendaId,'notebooks',nbDoc.id,'pages',npDoc.id,'elements'));
+      var npBatch = writeBatch(db);
+      npElSnap.docs.forEach(function(e){ npBatch.delete(e.ref); });
+      npBatch.delete(npDoc.ref);
+      await npBatch.commit();
+    }
+    await deleteDoc(nbDoc.ref);
   }
   var ctSnap = await getDocs(contactsColl(agendaId));
   if(ctSnap.docs.length>0){
@@ -1860,16 +1872,21 @@ async function deleteSectionData(agendaId, key){
       await updateDoc(agendaRef(agendaId), {schoolYear:null});
       if(state.currentAgenda && state.currentAgenda.id===agendaId) state.currentAgenda.schoolYear = null;
     } else if(key==='notebook'){
-      var npSnap = await getDocs(notebookPagesColl(agendaId));
-      for(var j=0;j<npSnap.docs.length;j++){
-        var npDoc = npSnap.docs[j];
-        var npElSnap = await getDocs(collection(db,'users',state.uid,'agendas',agendaId,'notebookPages',npDoc.id,'elements'));
-        var npBatch = writeBatch(db);
-        npElSnap.docs.forEach(function(e){ npBatch.delete(e.ref); });
-        npBatch.delete(npDoc.ref);
-        await npBatch.commit();
+      var nbSnap = await getDocs(notebooksColl(agendaId));
+      for(var j=0;j<nbSnap.docs.length;j++){
+        var nbDoc = nbSnap.docs[j];
+        var npSnap = await getDocs(notebookPagesColl(agendaId, nbDoc.id));
+        for(var k=0;k<npSnap.docs.length;k++){
+          var npDoc = npSnap.docs[k];
+          var npElSnap = await getDocs(collection(db,'users',state.uid,'agendas',agendaId,'notebooks',nbDoc.id,'pages',npDoc.id,'elements'));
+          var npBatch = writeBatch(db);
+          npElSnap.docs.forEach(function(e){ npBatch.delete(e.ref); });
+          npBatch.delete(npDoc.ref);
+          await npBatch.commit();
+        }
+        await deleteDoc(nbDoc.ref);
       }
-      state.notebookPages = [];
+      state.notebooks = [];
     } else if(key==='contacts'){
       var ctSnap = await getDocs(contactsColl(agendaId));
       if(ctSnap.docs.length>0){
@@ -2412,6 +2429,7 @@ async function openDayScreen(date){
   setIconButton('btnGoCalendar', 'calendar', 'Calendario');
   $('#dayDateLabel').textContent = formatDateIt(state.currentDate);
   $('#dayDateSub').textContent = saintOfDay(state.currentDate);
+  $('#dayAgendaName').style.display = '';
   $('#dayAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
   showScreen('screen-day');
   growCanvasIfNeeded();
@@ -2423,17 +2441,17 @@ $('#menuBtnNotebook').addEventListener('click', async function(){
 });
 async function enterNotebookSection(){
   try{
-    var snap = await getDocs(notebookPagesColl(state.currentAgendaId));
-    state.notebookPages = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
-  }catch(err){ console.error(err); showToast('Errore nel caricamento del blocco note.', 'error'); state.notebookPages=[]; }
-  if(state.notebookPages.length===0){
-    openNewNotebookPageModal(true);
+    var snap = await getDocs(notebooksColl(state.currentAgendaId));
+    state.notebooks = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+  }catch(err){ console.error(err); showToast('Errore nel caricamento dei blocchi note.', 'error'); state.notebooks=[]; }
+  if(state.notebooks.length===0){
+    openNewNotebookModal(true);
   } else {
     showNotebookListScreen();
   }
 }
-function sortedNotebookPages(){
-  return (state.notebookPages||[]).slice().sort(function(a,b){
+function sortedNotebooks(){
+  return (state.notebooks||[]).slice().sort(function(a,b){
     return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
   });
 }
@@ -2444,45 +2462,45 @@ function showNotebookListScreen(){
 }
 function renderNotebookList(filter){
   var wrap = $('#npListContainer');
-  var pages = sortedNotebookPages();
+  var notebooks = sortedNotebooks();
   var f = (filter||'').trim().toLowerCase();
-  if(f) pages = pages.filter(function(p){ return (p.name||'').toLowerCase().indexOf(f)>-1; });
-  if(pages.length===0){
-    wrap.innerHTML = '<p class="empty-hint">'+(f? 'Nessuna pagina corrisponde alla ricerca.' : 'Non hai ancora creato nessuna pagina.')+'</p>';
+  if(f) notebooks = notebooks.filter(function(n){ return (n.name||'').toLowerCase().indexOf(f)>-1; });
+  if(notebooks.length===0){
+    wrap.innerHTML = '<p class="empty-hint">'+(f? 'Nessun blocco note corrisponde alla ricerca.' : 'Non hai ancora creato nessun blocco note.')+'</p>';
     return;
   }
-  wrap.innerHTML = pages.map(function(p){
-    return '<div class="np-list-item" data-id="'+p.id+'">'+
-      '<span class="np-item-name">'+escapeHtml(p.name||'Senza nome')+'</span>'+
-      '<button type="button" class="np-item-rename" data-id="'+p.id+'" title="Rinomina pagina"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
-      '<button type="button" class="np-item-delete" data-id="'+p.id+'" title="Elimina pagina"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
+  wrap.innerHTML = notebooks.map(function(n){
+    return '<div class="np-list-item" data-id="'+n.id+'">'+
+      '<span class="np-item-name">'+escapeHtml(n.name||'Senza nome')+'</span>'+
+      '<button type="button" class="np-item-rename" data-id="'+n.id+'" title="Rinomina blocco note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
+      '<button type="button" class="np-item-delete" data-id="'+n.id+'" title="Elimina blocco note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
     '</div>';
   }).join('');
   $$('.np-list-item').forEach(function(item){
     item.addEventListener('click', function(e){
       if(e.target.closest('.np-item-delete') || e.target.closest('.np-item-rename')) return;
-      openNotebookPageScreen(item.dataset.id);
+      openNotebook(item.dataset.id);
     });
   });
   $$('.np-item-rename').forEach(function(btn){
-    btn.addEventListener('click', function(e){ e.stopPropagation(); renameNotebookPage(btn.dataset.id); });
+    btn.addEventListener('click', function(e){ e.stopPropagation(); renameNotebook(btn.dataset.id); });
   });
   $$('.np-item-delete').forEach(function(btn){
     btn.addEventListener('click', async function(e){
       e.stopPropagation();
-      await deleteNotebookPage(btn.dataset.id);
+      await deleteNotebook(btn.dataset.id);
     });
   });
 }
 $('#npSearchInput').addEventListener('input', function(e){ renderNotebookList(e.target.value); });
 $('#npListBack').addEventListener('click', function(){ showMenuScreen(); });
-$('#npListAddBtn').addEventListener('click', function(){ openNewNotebookPageModal(false); });
+$('#npListAddBtn').addEventListener('click', function(){ openNewNotebookModal(false); });
 
-function openNewNotebookPageModal(isFirst){
+function openNewNotebookModal(isFirst){
   openModal(
-    '<h3>Nuova pagina</h3>'+
-    '<label for="npNameInput">Nome della pagina</label>'+
-    '<input type="text" id="npNameInput" placeholder="Es. Appunti riunione" maxlength="60">'+
+    '<h3>Nuovo blocco note</h3>'+
+    '<label for="npNameInput">Nome del blocco note</label>'+
+    '<input type="text" id="npNameInput" placeholder="Es. Appunti personali" maxlength="60">'+
     '<div class="modal-actions">'+
       '<button type="button" class="btn-secondary" id="npNameCancel">Annulla</button>'+
       '<button type="button" class="btn-primary" id="npNameConfirm">Crea</button>'+
@@ -2493,34 +2511,98 @@ function openNewNotebookPageModal(isFirst){
   $('#npNameCancel').onclick = function(){ closeModal(); if(isFirst) showMenuScreen(); };
   $('#npNameConfirm').onclick = async function(){
     var name = input.value.trim();
-    if(!name){ showToast('Inserisci un nome per la pagina.', 'error'); return; }
+    if(!name){ showToast('Inserisci un nome per il blocco note.', 'error'); return; }
     try{
       var newId = uid();
-      var pageData = {name:name, createdAt: Date.now(), background:'righi'};
-      await setDoc(notebookPageDocRef(state.currentAgendaId, newId), pageData);
-      var entry = Object.assign({id:newId}, pageData);
-      state.notebookPages = state.notebookPages || [];
-      state.notebookPages.push(entry);
+      var notebookData = {name:name, createdAt: Date.now()};
+      await setDoc(notebookDocRef(state.currentAgendaId, newId), notebookData);
+      var entry = Object.assign({id:newId}, notebookData);
+      state.notebooks = state.notebooks || [];
+      state.notebooks.push(entry);
+      var firstPageId = uid();
+      var pageData = {createdAt: Date.now(), background:'righi'};
+      await setDoc(notebookPageDocRef(state.currentAgendaId, newId, firstPageId), pageData);
       closeModal();
-      openNotebookPageScreen(newId);
-    }catch(err){ console.error(err); showToast('Errore nella creazione della pagina.', 'error'); }
+      openNotebook(newId, firstPageId);
+    }catch(err){ console.error(err); showToast('Errore nella creazione del blocco note.', 'error'); }
   };
 }
-async function deleteNotebookPage(pageId){
-  var page = (state.notebookPages||[]).find(function(p){ return p.id===pageId; });
-  if(!confirm('Eliminare definitivamente la pagina "'+(page?page.name:'')+'"? Questa azione non può essere annullata.')) return;
+function renameNotebook(id){
+  var nb = (state.notebooks||[]).find(function(n){ return n.id===id; });
+  if(!nb) return;
+  openModal(
+    '<h3>Rinomina blocco note</h3>'+
+    '<label for="npRenameInput">Nome del blocco note</label>'+
+    '<input type="text" id="npRenameInput" value="'+escapeAttr(nb.name||'')+'" maxlength="60">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="npRenameCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="npRenameConfirm">Salva</button>'+
+    '</div>'
+  );
+  var input = $('#npRenameInput');
+  setTimeout(function(){ input.focus(); input.select(); }, 60);
+  $('#npRenameCancel').onclick = closeModal;
+  $('#npRenameConfirm').onclick = async function(){
+    var nuovoNome = input.value.trim();
+    if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
+    nb.name = nuovoNome;
+    try{
+      await updateDoc(notebookDocRef(state.currentAgendaId, id), {name: nuovoNome});
+      if(pageMode==='notebook' && currentNotebookId===id) updateNotebookBarName();
+      closeModal();
+      renderNotebookList($('#npSearchInput').value);
+      showToast('Blocco note rinominato.', 'success');
+    }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
+  };
+}
+async function deleteNotebook(id){
+  var nb = (state.notebooks||[]).find(function(n){ return n.id===id; });
+  if(!confirm('Eliminare definitivamente il blocco note "'+(nb?nb.name:'')+'" con tutte le sue pagine? Questa azione non può essere annullata.')) return;
   try{
-    var elSnap = await getDocs(collection(db,'users',state.uid,'agendas',state.currentAgendaId,'notebookPages',pageId,'elements'));
-    var batch = writeBatch(db);
-    elSnap.docs.forEach(function(e){ batch.delete(e.ref); });
-    batch.delete(notebookPageDocRef(state.currentAgendaId, pageId));
-    await batch.commit();
-    state.notebookPages = (state.notebookPages||[]).filter(function(p){ return p.id!==pageId; });
+    var pagesSnap = await getDocs(notebookPagesColl(state.currentAgendaId, id));
+    for(var i=0;i<pagesSnap.docs.length;i++){
+      var pageDoc = pagesSnap.docs[i];
+      var elSnap = await getDocs(collection(db,'users',state.uid,'agendas',state.currentAgendaId,'notebooks',id,'pages',pageDoc.id,'elements'));
+      var batch = writeBatch(db);
+      elSnap.docs.forEach(function(e){ batch.delete(e.ref); });
+      batch.delete(pageDoc.ref);
+      await batch.commit();
+    }
+    await deleteDoc(notebookDocRef(state.currentAgendaId, id));
+    state.notebooks = (state.notebooks||[]).filter(function(n){ return n.id!==id; });
     renderNotebookList($('#npSearchInput').value);
-    showToast('Pagina eliminata.', 'info');
+    showToast('Blocco note eliminato.', 'info');
   }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error'); }
 }
-async function openNotebookPageScreen(pageId){
+
+state.notebooks = [];
+state.notebookPagesCache = [];
+function sortedCurrentNotebookPages(){
+  return (state.notebookPagesCache||[]).slice().sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+}
+function updateNotebookBarName(){
+  var nb = (state.notebooks||[]).find(function(n){ return n.id===currentNotebookId; });
+  var pages = sortedCurrentNotebookPages();
+  var idx = pages.findIndex(function(p){ return p.id===currentPageKey; });
+  $('#npNameDisplay').textContent = (nb?nb.name:'') + (pages.length>1 ? ' — Pagina '+(idx+1)+' di '+pages.length : '');
+}
+async function openNotebook(notebookId, pageId){
+  try{
+    var snap = await getDocs(notebookPagesColl(state.currentAgendaId, notebookId));
+    state.notebookPagesCache = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+  }catch(err){ console.error(err); showToast('Errore nel caricamento del blocco note.', 'error'); state.notebookPagesCache=[]; }
+  var pages = sortedCurrentNotebookPages();
+  if(pages.length===0){
+    var newPageId = uid();
+    var pageData = {createdAt: Date.now(), background:'righi'};
+    try{ await setDoc(notebookPageDocRef(state.currentAgendaId, notebookId, newPageId), pageData); }catch(err){ console.error(err); }
+    state.notebookPagesCache.push(Object.assign({id:newPageId}, pageData));
+    pages = sortedCurrentNotebookPages();
+  }
+  var targetPageId = pageId || pages[0].id;
+  await openNotebookPageScreen(notebookId, targetPageId);
+}
+async function openNotebookPageScreen(notebookId, pageId){
   if(freeDrawOverlay) finishFreeDraw(false);
   if(eraserActive){ eraserActive=false; var eb=$('#btnEraser'); if(eb) eb.classList.remove('active'); }
   if(state.dirty && pageMode==='notebook' && currentPageKey){
@@ -2528,6 +2610,7 @@ async function openNotebookPageScreen(pageId){
     if(doSave) await saveDayData(true);
   }
   pageMode = 'notebook';
+  currentNotebookId = notebookId;
   currentPageKey = pageId;
   state.deletedElementIds = [];
   disarmPlacement();
@@ -2537,11 +2620,11 @@ async function openNotebookPageScreen(pageId){
   canvasZoom = 1;
   var canvas = $('#dayCanvas');
   canvas.innerHTML = '<p class="empty-day-hint">Caricamento...</p>';
-  var pageInfo = (state.notebookPages||[]).find(function(p){ return p.id===pageId; });
+  var pageInfo = (state.notebookPagesCache||[]).find(function(p){ return p.id===pageId; });
   if(!pageInfo){
     try{
-      var pSnap = await getDoc(notebookPageDocRef(state.currentAgendaId, pageId));
-      if(pSnap.exists()){ pageInfo = pSnap.data(); pageInfo.id = pageId; state.notebookPages=state.notebookPages||[]; state.notebookPages.push(pageInfo); }
+      var pSnap = await getDoc(notebookPageDocRef(state.currentAgendaId, notebookId, pageId));
+      if(pSnap.exists()){ pageInfo = pSnap.data(); pageInfo.id = pageId; state.notebookPagesCache=state.notebookPagesCache||[]; state.notebookPagesCache.push(pageInfo); }
     }catch(err){ console.error(err); }
   }
   applyNotebookBackground(pageInfo ? pageInfo.background : 'righi');
@@ -2571,51 +2654,42 @@ async function openNotebookPageScreen(pageId){
   $('#dayDateSub').style.display = 'none';
   $('#notebookBar').style.display = 'flex';
   $('#notebookFooter').style.display = 'flex';
-  setIconButton('btnGoCalendar', 'list', 'Elenco pagine');
-  $('#npNameDisplay').textContent = pageInfo ? pageInfo.name : '';
-  $('#dayAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
+  $('#dayAgendaName').style.display = 'none';
+  setIconButton('btnGoCalendar', 'list', 'Elenco blocchi note');
+  updateNotebookBarName();
   showScreen('screen-day');
   growCanvasIfNeeded();
 }
-function renameNotebookPage(pageId){
-  var page = (state.notebookPages||[]).find(function(p){ return p.id===pageId; });
-  if(!page) return;
-  openModal(
-    '<h3>Rinomina pagina</h3>'+
-    '<label for="npRenameInput">Nome della pagina</label>'+
-    '<input type="text" id="npRenameInput" value="'+escapeAttr(page.name||'')+'" maxlength="60">'+
-    '<div class="modal-actions">'+
-      '<button type="button" class="btn-secondary" id="npRenameCancel">Annulla</button>'+
-      '<button type="button" class="btn-primary" id="npRenameConfirm">Salva</button>'+
-    '</div>'
-  );
-  var input = $('#npRenameInput');
-  setTimeout(function(){ input.focus(); input.select(); }, 60);
-  $('#npRenameCancel').onclick = closeModal;
-  $('#npRenameConfirm').onclick = async function(){
-    var nuovoNome = input.value.trim();
-    if(!nuovoNome){ showToast('Inserisci un nome per la pagina.', 'error'); return; }
-    page.name = nuovoNome;
-    try{
-      await updateDoc(notebookPageDocRef(state.currentAgendaId, pageId), {name: nuovoNome});
-      if(pageMode==='notebook' && currentPageKey===pageId){ $('#npNameDisplay').textContent = nuovoNome; }
-      closeModal();
-      renderNotebookList($('#npSearchInput').value);
-      showToast('Pagina rinominata.', 'success');
-    }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
-  };
-}
-$('#npAddBtn').addEventListener('click', function(){ openNewNotebookPageModal(false); });
+$('#npAddBtn').addEventListener('click', async function(){
+  if(pageMode!=='notebook' || !currentNotebookId) return;
+  try{
+    var newPageId = uid();
+    var pageData = {createdAt: Date.now(), background:'righi'};
+    await setDoc(notebookPageDocRef(state.currentAgendaId, currentNotebookId, newPageId), pageData);
+    state.notebookPagesCache = state.notebookPagesCache || [];
+    state.notebookPagesCache.push(Object.assign({id:newPageId}, pageData));
+    await openNotebookPageScreen(currentNotebookId, newPageId);
+  }catch(err){ console.error(err); showToast('Errore nella creazione della pagina.', 'error'); }
+});
 $('#npDeletePageBtn').addEventListener('click', async function(){
-  if(pageMode!=='notebook') return;
+  if(pageMode!=='notebook' || !currentNotebookId) return;
+  var pages = sortedCurrentNotebookPages();
+  if(pages.length<=1){ showToast('Questa è l\'unica pagina del blocco note: elimina l\'intero blocco note dall\'elenco, se vuoi rimuoverlo.', 'info'); return; }
+  if(!confirm('Eliminare questa pagina? Questa azione non può essere annullata.')) return;
   var pageIdToDelete = currentPageKey;
-  var pages = sortedNotebookPages();
   var idx = pages.findIndex(function(p){ return p.id===pageIdToDelete; });
-  await deleteNotebookPage(pageIdToDelete);
-  var remaining = sortedNotebookPages();
-  if(remaining.length===0){ showMenuScreen(); return; }
+  try{
+    var elSnap = await getDocs(collection(db,'users',state.uid,'agendas',state.currentAgendaId,'notebooks',currentNotebookId,'pages',pageIdToDelete,'elements'));
+    var batch = writeBatch(db);
+    elSnap.docs.forEach(function(e){ batch.delete(e.ref); });
+    batch.delete(notebookPageDocRef(state.currentAgendaId, currentNotebookId, pageIdToDelete));
+    await batch.commit();
+    state.notebookPagesCache = (state.notebookPagesCache||[]).filter(function(p){ return p.id!==pageIdToDelete; });
+    showToast('Pagina eliminata.', 'info');
+  }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error'); return; }
+  var remaining = sortedCurrentNotebookPages();
   var nextIdx = Math.min(idx, remaining.length-1);
-  openNotebookPageScreen(remaining[nextIdx].id);
+  openNotebookPageScreen(currentNotebookId, remaining[nextIdx].id);
 });
 var NP_BACKGROUNDS = [
   ['righi','A righi'], ['quadretti','A quadretti'], ['millimetrata','Carta millimetrata'],
@@ -2629,7 +2703,7 @@ function applyNotebookBackground(bg){
 }
 $('#npBackgroundBtn').addEventListener('click', function(){
   if(pageMode!=='notebook') return;
-  var pageInfo = (state.notebookPages||[]).find(function(p){ return p.id===currentPageKey; });
+  var pageInfo = (state.notebookPagesCache||[]).find(function(p){ return p.id===currentPageKey; });
   var current = pageInfo ? (pageInfo.background||'righi') : 'righi';
   openModal(
     '<h3>Sfondo della pagina</h3>'+
@@ -2648,23 +2722,23 @@ $('#npBackgroundBtn').addEventListener('click', function(){
       closeModal();
       if(pageInfo){
         pageInfo.background = bg;
-        try{ await updateDoc(notebookPageDocRef(state.currentAgendaId, currentPageKey), {background: bg}); }
+        try{ await updateDoc(notebookPageDocRef(state.currentAgendaId, currentNotebookId, currentPageKey), {background: bg}); }
         catch(err){ console.error(err); showToast('Errore nel salvataggio dello sfondo.', 'error'); }
       }
     });
   });
 });
 $('#npPrevBtn').addEventListener('click', function(){
-  var pages = sortedNotebookPages();
+  var pages = sortedCurrentNotebookPages();
   var idx = pages.findIndex(function(p){ return p.id===currentPageKey; });
   if(idx<=0){ showToast('Questa è la prima pagina.', 'info'); return; }
-  openNotebookPageScreen(pages[idx-1].id);
+  openNotebookPageScreen(currentNotebookId, pages[idx-1].id);
 });
 $('#npNextBtn').addEventListener('click', function(){
-  var pages = sortedNotebookPages();
+  var pages = sortedCurrentNotebookPages();
   var idx = pages.findIndex(function(p){ return p.id===currentPageKey; });
   if(idx===-1 || idx>=pages.length-1){ showToast("Questa è l'ultima pagina.", 'info'); return; }
-  openNotebookPageScreen(pages[idx+1].id);
+  openNotebookPageScreen(currentNotebookId, pages[idx+1].id);
 });
 
 /* ================= RUBRICA ================= */
