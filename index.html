@@ -607,6 +607,9 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regDupSheet{--tool-color:#8B5FBF;}
 #regDelSheet{--tool-color:#A23A2C;}
 #regExportPdf{--tool-color:#5A6B7A;}
+#regFmtBold{--tool-color:#4E7FBD;}
+#regFmtItalic{--tool-color:#8B5FBF;}
+#regFmtStrike{--tool-color:#C0524B;}
 #regUndo{--tool-color:#7A8A99;}
 #regRedo{--tool-color:#7A8A99;}
 #balExportPdf{--tool-color:#5A6B7A;}
@@ -869,6 +872,10 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" class="icon-btn tool" id="regDelSheet" data-icon="trash" title="Elimina scheda"></button>
     <span class="reg-sep"></span>
     <button type="button" class="icon-btn tool" id="regExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
+    <span class="reg-sep"></span>
+    <button type="button" class="icon-btn tool" id="regFmtBold" data-icon="fmtBold" title="Grassetto"></button>
+    <button type="button" class="icon-btn tool" id="regFmtItalic" data-icon="fmtItalic" title="Corsivo"></button>
+    <button type="button" class="icon-btn tool" id="regFmtStrike" data-icon="fmtStrike" title="Barrato"></button>
     <span class="reg-sep"></span>
     <button type="button" class="icon-btn tool" id="regUndo" data-icon="undo" title="Annulla ultima modifica"></button>
     <button type="button" class="icon-btn tool" id="regRedo" data-icon="redo" title="Ripristina ultima modifica"></button>
@@ -1331,6 +1338,9 @@ var ICONS = {
   rowminus:'<rect x="3" y="6" width="18" height="6" rx="1"></rect><rect x="3" y="15" width="18" height="6" rx="1"></rect><line x1="15" y1="3" x2="21" y2="3"></line>',
   colplus:'<rect x="4" y="3" width="6" height="18" rx="1"></rect><rect x="13" y="3" width="6" height="18" rx="1"></rect><line x1="19" y1="1" x2="19" y2="7"></line><line x1="16" y1="4" x2="22" y2="4"></line>',
   colminus:'<rect x="6" y="3" width="6" height="18" rx="1"></rect><rect x="15" y="3" width="6" height="18" rx="1"></rect><line x1="15" y1="3" x2="21" y2="3"></line>',
+  fmtBold:'<path d="M7 4h6.5a3.5 3.5 0 0 1 0 7H7z" fill="currentColor" stroke="none"></path><path d="M7 11h7.5a3.5 3.5 0 0 1 0 7H7z" fill="currentColor" stroke="none"></path>',
+  fmtItalic:'<line x1="11" y1="4" x2="17" y2="4"></line><line x1="6" y1="20" x2="12" y2="20"></line><line x1="14" y1="4" x2="9" y2="20"></line>',
+  fmtStrike:'<path d="M7 6c0-1.2 1.3-2.5 5-2.5s5 1.5 5 3"></path><path d="M6.5 18c0 1.2 1.5 2.5 5.2 2.5s5.3-1.5 5.3-3.2"></path><line x1="4" y1="12" x2="20" y2="12"></line>',
   circleEmpty:'<circle cx="12" cy="12" r="9"></circle>',
   circleCheck:'<circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"></circle><path d="M8 12 L11 15 L16 9" stroke="#fff" stroke-width="2" fill="none"></path>',
   background:'<rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="14" x2="21" y2="14"></line>'
@@ -3045,6 +3055,7 @@ function defaultSheetData(name, color){
     grades2:Array.from({length:10}, function(){ return new Array(9).fill(''); }),
     desc1:new Array(9).fill(''), desc2:new Array(9).fill(''),
     excluded1:new Array(9).fill(false), excluded2:new Array(9).fill(false),
+    cellStyles:{},
     createdAt: Date.now()
   };
 }
@@ -3077,6 +3088,7 @@ function sheetFromFirestore(data){
   data.grades2 = deserializeGradeGrid(data.grades2, data.numRows, data.numCols2);
   if(!Array.isArray(data.excluded1) || data.excluded1.length!==data.numCols1) data.excluded1 = new Array(data.numCols1).fill(false);
   if(!Array.isArray(data.excluded2) || data.excluded2.length!==data.numCols2) data.excluded2 = new Array(data.numCols2).fill(false);
+  if(!data.cellStyles || typeof data.cellStyles!=='object') data.cellStyles = {};
   return data;
 }
 function getCurrentSheet(){ return (state.registerSheets||[]).find(function(s){ return s.id===state.currentSheetId; }); }
@@ -3095,6 +3107,8 @@ async function enterRegisterSection(){
   }
   registerDirty = false;
   resetRegisterHistory();
+  regActiveCellKey = null;
+  clearRegFmtButtonsState();
   $('#regAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
   renderRegisterTabs();
   renderRegisterTable(getCurrentSheet());
@@ -3143,6 +3157,8 @@ async function switchRegisterSheet(id){
   state.currentSheetId = id;
   registerDirty = false;
   resetRegisterHistory();
+  regActiveCellKey = null;
+  clearRegFmtButtonsState();
   var b=$('#regSaveBtn'); if(b) b.classList.remove('needs-save');
   renderRegisterTabs();
   renderRegisterTable(getCurrentSheet());
@@ -3274,12 +3290,21 @@ function renderRegisterTable(sheet){
   $('#regTableContainer').innerHTML = buildRegisterTableInnerHTML(sheet, false);
   wireRegisterTableEvents(sheet);
 }
+function cellFmtStyle(sheet, key){
+  var s = sheet.cellStyles && sheet.cellStyles[key];
+  if(!s) return '';
+  var parts = [];
+  if(s.bold) parts.push('font-weight:700');
+  if(s.italic) parts.push('font-style:italic');
+  if(s.strike) parts.push('text-decoration:line-through');
+  return parts.length ? ' style="'+parts.join(';')+'"' : '';
+}
 function buildRegisterTableInnerHTML(sheet, forPrint){
   var n1 = sheet.numCols1, n2 = sheet.numCols2;
   var totalCols = 2+n1+1+n2+1;
   var html = '<table class="reg-table"><thead>';
   html += '<tr>';
-  html += '<th class="reg-classe-cell" colspan="2">CLASSE: '+(forPrint ? escapeHtml(sheet.className||'') : '<input type="text" class="reg-input" id="regClassName" value="'+escapeAttr(sheet.className||'')+'">')+'</th>';
+  html += '<th class="reg-classe-cell" colspan="2">CLASSE: '+(forPrint ? '<span'+cellFmtStyle(sheet,'classname')+'>'+escapeHtml(sheet.className||'')+'</span>' : '<input type="text" class="reg-input" id="regClassName" data-cellkey="classname"'+cellFmtStyle(sheet,'classname')+' value="'+escapeAttr(sheet.className||'')+'">')+'</th>';
   for(var i=0;i<n1;i++){
     var excl1 = !!(sheet.excluded1 && sheet.excluded1[i]);
     html += '<th class="reg-hdr-grade'+(excl1?' excluded':'')+'"'+(forPrint?'':' data-quarter="1" data-col="'+i+'"')+' title="'+(excl1?'Colonna esclusa dalla media':'')+'">'+colLetter(i)+(excl1?'<span class="reg-excl-mark">✕</span>':'')+'</th>';
@@ -3291,8 +3316,9 @@ function buildRegisterTableInnerHTML(sheet, forPrint){
   }
   html += '<th class="reg-hdr-media2">MEDIA 2Q</th></tr></thead><tbody>';
   for(var r=0;r<sheet.numRows;r++){
+    var nameKey = 'name-'+r;
     html += '<tr class="reg-data-row" data-row="'+r+'">';
-    html += '<td class="reg-alt reg-name-cell">'+(forPrint ? escapeHtml(sheet.names[r]||'') : '<input type="text" class="reg-input reg-name-input" data-row="'+r+'" value="'+escapeAttr(sheet.names[r]||'')+'">')+'</td>';
+    html += '<td class="reg-alt reg-name-cell">'+(forPrint ? '<span'+cellFmtStyle(sheet,nameKey)+'>'+escapeHtml(sheet.names[r]||'')+'</span>' : '<input type="text" class="reg-input reg-name-input" data-row="'+r+'" data-cellkey="'+nameKey+'"'+cellFmtStyle(sheet,nameKey)+' value="'+escapeAttr(sheet.names[r]||'')+'">')+'</td>';
     html += '<td class="reg-alt reg-row-actions">'+(forPrint ? '' :
       (r===0 ? '<button type="button" class="reg-add-row-top-btn" data-row="'+r+'" title="Inserisci riga sopra">'+iconSvg('arrowUp')+'</button>' : '')+
       '<button type="button" class="reg-del-row-btn" data-row="'+r+'" title="Elimina questa riga">'+iconSvg('close')+'</button>'+
@@ -3302,7 +3328,8 @@ function buildRegisterTableInnerHTML(sheet, forPrint){
       var v1 = sheet.grades1[r][c1]||'';
       var low1 = isLowGrade(v1);
       var excl1c = !!(sheet.excluded1 && sheet.excluded1[c1]);
-      html += '<td class="reg-alt'+(low1?' low':'')+(excl1c?' excluded':'')+'" data-gcell="1-'+r+'-'+c1+'">'+(forPrint ? escapeHtml(v1) : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="1" data-row="'+r+'" data-col="'+c1+'" value="'+escapeAttr(v1)+'">')+'</td>';
+      var gKey1 = 'grade-1-'+r+'-'+c1;
+      html += '<td class="reg-alt'+(low1?' low':'')+(excl1c?' excluded':'')+'" data-gcell="1-'+r+'-'+c1+'">'+(forPrint ? '<span'+cellFmtStyle(sheet,gKey1)+'>'+escapeHtml(v1)+'</span>' : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="1" data-row="'+r+'" data-col="'+c1+'" data-cellkey="'+gKey1+'"'+cellFmtStyle(sheet,gKey1)+' value="'+escapeAttr(v1)+'">')+'</td>';
     }
     var avg1 = computeAvg(sheet.grades1[r], sheet.excluded1);
     html += '<td class="reg-media-cell'+(avg1!==null && avg1<5.5?' low':'')+'" data-media="1" data-row="'+r+'">'+(avg1!==null?fmtAvg(avg1):'')+'</td>';
@@ -3310,7 +3337,8 @@ function buildRegisterTableInnerHTML(sheet, forPrint){
       var v2 = sheet.grades2[r][c2]||'';
       var low2 = isLowGrade(v2);
       var excl2c = !!(sheet.excluded2 && sheet.excluded2[c2]);
-      html += '<td class="reg-alt'+(low2?' low':'')+(excl2c?' excluded':'')+'" data-gcell="2-'+r+'-'+c2+'">'+(forPrint ? escapeHtml(v2) : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="2" data-row="'+r+'" data-col="'+c2+'" value="'+escapeAttr(v2)+'">')+'</td>';
+      var gKey2 = 'grade-2-'+r+'-'+c2;
+      html += '<td class="reg-alt'+(low2?' low':'')+(excl2c?' excluded':'')+'" data-gcell="2-'+r+'-'+c2+'">'+(forPrint ? '<span'+cellFmtStyle(sheet,gKey2)+'>'+escapeHtml(v2)+'</span>' : '<input type="text" inputmode="decimal" class="reg-input reg-grade-input" data-quarter="2" data-row="'+r+'" data-col="'+c2+'" data-cellkey="'+gKey2+'"'+cellFmtStyle(sheet,gKey2)+' value="'+escapeAttr(v2)+'">')+'</td>';
     }
     var avg2 = computeAvg(sheet.grades2[r], sheet.excluded2);
     html += '<td class="reg-media-cell'+(avg2!==null && avg2<5.5?' low':'')+'" data-media="2" data-row="'+r+'">'+(avg2!==null?fmtAvg(avg2):'')+'</td>';
@@ -3323,11 +3351,13 @@ function buildRegisterTableInnerHTML(sheet, forPrint){
     if(d===0) html += '<td class="reg-desc-label" colspan="2" rowspan="'+maxDesc+'">Descrizione voti</td>';
     if(d<n1){
       var dv1 = sheet.desc1[d]||'';
-      html += '<td class="reg-desc-letter">'+colLetter(d)+'</td><td class="reg-desc-text" colspan="'+n1+'">'+(forPrint?escapeHtml(dv1):'<input type="text" class="reg-input" data-desc-quarter="1" data-desc-index="'+d+'" value="'+escapeAttr(dv1)+'">')+'</td>';
+      var dKey1 = 'desc-1-'+d;
+      html += '<td class="reg-desc-letter">'+colLetter(d)+'</td><td class="reg-desc-text" colspan="'+n1+'">'+(forPrint?'<span'+cellFmtStyle(sheet,dKey1)+'>'+escapeHtml(dv1)+'</span>':'<input type="text" class="reg-input" data-desc-quarter="1" data-desc-index="'+d+'" data-cellkey="'+dKey1+'"'+cellFmtStyle(sheet,dKey1)+' value="'+escapeAttr(dv1)+'">')+'</td>';
     } else { html += '<td colspan="'+(1+n1)+'"></td>'; }
     if(d<n2){
       var dv2 = sheet.desc2[d]||'';
-      html += '<td class="reg-desc-letter">'+colLetter(d)+'</td><td class="reg-desc-text" colspan="'+n2+'">'+(forPrint?escapeHtml(dv2):'<input type="text" class="reg-input" data-desc-quarter="2" data-desc-index="'+d+'" value="'+escapeAttr(dv2)+'">')+'</td>';
+      var dKey2 = 'desc-2-'+d;
+      html += '<td class="reg-desc-letter">'+colLetter(d)+'</td><td class="reg-desc-text" colspan="'+n2+'">'+(forPrint?'<span'+cellFmtStyle(sheet,dKey2)+'>'+escapeHtml(dv2)+'</span>':'<input type="text" class="reg-input" data-desc-quarter="2" data-desc-index="'+d+'" data-cellkey="'+dKey2+'"'+cellFmtStyle(sheet,dKey2)+' value="'+escapeAttr(dv2)+'">')+'</td>';
     } else { html += '<td colspan="'+(1+n2)+'"></td>'; }
     html += '</tr>';
   }
@@ -3385,7 +3415,47 @@ function wireRegisterTableEvents(sheet){
       openColumnActionsModal(sheet, th.dataset.quarter, +th.dataset.col);
     });
   });
+  $$('[data-cellkey]').forEach(function(inp){
+    inp.addEventListener('focus', function(){
+      regActiveCellKey = inp.dataset.cellkey;
+      updateRegFmtButtonsState(sheet);
+    });
+  });
 }
+var regActiveCellKey = null;
+function clearRegFmtButtonsState(){
+  var bBtn = $('#regFmtBold'), iBtn = $('#regFmtItalic'), sBtn = $('#regFmtStrike');
+  if(bBtn) bBtn.classList.remove('active');
+  if(iBtn) iBtn.classList.remove('active');
+  if(sBtn) sBtn.classList.remove('active');
+}
+function updateRegFmtButtonsState(sheet){
+  var s = (sheet.cellStyles && regActiveCellKey) ? sheet.cellStyles[regActiveCellKey] : null;
+  var bBtn = $('#regFmtBold'), iBtn = $('#regFmtItalic'), sBtn = $('#regFmtStrike');
+  if(bBtn) bBtn.classList.toggle('active', !!(s && s.bold));
+  if(iBtn) iBtn.classList.toggle('active', !!(s && s.italic));
+  if(sBtn) sBtn.classList.toggle('active', !!(s && s.strike));
+}
+function toggleRegCellFormat(prop){
+  var sheet = getCurrentSheet(); if(!sheet || !regActiveCellKey) { showToast('Seleziona prima una cella.', 'info'); return; }
+  pushRegisterHistory();
+  if(!sheet.cellStyles) sheet.cellStyles = {};
+  var cur = sheet.cellStyles[regActiveCellKey] || {bold:false, italic:false, strike:false};
+  cur[prop] = !cur[prop];
+  sheet.cellStyles[regActiveCellKey] = cur;
+  markRegisterDirty();
+  var input = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]');
+  if(input){
+    input.style.fontWeight = cur.bold ? '700' : '';
+    input.style.fontStyle = cur.italic ? 'italic' : '';
+    input.style.textDecoration = cur.strike ? 'line-through' : '';
+    input.focus();
+  }
+  updateRegFmtButtonsState(sheet);
+}
+$('#regFmtBold').addEventListener('click', function(){ toggleRegCellFormat('bold'); });
+$('#regFmtItalic').addEventListener('click', function(){ toggleRegCellFormat('italic'); });
+$('#regFmtStrike').addEventListener('click', function(){ toggleRegCellFormat('strike'); });
 function findGradeInput(quarter, row, col){
   return document.querySelector('.reg-grade-input[data-quarter="'+quarter+'"][data-row="'+row+'"][data-col="'+col+'"]');
 }
