@@ -576,9 +576,8 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regExportPdf{--tool-color:#5A6B7A;}
 #regUndo{--tool-color:#7A8A99;}
 #regRedo{--tool-color:#7A8A99;}
-#balAddRow{--tool-color:#4E7FBD;}
-#balDelRow{--tool-color:#C0524B;}
 #balExportPdf{--tool-color:#5A6B7A;}
+#libExportPdf{--tool-color:#5A6B7A;}
 .reg-table-outer{overflow:auto;padding:0 16px 10px;max-width:100%;-webkit-overflow-scrolling:touch;}
 .reg-table{border-collapse:collapse;font-size:.82rem;background:#fff;margin:0 auto;color:#222;}
 .reg-table td,.reg-table th{border:1px solid #bbb;padding:3px 5px;text-align:center;min-width:32px;}
@@ -635,6 +634,55 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .bal-table .bal-del-row-btn svg,.bal-table .bal-add-row-btn svg{width:12px;height:12px;}
 .bal-table tr.bal-total-row td,.bal-table tr.bal-diff-row td{background:#CFE8CB;font-weight:700;color:#1f3d1c;}
 .bal-table tr.bal-total-row td.bal-label,.bal-table tr.bal-diff-row td.bal-label{text-align:left;}
+</style>
+
+<style>
+/* ---------- Lista della spesa ---------- */
+.shop-section{margin-bottom:22px;}
+.shop-section-header{
+  padding:9px 16px;border-radius:8px;font-weight:700;font-size:.92rem;margin-bottom:8px;
+}
+.shop-header-todo{background:#F3CE7C;color:#4a3410;}
+.shop-header-done{background:#CFE8CB;color:#1f3d1c;}
+.shop-item{
+  display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--paper-line);
+  border-radius:10px;padding:12px 14px;margin-bottom:8px;
+}
+.shop-item-toggle{
+  background:none;border:none;cursor:pointer;flex-shrink:0;width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center;padding:0;color:#4E7FBD;
+}
+.shop-item-toggle svg{width:22px;height:22px;}
+.shop-item.done .shop-item-toggle{color:#3E9C5C;}
+.shop-item-name{flex:1;font-size:.95rem;color:var(--ink);}
+.shop-item.done .shop-item-name{color:var(--ink-soft);text-decoration:line-through;}
+.shop-item-rename,.shop-item-delete{
+  background:none;border:none;color:var(--ink-soft);cursor:pointer;flex-shrink:0;
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;
+}
+.shop-item-rename:hover{background:var(--paper-deep);color:var(--ink);}
+.shop-item-delete:hover{background:rgba(162,58,44,.15);color:var(--accent);}
+.shop-item-rename svg,.shop-item-delete svg{width:14px;height:14px;}
+.shop-empty-hint{color:var(--ink-soft);font-size:.85rem;padding:6px 4px;}
+</style>
+
+<style>
+/* ---------- Libreria ---------- */
+.lib-table{border-collapse:collapse;font-size:.85rem;background:#fff;margin:0 auto;color:#222;width:100%;min-width:760px;}
+.lib-table td,.lib-table th{border:1px solid #bbb;padding:7px 9px;text-align:left;vertical-align:top;}
+.lib-table thead th{background:#F3CE7C;color:#4a3410;}
+.lib-th-inner{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.lib-sort-btns{display:flex;flex-direction:column;gap:1px;}
+.lib-sort-btn{background:none;border:none;color:#4a3410;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;opacity:.55;}
+.lib-sort-btn:hover,.lib-sort-btn.active{opacity:1;}
+.lib-sort-btn svg{width:11px;height:11px;}
+.lib-table tbody tr:nth-child(odd) td{background:#fff;}
+.lib-table tbody tr:nth-child(even) td{background:#f2f2f2;}
+.lib-row-actions{display:flex;gap:4px;white-space:nowrap;}
+.lib-row-actions button{background:none;border:none;cursor:pointer;color:var(--ink-soft);padding:2px;display:flex;align-items:center;justify-content:center;}
+.lib-row-actions button:hover{color:var(--accent);}
+.lib-row-actions svg{width:13px;height:13px;}
+.lib-empty-hint{color:var(--ink-soft);font-size:.85rem;padding:14px 4px;text-align:center;}
 </style>
 </head>
 <body>
@@ -756,6 +804,16 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <h3>Bilancio</h3>
         <p>Entrate, uscite e totali</p>
       </button>
+      <button type="button" class="menu-tile" id="menuBtnShopping">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.3"></circle><circle cx="17" cy="20" r="1.3"></circle><path d="M2 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.6L21 7H6"></path></svg>
+        <h3>Lista della spesa</h3>
+        <p>Articoli da acquistare e già acquistati</p>
+      </button>
+      <button type="button" class="menu-tile" id="menuBtnLibrary">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4 H10 A1.5 1.5 0 0 1 11.5 5.5 V20 H5.5 A1.5 1.5 0 0 1 4 18.5 Z"></path><path d="M20 4 H14 A1.5 1.5 0 0 0 12.5 5.5 V20 H18.5 A1.5 1.5 0 0 0 20 18.5 Z"></path><line x1="12" y1="7" x2="12" y2="20"></line></svg>
+        <h3>Libreria</h3>
+        <p>Catalogo libri con ricerca e ordinamento</p>
+      </button>
     </div>
   </div>
 </div>
@@ -817,13 +875,80 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" class="topbar-btn primary" id="balSaveBtn" data-icon="save" data-label="Salva"></button>
   </div>
   <div class="reg-toolbar">
-    <button type="button" class="icon-btn tool" id="balAddRow" data-icon="rowplus" title="Aggiungi riga"></button>
-    <button type="button" class="icon-btn tool" id="balDelRow" data-icon="rowminus" title="Elimina ultima riga"></button>
-    <span class="reg-sep"></span>
     <button type="button" class="icon-btn tool" id="balExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
   </div>
   <div class="reg-table-outer">
     <div id="balTableContainer"></div>
+  </div>
+</div>
+
+<!-- ============ LISTA DELLA SPESA - elenco ============ -->
+<div id="screen-shopping-list" class="screen paper">
+  <div class="page-rings">__RINGS__</div>
+  <div class="page-wrap">
+    <div class="top-header">
+      <div class="header-back">
+        <button type="button" class="icon-btn" id="shopListBack" data-icon="arrowLeft" title="Indietro"></button>
+        <h1>Lista della spesa</h1>
+      </div>
+      <button type="button" class="topbar-btn primary" id="shopListAddBtn" data-icon="plus" data-label="Nuova lista"></button>
+    </div>
+    <div id="shopListContainer"></div>
+  </div>
+</div>
+
+<!-- ============ LISTA DELLA SPESA - articoli ============ -->
+<div id="screen-shopping" class="screen paper">
+  <div class="page-rings">__RINGS__</div>
+  <div class="page-wrap">
+    <div class="top-header">
+      <div class="header-back">
+        <button type="button" class="icon-btn" id="shopBack" data-icon="arrowLeft" title="Indietro"></button>
+        <h1 id="shopListName"></h1>
+      </div>
+      <button type="button" class="topbar-btn primary" id="shopAddItemBtn" data-icon="plus" data-label="Nuovo articolo"></button>
+    </div>
+    <div class="shop-section">
+      <div class="shop-section-header shop-header-todo" id="shopTodoHeader">Da acquistare</div>
+      <div id="shopTodoContainer"></div>
+    </div>
+    <div class="shop-section">
+      <div class="shop-section-header shop-header-done" id="shopDoneHeader">Già acquistato</div>
+      <div id="shopDoneContainer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LIBRERIA - elenco ============ -->
+<div id="screen-library-list" class="screen paper">
+  <div class="page-rings">__RINGS__</div>
+  <div class="page-wrap">
+    <div class="top-header">
+      <div class="header-back">
+        <button type="button" class="icon-btn" id="libListBack" data-icon="arrowLeft" title="Indietro"></button>
+        <h1>Libreria</h1>
+      </div>
+      <button type="button" class="topbar-btn primary" id="libListAddBtn" data-icon="plus" data-label="Nuova libreria"></button>
+    </div>
+    <div id="libListContainer"></div>
+  </div>
+</div>
+
+<!-- ============ LIBRERIA - libri ============ -->
+<div id="screen-library" class="screen paper">
+  <div class="day-topbar">
+    <div class="nav-group">
+      <button type="button" class="icon-btn" id="libBack" data-icon="arrowLeft" title="Indietro"></button>
+      <span class="day-agenda-tag" id="libName"></span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button type="button" class="icon-btn tool" id="libExportPdf" data-icon="pdf" title="Scarica in PDF"></button>
+      <button type="button" class="topbar-btn primary" id="libAddBookBtn" data-icon="plus" data-label="Nuovo libro"></button>
+    </div>
+  </div>
+  <input type="text" id="libSearchInput" class="np-search" placeholder="Cerca tra i libri..." style="margin:16px 16px 0;width:calc(100% - 32px);">
+  <div class="reg-table-outer">
+    <div id="libTableContainer"></div>
   </div>
 </div>
 
@@ -1118,6 +1243,10 @@ function registerSheetsColl(agendaId){ return collection(db, 'users', state.uid,
 function registerSheetDocRef(agendaId, sheetId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'registerSheets', sheetId); }
 function balanceSheetsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'balanceSheets'); }
 function balanceSheetDocRef(agendaId, sheetId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'balanceSheets', sheetId); }
+function shoppingListsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'shoppingLists'); }
+function shoppingListDocRef(agendaId, listId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'shoppingLists', listId); }
+function librariesColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'libraries'); }
+function libraryDocRef(agendaId, libId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'libraries', libId); }
 function contactsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'contacts'); }
 function contactDocRef(agendaId, contactId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'contacts', contactId); }
 function scheduleLinksColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'scheduleLinks'); }
@@ -1133,6 +1262,8 @@ var ICONS = {
   close:'<line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line>',
   arrowLeft:'<polyline points="15 4 7 12 15 20"></polyline>',
   arrowRight:'<polyline points="9 4 17 12 9 20"></polyline>',
+  arrowUp:'<polyline points="4 15 12 7 20 15"></polyline>',
+  arrowDown:'<polyline points="4 9 12 17 20 9"></polyline>',
   text:'<path d="M5 6 H19 M12 6 V19"></path>',
   mic:'<rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11 A7 7 0 0 0 19 11"></path><line x1="12" y1="18" x2="12" y2="22"></line><line x1="8" y1="22" x2="16" y2="22"></line>',
   pencil:'<path d="M4 20 L4 16 L15 5 L19 9 L8 20 Z"></path><line x1="13" y1="7" x2="17" y2="11"></line>',
@@ -1157,7 +1288,9 @@ var ICONS = {
   rowplus:'<rect x="3" y="4" width="18" height="6" rx="1"></rect><rect x="3" y="13" width="18" height="6" rx="1"></rect><line x1="12" y1="10.5" x2="12" y2="10.5"></line><line x1="19" y1="1" x2="19" y2="7"></line><line x1="16" y1="4" x2="22" y2="4"></line>',
   rowminus:'<rect x="3" y="6" width="18" height="6" rx="1"></rect><rect x="3" y="15" width="18" height="6" rx="1"></rect><line x1="15" y1="3" x2="21" y2="3"></line>',
   colplus:'<rect x="4" y="3" width="6" height="18" rx="1"></rect><rect x="13" y="3" width="6" height="18" rx="1"></rect><line x1="19" y1="1" x2="19" y2="7"></line><line x1="16" y1="4" x2="22" y2="4"></line>',
-  colminus:'<rect x="6" y="3" width="6" height="18" rx="1"></rect><rect x="15" y="3" width="6" height="18" rx="1"></rect><line x1="15" y1="3" x2="21" y2="3"></line>'
+  colminus:'<rect x="6" y="3" width="6" height="18" rx="1"></rect><rect x="15" y="3" width="6" height="18" rx="1"></rect><line x1="15" y1="3" x2="21" y2="3"></line>',
+  circleEmpty:'<circle cx="12" cy="12" r="9"></circle>',
+  circleCheck:'<circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"></circle><path d="M8 12 L11 15 L16 9" stroke="#fff" stroke-width="2" fill="none"></path>'
 };
 function iconSvg(name){
   return ICONS[name] ? ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS[name]+'</svg>') : '';
@@ -1578,6 +1711,18 @@ async function deleteAgendaCascade(agendaId){
     balSnap.docs.forEach(function(d){ balBatch.delete(d.ref); });
     await balBatch.commit();
   }
+  var shopSnap = await getDocs(shoppingListsColl(agendaId));
+  if(shopSnap.docs.length>0){
+    var shopBatch = writeBatch(db);
+    shopSnap.docs.forEach(function(d){ shopBatch.delete(d.ref); });
+    await shopBatch.commit();
+  }
+  var libSnap = await getDocs(librariesColl(agendaId));
+  if(libSnap.docs.length>0){
+    var libBatch = writeBatch(db);
+    libSnap.docs.forEach(function(d){ libBatch.delete(d.ref); });
+    await libBatch.commit();
+  }
   await deleteDoc(agendaRef(agendaId));
 }
 
@@ -1589,7 +1734,9 @@ var SECTION_TILES = {
   contacts: 'menuBtnContacts',
   links: 'menuBtnScheduleLink',
   register: 'menuBtnRegistro',
-  balance: 'menuBtnBalance'
+  balance: 'menuBtnBalance',
+  shopping: 'menuBtnShopping',
+  library: 'menuBtnLibrary'
 };
 function showMenuScreen(){
   $('#menuAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
@@ -1608,14 +1755,15 @@ $('#menuBackHome').addEventListener('click', function(){ showHomeScreen(); });
 $('#menuBtnAddSections').addEventListener('click', function(){ openAddSectionsModal(); });
 var SECTION_LABELS = {
   calendar:'Calendario', schoolCalendar:'Calendario scolastico', notebook:'Blocco note', contacts:'Rubrica',
-  links:'Schedule link', register:'Registro personale', balance:'Bilancio'
+  links:'Schedule link', register:'Registro personale', balance:'Bilancio', shopping:'Lista della spesa', library:'Libreria'
 };
 function openAddSectionsModal(){
   var enabled = state.currentAgenda.enabledSections;
   if(!Array.isArray(enabled)) enabled = Object.keys(SECTION_TILES);
   var options = [
     ['calendar','Calendario'], ['schoolCalendar','Calendario scolastico'], ['notebook','Blocco note'], ['contacts','Rubrica'],
-    ['links','Schedule link'], ['register','Registro personale'], ['balance','Bilancio']
+    ['links','Schedule link'], ['register','Registro personale'], ['balance','Bilancio'], ['shopping','Lista della spesa'],
+    ['library','Libreria']
   ];
   var rows = options.map(function(o){
     var checked = enabled.indexOf(o[0])>-1 ? ' checked' : '';
@@ -1707,6 +1855,22 @@ async function deleteSectionData(agendaId, key){
         await balBatch.commit();
       }
       state.balanceSheets = [];
+    } else if(key==='shopping'){
+      var shopSnap = await getDocs(shoppingListsColl(agendaId));
+      if(shopSnap.docs.length>0){
+        var shopBatch = writeBatch(db);
+        shopSnap.docs.forEach(function(d){ shopBatch.delete(d.ref); });
+        await shopBatch.commit();
+      }
+      state.shoppingLists = [];
+    } else if(key==='library'){
+      var libSnap = await getDocs(librariesColl(agendaId));
+      if(libSnap.docs.length>0){
+        var libBatch = writeBatch(db);
+        libSnap.docs.forEach(function(d){ libBatch.delete(d.ref); });
+        await libBatch.commit();
+      }
+      state.libraries = [];
     }
   }catch(err){ console.error(err); showToast('Errore durante la rimozione dei dati di "'+SECTION_LABELS[key]+'".', 'error'); }
 }
@@ -3440,14 +3604,6 @@ function deleteBalanceRow(sheet, r){
   markBalanceDirty();
   renderBalanceTable(sheet);
 }
-$('#balAddRow').addEventListener('click', function(){
-  var sheet = getCurrentBalance(); if(!sheet) return;
-  insertBalanceRow(sheet, sheet.rows.length);
-});
-$('#balDelRow').addEventListener('click', function(){
-  var sheet = getCurrentBalance(); if(!sheet) return;
-  deleteBalanceRow(sheet, sheet.rows.length-1);
-});
 async function saveBalanceSheet(silent){
   var sheet = getCurrentBalance();
   if(!sheet) return false;
@@ -3501,6 +3657,505 @@ $('#balExportPdf').addEventListener('click', function(){
   $('#balExpCancel').onclick = closeModal;
   $('#balExpCurrent').onclick = function(){ closeModal(); printBalanceSheets([getCurrentBalance()]); };
   $('#balExpAll').onclick = function(){ closeModal(); printBalanceSheets(state.balanceSheets||[]); };
+});
+
+/* ================= LISTA DELLA SPESA ================= */
+state.shoppingLists = [];
+state.currentShoppingListId = null;
+function getCurrentShoppingList(){ return (state.shoppingLists||[]).find(function(l){ return l.id===state.currentShoppingListId; }); }
+function sortedShoppingLists(){
+  return (state.shoppingLists||[]).slice().sort(function(a,b){
+    return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
+  });
+}
+$('#menuBtnShopping').addEventListener('click', async function(){
+  try{
+    var snap = await getDocs(shoppingListsColl(state.currentAgendaId));
+    state.shoppingLists = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+  }catch(err){ console.error(err); showToast('Errore nel caricamento della lista della spesa.', 'error'); state.shoppingLists=[]; }
+  if(state.shoppingLists.length===0){
+    openNewShoppingListModal(true);
+  } else {
+    showShoppingListScreen();
+  }
+});
+function showShoppingListScreen(){
+  renderShoppingListsList();
+  showScreen('screen-shopping-list');
+}
+function renderShoppingListsList(){
+  var wrap = $('#shopListContainer');
+  var lists = sortedShoppingLists();
+  if(lists.length===0){
+    wrap.innerHTML = '<p class="empty-hint">Non hai ancora creato nessuna lista della spesa.</p>';
+    return;
+  }
+  wrap.innerHTML = lists.map(function(l){
+    return '<div class="np-list-item" data-id="'+l.id+'">'+
+      '<span class="np-item-name">'+escapeHtml(l.name||'Senza nome')+'</span>'+
+      '<button type="button" class="np-item-rename" data-id="'+l.id+'" title="Rinomina lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
+      '<button type="button" class="np-item-delete" data-id="'+l.id+'" title="Elimina lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
+    '</div>';
+  }).join('');
+  $$('#shopListContainer .np-list-item').forEach(function(item){
+    item.addEventListener('click', function(e){
+      if(e.target.closest('.np-item-delete') || e.target.closest('.np-item-rename')) return;
+      openShoppingListScreen(item.dataset.id);
+    });
+  });
+  $$('#shopListContainer .np-item-rename').forEach(function(btn){
+    btn.addEventListener('click', function(e){ e.stopPropagation(); renameShoppingList(btn.dataset.id); });
+  });
+  $$('#shopListContainer .np-item-delete').forEach(function(btn){
+    btn.addEventListener('click', async function(e){ e.stopPropagation(); await deleteShoppingList(btn.dataset.id); });
+  });
+}
+$('#shopListBack').addEventListener('click', function(){ showMenuScreen(); });
+$('#shopListAddBtn').addEventListener('click', function(){ openNewShoppingListModal(false); });
+function openNewShoppingListModal(isFirst){
+  openModal(
+    '<h3>Nuova lista della spesa</h3>'+
+    '<label for="shopListNameInput">Nome della lista</label>'+
+    '<input type="text" id="shopListNameInput" placeholder="Es. Spesa settimanale" maxlength="60">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="shopListNameCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="shopListNameConfirm">Crea</button>'+
+    '</div>'
+  );
+  var input = $('#shopListNameInput');
+  setTimeout(function(){ input.focus(); }, 60);
+  $('#shopListNameCancel').onclick = function(){ closeModal(); if(isFirst) showMenuScreen(); };
+  $('#shopListNameConfirm').onclick = async function(){
+    var name = input.value.trim();
+    if(!name){ showToast('Inserisci un nome per la lista.', 'error'); return; }
+    try{
+      var newId = uid();
+      var data = {name:name, items:[], createdAt: Date.now()};
+      await setDoc(shoppingListDocRef(state.currentAgendaId, newId), data);
+      var entry = Object.assign({id:newId}, data);
+      state.shoppingLists = state.shoppingLists || [];
+      state.shoppingLists.push(entry);
+      closeModal();
+      openShoppingListScreen(newId);
+    }catch(err){ console.error(err); showToast('Errore nella creazione della lista.', 'error'); }
+  };
+}
+function renameShoppingList(id){
+  var list = (state.shoppingLists||[]).find(function(l){ return l.id===id; });
+  if(!list) return;
+  openModal(
+    '<h3>Rinomina lista</h3>'+
+    '<label for="shopListRenameInput">Nome della lista</label>'+
+    '<input type="text" id="shopListRenameInput" value="'+escapeAttr(list.name||'')+'" maxlength="60">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="shopListRenameCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="shopListRenameConfirm">Salva</button>'+
+    '</div>'
+  );
+  var input = $('#shopListRenameInput');
+  setTimeout(function(){ input.focus(); input.select(); }, 60);
+  $('#shopListRenameCancel').onclick = closeModal;
+  $('#shopListRenameConfirm').onclick = async function(){
+    var nuovoNome = input.value.trim();
+    if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
+    list.name = nuovoNome;
+    try{
+      await updateDoc(shoppingListDocRef(state.currentAgendaId, id), {name: nuovoNome});
+      if(state.currentShoppingListId===id) $('#shopListName').textContent = nuovoNome;
+      closeModal();
+      renderShoppingListsList();
+      showToast('Lista rinominata.', 'success');
+    }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
+  };
+}
+async function deleteShoppingList(id){
+  var list = (state.shoppingLists||[]).find(function(l){ return l.id===id; });
+  if(!confirm('Eliminare definitivamente la lista "'+(list?list.name:'')+'"? Questa azione non può essere annullata.')) return;
+  try{
+    await deleteDoc(shoppingListDocRef(state.currentAgendaId, id));
+    state.shoppingLists = (state.shoppingLists||[]).filter(function(l){ return l.id!==id; });
+    renderShoppingListsList();
+    showToast('Lista eliminata.', 'info');
+  }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error'); }
+}
+function openShoppingListScreen(id){
+  state.currentShoppingListId = id;
+  var list = getCurrentShoppingList();
+  $('#shopListName').textContent = list ? list.name : '';
+  renderShoppingItems(list);
+  showScreen('screen-shopping');
+}
+$('#shopBack').addEventListener('click', function(){ showShoppingListScreen(); });
+function sortedItems(items){
+  return (items||[]).slice().sort(function(a,b){
+    return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
+  });
+}
+function renderShoppingItems(list){
+  if(!list){ $('#shopTodoContainer').innerHTML=''; $('#shopDoneContainer').innerHTML=''; return; }
+  var todo = sortedItems((list.items||[]).filter(function(it){ return !it.bought; }));
+  var done = sortedItems((list.items||[]).filter(function(it){ return it.bought; }));
+  $('#shopTodoHeader').textContent = 'Da acquistare ('+todo.length+')';
+  $('#shopDoneHeader').textContent = 'Già acquistato ('+done.length+')';
+  $('#shopTodoContainer').innerHTML = todo.length ? todo.map(renderShoppingItemHTML).join('') : '<p class="shop-empty-hint">Nessun articolo da acquistare.</p>';
+  $('#shopDoneContainer').innerHTML = done.length ? done.map(renderShoppingItemHTML).join('') : '<p class="shop-empty-hint">Nessun articolo acquistato.</p>';
+  wireShoppingItemEvents(list);
+}
+function renderShoppingItemHTML(item){
+  return '<div class="shop-item'+(item.bought?' done':'')+'" data-id="'+item.id+'">'+
+    '<button type="button" class="shop-item-toggle" data-id="'+item.id+'" title="'+(item.bought?'Segna da acquistare':'Segna come acquistato')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">'+(item.bought?ICONS.circleCheck:ICONS.circleEmpty)+'</svg></button>'+
+    '<span class="shop-item-name">'+escapeHtml(item.name||'')+'</span>'+
+    '<button type="button" class="shop-item-rename" data-id="'+item.id+'" title="Rinomina articolo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
+    '<button type="button" class="shop-item-delete" data-id="'+item.id+'" title="Elimina articolo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
+  '</div>';
+}
+function wireShoppingItemEvents(list){
+  $$('.shop-item-toggle').forEach(function(btn){
+    btn.addEventListener('click', function(){ toggleShoppingItem(list, btn.dataset.id); });
+  });
+  $$('.shop-item-rename').forEach(function(btn){
+    btn.addEventListener('click', function(){ renameShoppingItem(list, btn.dataset.id); });
+  });
+  $$('.shop-item-delete').forEach(function(btn){
+    btn.addEventListener('click', function(){ deleteShoppingItem(list, btn.dataset.id); });
+  });
+}
+async function saveShoppingListItems(list){
+  try{
+    await updateDoc(shoppingListDocRef(state.currentAgendaId, list.id), {items: list.items});
+    return true;
+  }catch(err){ console.error(err); showToast('Errore durante il salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); return false; }
+}
+async function toggleShoppingItem(list, itemId){
+  var item = list.items.find(function(it){ return it.id===itemId; });
+  if(!item) return;
+  item.bought = !item.bought;
+  renderShoppingItems(list);
+  await saveShoppingListItems(list);
+}
+function renameShoppingItem(list, itemId){
+  var item = list.items.find(function(it){ return it.id===itemId; });
+  if(!item) return;
+  openModal(
+    '<h3>Rinomina articolo</h3>'+
+    '<label for="shopItemRenameInput">Nome articolo</label>'+
+    '<input type="text" id="shopItemRenameInput" value="'+escapeAttr(item.name||'')+'" maxlength="80">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="shopItemRenameCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="shopItemRenameConfirm">Salva</button>'+
+    '</div>'
+  );
+  var input = $('#shopItemRenameInput');
+  setTimeout(function(){ input.focus(); input.select(); }, 60);
+  $('#shopItemRenameCancel').onclick = closeModal;
+  $('#shopItemRenameConfirm').onclick = async function(){
+    var nuovoNome = input.value.trim();
+    if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
+    item.name = nuovoNome;
+    closeModal();
+    renderShoppingItems(list);
+    await saveShoppingListItems(list);
+    showToast('Articolo rinominato.', 'success');
+  };
+}
+async function deleteShoppingItem(list, itemId){
+  var item = list.items.find(function(it){ return it.id===itemId; });
+  if(!confirm('Eliminare l\'articolo "'+(item?item.name:'')+'"?')) return;
+  list.items = list.items.filter(function(it){ return it.id!==itemId; });
+  renderShoppingItems(list);
+  await saveShoppingListItems(list);
+  showToast('Articolo eliminato.', 'info');
+}
+$('#shopAddItemBtn').addEventListener('click', function(){
+  var list = getCurrentShoppingList(); if(!list) return;
+  openModal(
+    '<h3>Nuovo articolo</h3>'+
+    '<label for="shopNewItemInput">Nome articolo</label>'+
+    '<input type="text" id="shopNewItemInput" placeholder="Es. latte" maxlength="80">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="shopNewItemCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="shopNewItemConfirm">Aggiungi</button>'+
+    '</div>'
+  );
+  var input = $('#shopNewItemInput');
+  setTimeout(function(){ input.focus(); }, 60);
+  $('#shopNewItemCancel').onclick = closeModal;
+  $('#shopNewItemConfirm').onclick = async function(){
+    var name = input.value.trim();
+    if(!name){ showToast('Inserisci un nome.', 'error'); return; }
+    list.items = list.items || [];
+    list.items.push({id:uid(), name:name, bought:false});
+    closeModal();
+    renderShoppingItems(list);
+    await saveShoppingListItems(list);
+  };
+});
+
+/* ================= LIBRERIA ================= */
+state.libraries = [];
+state.currentLibraryId = null;
+var LIB_FIELDS = [
+  {key:'titolo', label:'Titolo'},
+  {key:'autore', label:'Autore/i'},
+  {key:'isbn', label:'Codice ISBN'},
+  {key:'prezzo', label:'Prezzo'},
+  {key:'collocazione', label:'Collocazione'}
+];
+var libSortField = null, libSortDir = 'asc';
+function getCurrentLibrary(){ return (state.libraries||[]).find(function(l){ return l.id===state.currentLibraryId; }); }
+function sortedLibraries(){
+  return (state.libraries||[]).slice().sort(function(a,b){
+    return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
+  });
+}
+$('#menuBtnLibrary').addEventListener('click', async function(){
+  try{
+    var snap = await getDocs(librariesColl(state.currentAgendaId));
+    state.libraries = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+  }catch(err){ console.error(err); showToast('Errore nel caricamento della libreria.', 'error'); state.libraries=[]; }
+  if(state.libraries.length===0){
+    openNewLibraryModal(true);
+  } else {
+    showLibraryListScreen();
+  }
+});
+function showLibraryListScreen(){
+  renderLibraryList();
+  showScreen('screen-library-list');
+}
+function renderLibraryList(){
+  var wrap = $('#libListContainer');
+  var libs = sortedLibraries();
+  if(libs.length===0){
+    wrap.innerHTML = '<p class="empty-hint">Non hai ancora creato nessuna libreria.</p>';
+    return;
+  }
+  wrap.innerHTML = libs.map(function(l){
+    return '<div class="np-list-item" data-id="'+l.id+'">'+
+      '<span class="np-item-name">'+escapeHtml(l.name||'Senza nome')+'</span>'+
+      '<button type="button" class="np-item-rename" data-id="'+l.id+'" title="Rinomina libreria"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
+      '<button type="button" class="np-item-delete" data-id="'+l.id+'" title="Elimina libreria"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
+    '</div>';
+  }).join('');
+  $$('#libListContainer .np-list-item').forEach(function(item){
+    item.addEventListener('click', function(e){
+      if(e.target.closest('.np-item-delete') || e.target.closest('.np-item-rename')) return;
+      openLibraryScreen(item.dataset.id);
+    });
+  });
+  $$('#libListContainer .np-item-rename').forEach(function(btn){
+    btn.addEventListener('click', function(e){ e.stopPropagation(); renameLibrary(btn.dataset.id); });
+  });
+  $$('#libListContainer .np-item-delete').forEach(function(btn){
+    btn.addEventListener('click', async function(e){ e.stopPropagation(); await deleteLibrary(btn.dataset.id); });
+  });
+}
+$('#libListBack').addEventListener('click', function(){ showMenuScreen(); });
+$('#libListAddBtn').addEventListener('click', function(){ openNewLibraryModal(false); });
+function openNewLibraryModal(isFirst){
+  openModal(
+    '<h3>Nuova libreria</h3>'+
+    '<label for="libNameInput">Nome della libreria</label>'+
+    '<input type="text" id="libNameInput" placeholder="Es. Biblioteca di classe" maxlength="60">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="libNameCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="libNameConfirm">Crea</button>'+
+    '</div>'
+  );
+  var input = $('#libNameInput');
+  setTimeout(function(){ input.focus(); }, 60);
+  $('#libNameCancel').onclick = function(){ closeModal(); if(isFirst) showMenuScreen(); };
+  $('#libNameConfirm').onclick = async function(){
+    var name = input.value.trim();
+    if(!name){ showToast('Inserisci un nome per la libreria.', 'error'); return; }
+    try{
+      var newId = uid();
+      var data = {name:name, books:[], createdAt: Date.now()};
+      await setDoc(libraryDocRef(state.currentAgendaId, newId), data);
+      var entry = Object.assign({id:newId}, data);
+      state.libraries = state.libraries || [];
+      state.libraries.push(entry);
+      closeModal();
+      openLibraryScreen(newId);
+    }catch(err){ console.error(err); showToast('Errore nella creazione della libreria.', 'error'); }
+  };
+}
+function renameLibrary(id){
+  var lib = (state.libraries||[]).find(function(l){ return l.id===id; });
+  if(!lib) return;
+  openModal(
+    '<h3>Rinomina libreria</h3>'+
+    '<label for="libRenameInput">Nome della libreria</label>'+
+    '<input type="text" id="libRenameInput" value="'+escapeAttr(lib.name||'')+'" maxlength="60">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="libRenameCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="libRenameConfirm">Salva</button>'+
+    '</div>'
+  );
+  var input = $('#libRenameInput');
+  setTimeout(function(){ input.focus(); input.select(); }, 60);
+  $('#libRenameCancel').onclick = closeModal;
+  $('#libRenameConfirm').onclick = async function(){
+    var nuovoNome = input.value.trim();
+    if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
+    lib.name = nuovoNome;
+    try{
+      await updateDoc(libraryDocRef(state.currentAgendaId, id), {name: nuovoNome});
+      if(state.currentLibraryId===id) $('#libName').textContent = nuovoNome;
+      closeModal();
+      renderLibraryList();
+      showToast('Libreria rinominata.', 'success');
+    }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
+  };
+}
+async function deleteLibrary(id){
+  var lib = (state.libraries||[]).find(function(l){ return l.id===id; });
+  if(!confirm('Eliminare definitivamente la libreria "'+(lib?lib.name:'')+'"? Questa azione non può essere annullata.')) return;
+  try{
+    await deleteDoc(libraryDocRef(state.currentAgendaId, id));
+    state.libraries = (state.libraries||[]).filter(function(l){ return l.id!==id; });
+    renderLibraryList();
+    showToast('Libreria eliminata.', 'info');
+  }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error'); }
+}
+function openLibraryScreen(id){
+  state.currentLibraryId = id;
+  libSortField = null; libSortDir = 'asc';
+  var lib = getCurrentLibrary();
+  $('#libName').textContent = lib ? lib.name : '';
+  $('#libSearchInput').value = '';
+  renderLibraryTable('');
+  showScreen('screen-library');
+}
+$('#libBack').addEventListener('click', function(){ showLibraryListScreen(); });
+$('#libSearchInput').addEventListener('input', function(e){ renderLibraryTable(e.target.value); });
+async function saveLibraryBooks(lib){
+  try{
+    await updateDoc(libraryDocRef(state.currentAgendaId, lib.id), {books: lib.books});
+    return true;
+  }catch(err){ console.error(err); showToast('Errore durante il salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); return false; }
+}
+function getFilteredSortedBooks(lib, filter){
+  var books = (lib.books||[]).slice();
+  var f = (filter||'').trim().toLowerCase();
+  if(f){
+    books = books.filter(function(b){
+      return LIB_FIELDS.some(function(fld){ return (b[fld.key]||'').toLowerCase().indexOf(f)>-1; });
+    });
+  }
+  if(libSortField){
+    books.sort(function(a,b){
+      var va = (a[libSortField]||''), vb = (b[libSortField]||'');
+      var cmp = (va+'').localeCompare((vb+''), 'it', {numeric:true, sensitivity:'base'});
+      return libSortDir==='asc' ? cmp : -cmp;
+    });
+  }
+  return books;
+}
+function renderLibraryTable(filter){
+  var lib = getCurrentLibrary();
+  if(!lib){ $('#libTableContainer').innerHTML=''; return; }
+  var books = getFilteredSortedBooks(lib, filter);
+  var html = '<table class="lib-table"><thead><tr>';
+  LIB_FIELDS.forEach(function(fld){
+    html += '<th><div class="lib-th-inner"><span>'+fld.label+'</span><span class="lib-sort-btns">'+
+      '<button type="button" class="lib-sort-btn'+(libSortField===fld.key && libSortDir==='asc'?' active':'')+'" data-field="'+fld.key+'" data-dir="asc" title="Ordina A-Z">'+iconSvg('arrowUp')+'</button>'+
+      '<button type="button" class="lib-sort-btn'+(libSortField===fld.key && libSortDir==='desc'?' active':'')+'" data-field="'+fld.key+'" data-dir="desc" title="Ordina Z-A">'+iconSvg('arrowDown')+'</button>'+
+    '</span></div></th>';
+  });
+  html += '<th></th></tr></thead><tbody>';
+  if(books.length===0){
+    html += '<tr><td colspan="'+(LIB_FIELDS.length+1)+'" class="lib-empty-hint">'+(filter?'Nessun libro corrisponde alla ricerca.':'Non hai ancora aggiunto nessun libro.')+'</td></tr>';
+  } else {
+    books.forEach(function(b){
+      html += '<tr data-id="'+b.id+'">';
+      LIB_FIELDS.forEach(function(fld){ html += '<td>'+escapeHtml(b[fld.key]||'')+'</td>'; });
+      html += '<td class="lib-row-actions">'+
+        '<button type="button" class="lib-edit-btn" data-id="'+b.id+'" title="Modifica libro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
+        '<button type="button" class="lib-del-btn" data-id="'+b.id+'" title="Elimina libro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
+      '</td></tr>';
+    });
+  }
+  html += '</tbody></table>';
+  $('#libTableContainer').innerHTML = html;
+  $$('.lib-sort-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      libSortField = btn.dataset.field;
+      libSortDir = btn.dataset.dir;
+      renderLibraryTable($('#libSearchInput').value);
+    });
+  });
+  $$('.lib-edit-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ openBookModal(lib, btn.dataset.id); });
+  });
+  $$('.lib-del-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ deleteBook(lib, btn.dataset.id); });
+  });
+}
+function openBookModal(lib, existingId){
+  var existing = existingId ? (lib.books||[]).find(function(b){ return b.id===existingId; }) : null;
+  var fieldsHtml = LIB_FIELDS.map(function(fld){
+    return '<label for="bk_'+fld.key+'">'+fld.label+(fld.key==='titolo'?' *':'')+'</label>'+
+      '<input type="text" id="bk_'+fld.key+'" value="'+(existing?escapeAttr(existing[fld.key]||''):'')+'" maxlength="200">';
+  }).join('');
+  openModal(
+    '<h3>'+(existing?'Modifica libro':'Nuovo libro')+'</h3>'+
+    fieldsHtml+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="bkCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="bkConfirm">'+(existing?'Salva':'Aggiungi')+'</button>'+
+    '</div>'
+  );
+  setTimeout(function(){ $('#bk_titolo').focus(); }, 60);
+  $('#bkCancel').onclick = closeModal;
+  $('#bkConfirm').onclick = async function(){
+    var titolo = $('#bk_titolo').value.trim();
+    if(!titolo){ showToast('Il campo "Titolo" è obbligatorio.', 'error'); return; }
+    var values = {};
+    LIB_FIELDS.forEach(function(fld){ values[fld.key] = $('#bk_'+fld.key).value.trim(); });
+    lib.books = lib.books || [];
+    if(existing){
+      Object.assign(existing, values);
+    } else {
+      values.id = uid();
+      lib.books.push(values);
+    }
+    closeModal();
+    renderLibraryTable($('#libSearchInput').value);
+    await saveLibraryBooks(lib);
+    showToast(existing ? 'Libro aggiornato.' : 'Libro aggiunto.', 'success');
+  };
+}
+async function deleteBook(lib, bookId){
+  var book = (lib.books||[]).find(function(b){ return b.id===bookId; });
+  if(!confirm('Eliminare il libro "'+(book?book.titolo:'')+'"?')) return;
+  lib.books = (lib.books||[]).filter(function(b){ return b.id!==bookId; });
+  renderLibraryTable($('#libSearchInput').value);
+  await saveLibraryBooks(lib);
+  showToast('Libro eliminato.', 'info');
+}
+$('#libAddBookBtn').addEventListener('click', function(){
+  var lib = getCurrentLibrary(); if(!lib) return;
+  openBookModal(lib, null);
+});
+$('#libExportPdf').addEventListener('click', function(){
+  var lib = getCurrentLibrary(); if(!lib) return;
+  var books = getFilteredSortedBooks(lib, $('#libSearchInput').value);
+  var html = '<div class="reg-print-sheet"><h2 style="font-family:inherit;margin:0 0 8px;">'+escapeHtml(lib.name)+'</h2><table class="lib-table"><thead><tr>';
+  LIB_FIELDS.forEach(function(fld){ html += '<th>'+fld.label+'</th>'; });
+  html += '</tr></thead><tbody>';
+  books.forEach(function(b){
+    html += '<tr>';
+    LIB_FIELDS.forEach(function(fld){ html += '<td>'+escapeHtml(b[fld.key]||'')+'</td>'; });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  var area = $('#regPrintArea');
+  area.innerHTML = html;
+  setPrintPageSize('landscape');
+  document.body.classList.add('printing-register');
+  window.print();
+  setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
 });
 
 function clearEmptyHint(){
