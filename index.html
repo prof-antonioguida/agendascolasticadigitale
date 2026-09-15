@@ -429,22 +429,26 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .day-canvas.erasing{cursor:crosshair;outline:2px dashed #8A7F68;outline-offset:-2px;}
 
 .canvas-el{position:absolute;touch-action:none;}
-.el-delete-x{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;
-  background:var(--accent);color:#fff;border:2px solid var(--paper);display:none;
-  align-items:center;justify-content:center;font-size:19px;line-height:1;cursor:pointer;z-index:9;padding:0;
-  box-shadow:0 3px 10px rgba(0,0,0,.35);
-}
-.canvas-el.show-delete .el-delete-x{display:flex;}
-.el-duplicate-btn{
-  position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;
-  background:#3E9C5C;color:#fff;border:2px solid var(--paper);display:none;
-  align-items:center;justify-content:center;font-size:14px;cursor:pointer;z-index:9;padding:0;
-  box-shadow:0 3px 8px rgba(0,0,0,.3);
-}
-.el-duplicate-btn svg{width:14px;height:14px;}
-.canvas-el.show-delete .el-duplicate-btn{display:flex;}
 .canvas-el.move-active{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px;}
+.el-action-bubble{
+  position:fixed;display:none;align-items:center;gap:10px;background:#2E2A22;border-radius:16px;padding:9px;
+  box-shadow:0 10px 28px rgba(0,0,0,.45);z-index:500;
+}
+.el-action-bubble.active{display:flex;}
+.el-action-bubble button{
+  width:54px;height:54px;border-radius:12px;border:none;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:#fff;flex-shrink:0;
+}
+.el-action-bubble button svg{width:24px;height:24px;}
+#elBubbleDuplicate{background:#3E9C5C;}
+#elBubbleDelete{background:#C0524B;}
+.el-action-bubble-arrow{
+  position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);width:0;height:0;
+  border-left:9px solid transparent;border-right:9px solid transparent;border-top:9px solid #2E2A22;
+}
+.el-action-bubble.below .el-action-bubble-arrow{
+  bottom:auto;top:-9px;border-top:none;border-bottom:9px solid #2E2A22;
+}
 .resize-handle{
   position:absolute;width:15px;height:15px;border-radius:4px;
   background:var(--accent);border:2px solid var(--paper);display:none;z-index:7;
@@ -1285,6 +1289,12 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 </div>
 
 <div id="regPrintArea"></div>
+
+<div id="elActionBubble" class="el-action-bubble">
+  <button type="button" id="elBubbleDuplicate" data-icon="duplicate" title="Duplica"></button>
+  <button type="button" id="elBubbleDelete" data-icon="close" title="Elimina"></button>
+  <div class="el-action-bubble-arrow"></div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
@@ -2463,20 +2473,31 @@ function openDuplicateModal(data){
     var type = typeSel.value;
     var originalDate = state.currentDate;
     var targetDates = [];
+    var typeLabels = {daily:'Ogni giorno', weekly:'Ogni settimana', monthly:'Ogni mese', yearly:'Ogni anno'};
     if(type==='daily'||type==='weekly'||type==='monthly'||type==='yearly'){
       var untilStr = $('#dupUntil').value;
       if(!untilStr){ showToast('Scegli una data limite.', 'error'); return; }
-      targetDates = computeRecurringDates(originalDate, type, new Date(untilStr+'T00:00:00'));
+      var untilDate = new Date(untilStr+'T00:00:00');
+      if(isNaN(untilDate.getTime())){ showToast('Data limite non valida.', 'error'); return; }
+      if(untilDate <= originalDate){ showToast('La data limite deve essere successiva alla data di partenza ('+formatDateIt(originalDate)+').', 'error'); return; }
+      targetDates = computeRecurringDates(originalDate, type, untilDate);
+      if(targetDates.length===0){
+        var firstOccurrence = computeRecurringDates(originalDate, type, addYears(originalDate, 10))[0];
+        var hint = firstOccurrence ? (' La prima data utile con "'+typeLabels[type]+'" sarebbe il '+formatDateIt(firstOccurrence)+': scegli una data limite pari o successiva.') : '';
+        showToast('Nessuna data valida da aggiungere con questa data limite.'+hint, 'error');
+        return;
+      }
     } else if(type==='range'){
       var s = $('#dupRangeStart').value, e = $('#dupRangeEnd').value;
       if(!s||!e){ showToast("Scegli l'inizio e la fine dell'intervallo.", 'error'); return; }
       targetDates = computeRangeDates(originalDate, new Date(s+'T00:00:00'), new Date(e+'T00:00:00'));
+      if(targetDates.length===0){ showToast('Nessuna data valida da aggiungere in questo intervallo.', 'error'); return; }
     } else if(type==='list'){
       var raw = $('#dupListInput').value.trim();
       if(!raw){ showToast('Inserisci almeno una data.', 'error'); return; }
       targetDates = parseDateList(raw, originalDate);
+      if(targetDates.length===0){ showToast('Nessuna data valida trovata: usa il formato AAAA-MM-GG separato da virgole.', 'error'); return; }
     }
-    if(targetDates.length===0){ showToast('Nessuna data valida da aggiungere.', 'error'); return; }
     if(targetDates.length>366){ showToast('Troppe date in una sola volta (massimo 366).', 'error'); return; }
     closeModal();
     await performDuplication(data, targetDates);
@@ -2578,18 +2599,6 @@ async function refreshDaysWithContentAfterGroupDelete(dateKeys){
     if(listEntry) listEntry.daysWithContent = list;
   }
 }
-function attachActionButtons(wrapper, data){
-  if(pageMode==='notebook') return;
-  var dupBtn = document.createElement('button');
-  dupBtn.type = 'button';
-  dupBtn.className = 'el-duplicate-btn';
-  dupBtn.title = 'Duplica';
-  dupBtn.innerHTML = iconSvg('duplicate');
-  wrapper.appendChild(dupBtn);
-  dupBtn.addEventListener('mousedown', function(e){ e.stopPropagation(); });
-  dupBtn.addEventListener('touchstart', function(e){ e.stopPropagation(); });
-  dupBtn.addEventListener('click', function(e){ e.stopPropagation(); hideDeleteX(); openDuplicateModal(data); });
-}
 
 async function openDayScreen(date){
   if(freeDrawOverlay) finishFreeDraw(false);
@@ -2603,7 +2612,7 @@ async function openDayScreen(date){
   state.currentDate = date;
   state.deletedElementIds = [];
   disarmPlacement();
-  activeDeleteWrapper = null;
+  hideDeleteX();
   activeEditingText = null;
   resetDayHistory();
   applyNotebookBackground('righi');
@@ -2825,7 +2834,7 @@ async function openNotebookPageScreen(notebookId, pageId){
   currentPageKey = pageId;
   state.deletedElementIds = [];
   disarmPlacement();
-  activeDeleteWrapper = null;
+  hideDeleteX();
   activeEditingText = null;
   resetDayHistory();
   canvasZoom = 1;
@@ -5012,7 +5021,7 @@ function rerenderCanvasFromElements(){
   var canvas = $('#dayCanvas');
   if(!canvas) return;
   disarmPlacement();
-  activeDeleteWrapper = null;
+  hideDeleteX();
   activeEditingText = null;
   canvas.innerHTML = '';
   if(state.dayElements.length===0){
@@ -5191,14 +5200,51 @@ function deselectAll(){
   if(activeEditingText) exitTextEditMode(activeEditingText);
   hideDeleteX();
 }
-function showDeleteX(wrapper){
+var activeLongPressData = null;
+function showDeleteX(wrapper, data){
   if(activeDeleteWrapper && activeDeleteWrapper!==wrapper) activeDeleteWrapper.classList.remove('show-delete');
   wrapper.classList.add('show-delete');
   activeDeleteWrapper = wrapper;
+  activeLongPressData = data;
+  positionActionBubble(wrapper);
 }
 function hideDeleteX(){
   if(activeDeleteWrapper){ activeDeleteWrapper.classList.remove('show-delete'); activeDeleteWrapper=null; }
+  activeLongPressData = null;
+  var bubble = $('#elActionBubble');
+  if(bubble) bubble.classList.remove('active');
 }
+function positionActionBubble(wrapper){
+  var bubble = $('#elActionBubble');
+  if(!bubble) return;
+  var dupBtn = $('#elBubbleDuplicate');
+  if(dupBtn) dupBtn.style.display = (pageMode==='notebook') ? 'none' : 'flex';
+  bubble.classList.add('active');
+  var rect = wrapper.getBoundingClientRect();
+  var bw = bubble.offsetWidth || 130;
+  var bh = bubble.offsetHeight || 72;
+  var below = false;
+  var top = rect.top - bh - 14;
+  if(top < 8){ top = rect.bottom + 14; below = true; }
+  var left = rect.left + rect.width/2 - bw/2;
+  if(left < 8) left = 8;
+  if(left + bw > window.innerWidth - 8) left = window.innerWidth - 8 - bw;
+  bubble.style.top = top+'px';
+  bubble.style.left = left+'px';
+  bubble.classList.toggle('below', below);
+}
+$('#elBubbleDelete').addEventListener('click', function(evt){
+  evt.stopPropagation();
+  var wrapper = activeDeleteWrapper, data = activeLongPressData;
+  hideDeleteX();
+  if(wrapper && data) deleteElement(wrapper, data);
+});
+$('#elBubbleDuplicate').addEventListener('click', function(evt){
+  evt.stopPropagation();
+  var data = activeLongPressData;
+  hideDeleteX();
+  if(data) openDuplicateModal(data);
+});
 
 /* ---- barra stile testo (attiva mentre "Inserisci testo" è armato) ---- */
 (function initTextStyleBar(){
@@ -5374,7 +5420,7 @@ function attachElementInteractions(wrapper, data){
   var pressTimer=null, startX=0,startY=0,startLeft=0,startTop=0, preMoveSnapshot=null;
   var THRESH=6;
   function ignoreTarget(evt){
-    return evt.target.closest('.resize-handle') || evt.target.closest('.el-delete-x') || evt.target.closest('.el-duplicate-btn') ||
+    return evt.target.closest('.resize-handle') ||
            evt.target.closest('.link-open-btn') || evt.target.closest('.phone-call-btn') || evt.target.closest('.email-open-btn') ||
            evt.target.closest('.link-edit-btn') ||
            evt.target.closest('.play-toggle') || evt.target.closest('.text-mini-toolbar');
@@ -5391,7 +5437,7 @@ function attachElementInteractions(wrapper, data){
     pressTimer = setTimeout(function(){
       longPressActive = true;
       wrapper.classList.add('move-active');
-      showDeleteX(wrapper);
+      showDeleteX(wrapper, data);
     }, 550);
     document.addEventListener('mousemove', move);
     document.addEventListener('mouseup', up);
@@ -5543,8 +5589,7 @@ function renderTextEl(data){
       '<input type="color" class="t-color" value="'+displayColor+'">'+
     '</div>'+
     '<div class="text-content" contenteditable="false" style="font-family:'+data.font+'; font-size:'+data.size+'px; font-weight:'+(data.bold?'700':'400')+'; font-style:'+(data.italic?'italic':'normal')+'; text-decoration:'+(data.underline?'underline':'none')+'; color:'+displayColor+';">'+(data.html||'')+'</div>'+
-    '<div class="resize-handle-text" title="Ridimensiona larghezza"></div>'+
-    '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
+    '<div class="resize-handle-text" title="Ridimensiona larghezza"></div>';
   var contentEl = wrapper.querySelector('.text-content');
   contentEl.addEventListener('input', function(){ data.html = contentEl.innerHTML; markDirty(); });
   contentEl.addEventListener('blur', function(){ exitTextEditMode(wrapper); });
@@ -5555,9 +5600,7 @@ function renderTextEl(data){
   italBtn.addEventListener('click', function(evt){ evt.stopPropagation(); data.italic=!data.italic; italBtn.classList.toggle('active',data.italic); contentEl.style.fontStyle=data.italic?'italic':'normal'; markDirty(); });
   undBtn.addEventListener('click', function(evt){ evt.stopPropagation(); data.underline=!data.underline; undBtn.classList.toggle('active',data.underline); contentEl.style.textDecoration=data.underline?'underline':'none'; markDirty(); });
   wrapper.querySelector('.t-color').addEventListener('input', function(e){ data.colorCustom=true; data.color=e.target.value; contentEl.style.color=data.color; markDirty(); });
-  wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
   attachTextResizeHandle(wrapper.querySelector('.resize-handle-text'), wrapper, data);
-  attachActionButtons(wrapper, data);
   return wrapper;
 }
 function attachTextResizeHandle(handle, wrapper, data){
@@ -5600,11 +5643,8 @@ function renderDrawingEl(data){
   wrapper.style.width=(data.w||160)+'px'; wrapper.style.height=(data.h||120)+'px';
   wrapper.innerHTML =
     '<img src="'+data.dataURL+'" alt="Disegno" draggable="false">'+
-    fourHandlesHTML()+
-    '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
-  wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
+    fourHandlesHTML();
   attachResizeHandles(wrapper, data, 40, 30, true);
-  attachActionButtons(wrapper, data);
   return wrapper;
 }
 
@@ -5715,11 +5755,8 @@ function renderImageEl(data){
   wrapper.style.width=(data.w||220)+'px'; wrapper.style.height=(data.h||160)+'px';
   wrapper.innerHTML =
     '<img src="'+data.dataURL+'" alt="Immagine" draggable="false">'+
-    fourHandlesHTML()+
-    '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
-  wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
+    fourHandlesHTML();
   attachResizeHandles(wrapper, data, 60, 40, true);
-  attachActionButtons(wrapper, data);
   return wrapper;
 }
 function getImageNaturalSize(dataUrl){
@@ -5743,9 +5780,7 @@ function renderAudioEl(data){
       '<span class="audio-badge-icon play-toggle">'+iconSvg('headphones')+'</span>'+
       '<span class="el-media-label lbl-text">'+escapeHtml(data.label||'Audio')+'</span>'+
     '</div>'+
-    '<audio class="audio-hidden-player" src="'+data.dataURL+'" style="display:none;"></audio>'+
-    '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
-  wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
+    '<audio class="audio-hidden-player" src="'+data.dataURL+'" style="display:none;"></audio>';
   var playToggle = wrapper.querySelector('.play-toggle');
   var audioEl = wrapper.querySelector('.audio-hidden-player');
   playToggle.addEventListener('click', function(evt){
@@ -5755,7 +5790,6 @@ function renderAudioEl(data){
   audioEl.addEventListener('play', function(){ playToggle.innerHTML = iconSvg('pause'); });
   audioEl.addEventListener('pause', function(){ playToggle.innerHTML = iconSvg('headphones'); });
   audioEl.addEventListener('ended', function(){ playToggle.innerHTML = iconSvg('headphones'); });
-  attachActionButtons(wrapper, data);
   return wrapper;
 }
 
@@ -5771,9 +5805,7 @@ function renderLinkEl(data){
       '<span class="el-media-label lbl-text">'+escapeHtml(data.label||data.url)+'</span>'+
       '<button type="button" class="link-edit-btn" title="Modifica">'+iconSvg('pencil')+'</button>'+
       '<a href="'+escapeAttr(data.url)+'" target="_blank" rel="noopener noreferrer" class="link-open-btn" title="Apri link">'+iconSvg('externalLink')+'</a>'+
-    '</div>'+
-    '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
-  wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
+    '</div>';
   var openBtn = wrapper.querySelector('.link-open-btn');
   openBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
   openBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
@@ -5782,7 +5814,6 @@ function renderLinkEl(data){
   editBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
   editBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
   editBtn.addEventListener('click', function(evt){ evt.stopPropagation(); openLinkModal(data.x, data.y, data, wrapper); });
-  attachActionButtons(wrapper, data);
   return wrapper;
 }
 
@@ -5796,9 +5827,7 @@ function renderPhoneEl(data){
       '<a href="tel:'+escapeAttr(data.phone||'')+'" class="phone-call-btn phone-badge-icon" title="Chiama">'+iconSvg('phone')+'</a>'+
       '<span class="el-media-label lbl-text">'+escapeHtml(data.label||'Contatto')+'</span>'+
       '<button type="button" class="link-edit-btn" title="Modifica">'+iconSvg('pencil')+'</button>'+
-    '</div>'+
-    '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
-  wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
+    '</div>';
   var callBtn = wrapper.querySelector('.phone-call-btn');
   callBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
   callBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
@@ -5807,7 +5836,6 @@ function renderPhoneEl(data){
   editBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
   editBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
   editBtn.addEventListener('click', function(evt){ evt.stopPropagation(); openPhoneModal(data.x, data.y, data, wrapper); });
-  attachActionButtons(wrapper, data);
   return wrapper;
 }
 function renderEmailEl(data){
@@ -5820,9 +5848,7 @@ function renderEmailEl(data){
       '<a href="mailto:'+escapeAttr(data.email||'')+'" class="email-open-btn email-badge-icon" title="Invia email">'+iconSvg('email')+'</a>'+
       '<span class="el-media-label lbl-text">'+escapeHtml(data.label||'Contatto')+'</span>'+
       '<button type="button" class="link-edit-btn" title="Modifica">'+iconSvg('pencil')+'</button>'+
-    '</div>'+
-    '<button type="button" class="el-delete-x">'+iconSvg('close')+'</button>';
-  wrapper.querySelector('.el-delete-x').addEventListener('click', function(evt){ evt.stopPropagation(); deleteElement(wrapper, data); });
+    '</div>';
   var openBtn = wrapper.querySelector('.email-open-btn');
   openBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
   openBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
@@ -5831,7 +5857,6 @@ function renderEmailEl(data){
   editBtn2.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
   editBtn2.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
   editBtn2.addEventListener('click', function(evt){ evt.stopPropagation(); openEmailModal(data.x, data.y, data, wrapper); });
-  attachActionButtons(wrapper, data);
   return wrapper;
 }
 
