@@ -153,6 +153,15 @@ input,select{font-family:inherit;}
   border-radius:9px;padding:8px 15px;cursor:pointer;font-weight:600;font-size:.8rem;
 }
 .home-header .user-chip button#btnLogout:hover{background:var(--accent-deep);}
+.home-header .user-chip button#btnDeleteAccount{
+  background:none;border:1px solid var(--paper-line);color:var(--ink-soft);
+  border-radius:9px;padding:8px 15px;cursor:pointer;font-weight:600;font-size:.8rem;
+}
+.home-header .user-chip button#btnDeleteAccount:hover{background:rgba(162,58,44,.12);color:#a23a2c;border-color:#a23a2c;}
+.auth-forgot-link{
+  background:none;border:none;color:var(--accent);font-size:.8rem;cursor:pointer;
+  padding:0;margin:-6px 0 8px;text-align:left;text-decoration:underline;
+}
 .theme-toggle{
   width:42px;height:42px;border-radius:50%;border:2px solid var(--gold);
   background:var(--surface-alt);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;
@@ -529,7 +538,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 }
 #modalBox h3{margin-bottom:16px;font-size:1.15rem;}
 #modalBox label{display:block;font-size:.8rem;color:var(--ink-soft);margin:10px 0 5px;}
-#modalBox input[type=text],#modalBox input[type=url],#modalBox input[type=time],#modalBox input[type=email],#modalBox input[type=tel],#modalBox input[type=date]{
+#modalBox input[type=text],#modalBox input[type=url],#modalBox input[type=time],#modalBox input[type=email],#modalBox input[type=tel],#modalBox input[type=date],#modalBox input[type=number],#modalBox select{
   width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--paper-line);background:var(--surface);font-size:.92rem;color:var(--ink);
 }
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
@@ -707,7 +716,15 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 
 <style>
 /* ---------- Libreria ---------- */
-.lib-table{border-collapse:collapse;font-size:.85rem;background:#fff;margin:0 auto;color:#222;width:100%;min-width:760px;}
+.lib-table{border-collapse:collapse;font-size:.85rem;background:#fff;margin:0 auto;color:#222;width:100%;min-width:760px;table-layout:fixed;}
+.lib-table .lib-col-titolo{width:26%;}
+.lib-table .lib-col-autore{width:14%;}
+.lib-table .lib-col-isbn{width:11%;}
+.lib-table .lib-col-materia{width:15%;}
+.lib-table .lib-col-prezzo{width:8%;}
+.lib-table .lib-col-collocazione{width:16%;}
+.lib-table .lib-col-actions{width:10%;}
+.lib-table td{overflow-wrap:break-word;}
 .lib-table td,.lib-table th{border:1px solid #bbb;padding:7px 9px;text-align:left;vertical-align:top;}
 .lib-table thead th{background:#F3CE7C;color:#4a3410;}
 .lib-th-inner{display:flex;align-items:center;justify-content:space-between;gap:6px;}
@@ -722,6 +739,47 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .lib-row-actions button:hover{color:var(--accent);}
 .lib-row-actions svg{width:13px;height:13px;}
 .lib-empty-hint{color:var(--ink-soft);font-size:.85rem;padding:14px 4px;text-align:center;}
+</style>
+
+<style>
+/* ---------- Lezioni private ---------- */
+.lp-profile{
+  max-width:900px;margin:0 auto;padding:16px 20px;background:var(--surface);border:1px solid var(--paper-line);
+  border-radius:12px;margin-top:14px;margin-bottom:6px;
+}
+.lp-profile-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;}
+.lp-profile-fields{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;}
+.lp-profile-item{font-size:.9rem;color:var(--ink);}
+.lp-profile-item strong{color:var(--ink-soft);font-weight:600;font-size:.78rem;display:block;text-transform:uppercase;letter-spacing:.02em;}
+.lp-edit-profile-btn{
+  background:none;border:1px solid var(--paper-line);color:var(--ink-soft);cursor:pointer;flex-shrink:0;
+  width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+}
+.lp-edit-profile-btn:hover{background:var(--paper-deep);color:var(--ink);}
+.lp-edit-profile-btn svg{width:15px;height:15px;}
+.lp-sched-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.lp-sched-row select,.lp-sched-row input[type=time]{flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);background:var(--surface);color:var(--ink);font-size:.85rem;}
+.lp-sched-del{background:none;border:none;color:#a23a2c;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.lp-sched-del svg{width:14px;height:14px;}
+.lp-table{border-collapse:collapse;font-size:.88rem;background:#fff;margin:0 auto;color:#222;width:100%;min-width:640px;}
+.lp-table td,.lp-table th{border:1px solid #bbb;padding:6px 8px;text-align:center;}
+.lp-table thead th{background:#F3CE7C;color:#4a3410;font-weight:700;}
+.lp-table .lp-date-cell{min-width:130px;}
+.lp-table .lp-total-cell{min-width:90px;}
+.lp-table tbody tr.lp-date-row:nth-child(odd) td.lp-alt{background:#fff;}
+.lp-table tbody tr.lp-date-row:nth-child(even) td.lp-alt{background:#f2f2f2;}
+.lp-table td.lp-count-cell{background:#CFE8CB;font-weight:700;color:#1f3d1c;}
+.lp-table tr.lp-rate-row td,.lp-table tr.lp-pay-row td{background:#CFE8CB;font-weight:700;color:#1f3d1c;}
+.lp-table tr.lp-rate-row td.lp-label,.lp-table tr.lp-pay-row td.lp-label{text-align:left;}
+.lp-table input.lp-input{border:none;background:transparent;width:100%;text-align:center;font-size:inherit;font-family:inherit;color:inherit;}
+.lp-table .lp-row-actions{display:flex;gap:2px;align-items:center;justify-content:center;}
+.lp-table .lp-del-row-btn,.lp-table .lp-add-row-btn{background:none;border:none;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;}
+.lp-table .lp-del-row-btn{color:#a23a2c;}
+.lp-table .lp-add-row-btn{color:#3E9C5C;}
+.lp-table .lp-del-row-btn svg,.lp-table .lp-add-row-btn svg{width:12px;height:12px;}
+.lp-table .lp-hdr-datecol{cursor:pointer;}
+.lp-table .lp-hdr-datecol:hover{background:#e8bd6a;}
+.lp-table-caption{font-family:var(--font-display);font-weight:600;font-size:1rem;color:var(--ink);margin:14px auto 8px;text-align:center;max-width:640px;}
 </style>
 </head>
 <body>
@@ -754,6 +812,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <label for="authPassword">Password</label>
         <input type="password" id="authPassword" autocomplete="current-password" required>
       </div>
+      <button type="button" class="auth-forgot-link" id="btnForgotPassword">Password dimenticata?</button>
       <div class="auth-field" id="authConfirmWrap" style="display:none;">
         <label for="authConfirm">Conferma password</label>
         <input type="password" id="authConfirm" autocomplete="new-password">
@@ -778,6 +837,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
           <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5 A8.5 8.5 0 1 1 9.5 4 A6.8 6.8 0 0 0 20 14.5 Z"></path></svg>
         </button>
         <button type="button" id="btnLogout">Esci</button>
+        <button type="button" id="btnDeleteAccount">Elimina account</button>
       </div>
     </div>
     <div class="agenda-grid" id="agendaGrid"></div>
@@ -847,6 +907,11 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4 H10 A1.5 1.5 0 0 1 11.5 5.5 V20 H5.5 A1.5 1.5 0 0 1 4 18.5 Z"></path><path d="M20 4 H14 A1.5 1.5 0 0 0 12.5 5.5 V20 H18.5 A1.5 1.5 0 0 0 20 18.5 Z"></path><line x1="12" y1="7" x2="12" y2="20"></line></svg>
         <h3>Libreria</h3>
         <p>Catalogo libri con ricerca e ordinamento</p>
+      </button>
+      <button type="button" class="menu-tile" id="menuBtnLessons">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"></circle><path d="M5 20c0-3.8 3.1-6.5 7-6.5s7 2.7 7 6.5"></path><path d="M15.5 3.5 L17 5 L20 2"></path></svg>
+        <h3>Lezioni private</h3>
+        <p>Alunni, orari e pagamenti</p>
       </button>
       <button type="button" class="menu-tile menu-tile-add" id="menuBtnAddSections">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -988,6 +1053,41 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   <input type="text" id="libSearchInput" class="np-search" placeholder="Cerca tra i libri..." style="margin:16px 16px 0;width:calc(100% - 32px);">
   <div class="reg-table-outer">
     <div id="libTableContainer"></div>
+  </div>
+</div>
+
+<!-- ============ LEZIONI PRIVATE - elenco ============ -->
+<div id="screen-lessons-list" class="screen paper">
+  <div class="page-rings">__RINGS__</div>
+  <div class="page-wrap">
+    <div class="top-header">
+      <div class="header-back">
+        <button type="button" class="icon-btn" id="lpListBack" data-icon="arrowLeft" title="Indietro"></button>
+        <h1>Lezioni private</h1>
+      </div>
+      <button type="button" class="topbar-btn primary" id="lpListAddBtn" data-icon="plus" data-label="Nuovo alunno"></button>
+    </div>
+    <div id="lpListContainer"></div>
+  </div>
+</div>
+
+<!-- ============ LEZIONI PRIVATE - scheda alunno ============ -->
+<div id="screen-lessons" class="screen paper">
+  <div class="day-topbar">
+    <div class="nav-group">
+      <button type="button" class="icon-btn" id="lpBack" data-icon="arrowLeft" title="Indietro"></button>
+      <span class="day-agenda-tag" id="lpAgendaName"></span>
+    </div>
+    <button type="button" class="topbar-btn primary" id="lpSaveBtn" data-icon="save" data-label="Salva"></button>
+  </div>
+  <div class="lp-profile" id="lpProfileBlock"></div>
+  <div class="reg-toolbar">
+    <button type="button" class="icon-btn tool" id="lpFmtBold" data-icon="fmtBold" title="Grassetto"></button>
+    <button type="button" class="icon-btn tool" id="lpFmtItalic" data-icon="fmtItalic" title="Corsivo"></button>
+    <button type="button" class="icon-btn tool" id="lpFmtStrike" data-icon="fmtStrike" title="Barrato"></button>
+  </div>
+  <div class="reg-table-outer">
+    <div id="lpTableContainer"></div>
   </div>
 </div>
 
@@ -1193,7 +1293,8 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signOut, onAuthStateChanged
+  signOut, onAuthStateChanged, sendPasswordResetEmail,
+  deleteUser, reauthenticateWithCredential, EmailAuthProvider
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 import {
   getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc,
@@ -1296,6 +1397,8 @@ function shoppingListsColl(agendaId){ return collection(db, 'users', state.uid, 
 function shoppingListDocRef(agendaId, listId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'shoppingLists', listId); }
 function librariesColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'libraries'); }
 function libraryDocRef(agendaId, libId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'libraries', libId); }
+function privateLessonsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'privateLessons'); }
+function privateLessonDocRef(agendaId, studentId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'privateLessons', studentId); }
 function contactsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'contacts'); }
 function contactDocRef(agendaId, contactId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'contacts', contactId); }
 function scheduleLinksColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'scheduleLinks'); }
@@ -1542,6 +1645,102 @@ $('#btnLogout').addEventListener('click', async function(){
   showScreen('screen-auth');
 });
 
+$('#btnForgotPassword').addEventListener('click', async function(){
+  var email = $('#authEmail').value.trim();
+  if(!email){
+    email = prompt('Inserisci l\'indirizzo email del tuo account:');
+    if(!email) return;
+    email = email.trim();
+  }
+  if(!email){ showToast('Inserisci un indirizzo email.', 'error'); return; }
+  try{
+    await sendPasswordResetEmail(auth, email);
+    showToast('Ti abbiamo inviato un\'email per reimpostare la password. Controlla anche la posta indesiderata.', 'success');
+  }catch(err){
+    console.error(err);
+    var msg = 'Errore durante l\'invio dell\'email.';
+    if(err.code==='auth/user-not-found') msg = 'Nessun account trovato con questa email.';
+    else if(err.code==='auth/invalid-email') msg = 'Indirizzo email non valido.';
+    showToast(msg, 'error');
+  }
+});
+
+$('#btnDeleteAccount').addEventListener('click', function(){
+  openModal(
+    '<h3>Eliminare l\'account?</h3>'+
+    '<p style="color:var(--ink-soft);font-size:.85rem;">Questa azione eliminerà <strong>definitivamente</strong> il tuo account e tutte le agende con ogni contenuto al loro interno (calendario, blocchi note, rubrica, registro, bilancio, liste della spesa, librerie, ecc.). Non è possibile annullare.</p>'+
+    '<label for="delAccConfirmInput">Per confermare, scrivi il tuo indirizzo email ('+escapeHtml(state.email||'')+')</label>'+
+    '<input type="text" id="delAccConfirmInput" placeholder="'+escapeAttr(state.email||'')+'">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="delAccCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="delAccConfirm" style="background:#A23A2C;border-color:#7a2a1e;">Elimina definitivamente</button>'+
+    '</div>'
+  );
+  var input = $('#delAccConfirmInput');
+  setTimeout(function(){ input.focus(); }, 60);
+  $('#delAccCancel').onclick = closeModal;
+  $('#delAccConfirm').onclick = async function(){
+    if(input.value.trim().toLowerCase() !== (state.email||'').toLowerCase()){
+      showToast('L\'email non corrisponde. Riprova.', 'error');
+      return;
+    }
+    closeModal();
+    await performAccountDeletion();
+  };
+});
+async function performAccountDeletion(password){
+  showToast('Eliminazione dell\'account in corso...', 'info');
+  try{
+    var snap = await getDocs(agendasColl());
+    for(var i=0;i<snap.docs.length;i++){
+      await deleteAgendaCascade(snap.docs[i].id);
+    }
+    await deleteUser(auth.currentUser);
+    state.uid=null; state.email=null; state.agende=[]; state.currentAgendaId=null; state.currentAgenda=null;
+    $('#authEmail').value=''; $('#authPassword').value=''; $('#authConfirm').value='';
+    switchAuthMode('login');
+    showScreen('screen-auth');
+    showToast('Account eliminato definitivamente.', 'info');
+  }catch(err){
+    console.error(err);
+    if(err.code==='auth/requires-recent-login'){
+      openReauthModal();
+    } else {
+      showToast('Errore durante l\'eliminazione dell\'account'+(err.message?(': '+err.message):'')+'.', 'error');
+    }
+  }
+}
+function openReauthModal(){
+  openModal(
+    '<h3>Conferma la tua identità</h3>'+
+    '<p style="color:var(--ink-soft);font-size:.85rem;">Per motivi di sicurezza, prima di eliminare l\'account devi reinserire la password.</p>'+
+    '<label for="reauthPasswordInput">Password</label>'+
+    '<input type="password" id="reauthPasswordInput">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="reauthCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="reauthConfirm" style="background:#A23A2C;border-color:#7a2a1e;">Conferma ed elimina</button>'+
+    '</div>'
+  );
+  var input = $('#reauthPasswordInput');
+  setTimeout(function(){ input.focus(); }, 60);
+  $('#reauthCancel').onclick = closeModal;
+  $('#reauthConfirm').onclick = async function(){
+    var pwd = input.value;
+    if(!pwd){ showToast('Inserisci la password.', 'error'); return; }
+    closeModal();
+    try{
+      var cred = EmailAuthProvider.credential(state.email, pwd);
+      await reauthenticateWithCredential(auth.currentUser, cred);
+      await performAccountDeletion();
+    }catch(err){
+      console.error(err);
+      var msg = 'Errore durante la verifica della password.';
+      if(err.code==='auth/wrong-password' || err.code==='auth/invalid-credential') msg = 'Password errata.';
+      showToast(msg, 'error');
+    }
+  };
+}
+
 var authChecked = false;
 var authTimeoutId = setTimeout(function(){
   if(!authChecked){
@@ -1781,6 +1980,12 @@ async function deleteAgendaCascade(agendaId){
     libSnap.docs.forEach(function(d){ libBatch.delete(d.ref); });
     await libBatch.commit();
   }
+  var lpSnap = await getDocs(privateLessonsColl(agendaId));
+  if(lpSnap.docs.length>0){
+    var lpBatch = writeBatch(db);
+    lpSnap.docs.forEach(function(d){ lpBatch.delete(d.ref); });
+    await lpBatch.commit();
+  }
   await deleteDoc(agendaRef(agendaId));
 }
 
@@ -1794,7 +1999,8 @@ var SECTION_TILES = {
   register: 'menuBtnRegistro',
   balance: 'menuBtnBalance',
   shopping: 'menuBtnShopping',
-  library: 'menuBtnLibrary'
+  library: 'menuBtnLibrary',
+  lessons: 'menuBtnLessons'
 };
 function showMenuScreen(){
   $('#menuAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
@@ -1813,7 +2019,8 @@ $('#menuBackHome').addEventListener('click', function(){ showHomeScreen(); });
 $('#menuBtnAddSections').addEventListener('click', function(){ openAddSectionsModal(); });
 var SECTION_LABELS = {
   calendar:'Calendario', schoolCalendar:'Calendario scolastico', notebook:'Blocco note', contacts:'Rubrica',
-  links:'Schedule link', register:'Registro personale', balance:'Bilancio', shopping:'Lista della spesa', library:'Libreria'
+  links:'Schedule link', register:'Registro personale', balance:'Bilancio', shopping:'Lista della spesa', library:'Libreria',
+  lessons:'Lezioni private'
 };
 function openAddSectionsModal(){
   var enabled = state.currentAgenda.enabledSections;
@@ -1821,7 +2028,7 @@ function openAddSectionsModal(){
   var options = [
     ['calendar','Calendario'], ['schoolCalendar','Calendario scolastico'], ['notebook','Blocco note'], ['contacts','Rubrica'],
     ['links','Schedule link'], ['register','Registro personale'], ['balance','Bilancio'], ['shopping','Lista della spesa'],
-    ['library','Libreria']
+    ['library','Libreria'], ['lessons','Lezioni private']
   ];
   var rows = options.map(function(o){
     var checked = enabled.indexOf(o[0])>-1 ? ' checked' : '';
@@ -1934,6 +2141,14 @@ async function deleteSectionData(agendaId, key){
         await libBatch.commit();
       }
       state.libraries = [];
+    } else if(key==='lessons'){
+      var lpSnap = await getDocs(privateLessonsColl(agendaId));
+      if(lpSnap.docs.length>0){
+        var lpBatch = writeBatch(db);
+        lpSnap.docs.forEach(function(d){ lpBatch.delete(d.ref); });
+        await lpBatch.commit();
+      }
+      state.privateLessons = [];
     }
   }catch(err){ console.error(err); showToast('Errore durante la rimozione dei dati di "'+SECTION_LABELS[key]+'".', 'error'); }
 }
@@ -4146,6 +4361,7 @@ var LIB_FIELDS = [
   {key:'titolo', label:'Titolo'},
   {key:'autore', label:'Autore/i'},
   {key:'isbn', label:'Codice ISBN'},
+  {key:'materia', label:'Materia'},
   {key:'prezzo', label:'Prezzo'},
   {key:'collocazione', label:'Collocazione'}
 ];
@@ -4322,19 +4538,19 @@ function renderLibraryTable(filter){
     var isNum = LIB_NUMERIC_FIELDS.indexOf(fld.key)>-1;
     var ascTitle = isNum ? 'Ordina dal più piccolo al più grande' : 'Ordina A-Z';
     var descTitle = isNum ? 'Ordina dal più grande al più piccolo' : 'Ordina Z-A';
-    html += '<th><div class="lib-th-inner"><span>'+fld.label+'</span><span class="lib-sort-btns">'+
+    html += '<th class="lib-col-'+fld.key+'"><div class="lib-th-inner"><span>'+fld.label+'</span><span class="lib-sort-btns">'+
       '<button type="button" class="lib-sort-btn'+(libSortField===fld.key && libSortDir==='asc'?' active':'')+'" data-field="'+fld.key+'" data-dir="asc" title="'+ascTitle+'">'+iconSvg('arrowUp')+'</button>'+
       '<button type="button" class="lib-sort-btn'+(libSortField===fld.key && libSortDir==='desc'?' active':'')+'" data-field="'+fld.key+'" data-dir="desc" title="'+descTitle+'">'+iconSvg('arrowDown')+'</button>'+
     '</span></div></th>';
   });
-  html += '<th></th></tr></thead><tbody>';
+  html += '<th class="lib-col-actions"></th></tr></thead><tbody>';
   if(books.length===0){
     html += '<tr><td colspan="'+(LIB_FIELDS.length+1)+'" class="lib-empty-hint">'+(filter?'Nessun libro corrisponde alla ricerca.':'Non hai ancora aggiunto nessun libro.')+'</td></tr>';
   } else {
     books.forEach(function(b){
       html += '<tr data-id="'+b.id+'">';
-      LIB_FIELDS.forEach(function(fld){ html += '<td>'+escapeHtml(b[fld.key]||'')+'</td>'; });
-      html += '<td class="lib-row-actions">'+
+      LIB_FIELDS.forEach(function(fld){ html += '<td class="lib-col-'+fld.key+'">'+escapeHtml(b[fld.key]||'')+'</td>'; });
+      html += '<td class="lib-row-actions lib-col-actions">'+
         '<button type="button" class="lib-edit-btn" data-id="'+b.id+'" title="Modifica libro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
         '<button type="button" class="lib-del-btn" data-id="'+b.id+'" title="Elimina libro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
       '</td></tr>';
@@ -4421,6 +4637,369 @@ $('#libExportPdf').addEventListener('click', function(){
   window.print();
   setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
 });
+
+/* ================= LEZIONI PRIVATE ================= */
+state.privateLessons = [];
+state.currentStudentId = null;
+var LP_DAYS = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
+var lpActiveCellKey = null;
+var lpDirty = false;
+function markLpDirty(){ lpDirty = true; var b=$('#lpSaveBtn'); if(b) b.classList.add('needs-save'); }
+function getCurrentStudent(){ return (state.privateLessons||[]).find(function(s){ return s.id===state.currentStudentId; }); }
+function sortedStudents(){
+  return (state.privateLessons||[]).slice().sort(function(a,b){
+    return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
+  });
+}
+function defaultStudentData(name){
+  return {
+    name:name, subject:'', schedule:[], hourlyRate:'',
+    numRows:1, numCols:6,
+    dateRows:[ new Array(6).fill('') ],
+    cellStyles:{},
+    createdAt: Date.now()
+  };
+}
+function studentForFirestore(student){
+  var payload = Object.assign({}, student);
+  delete payload.id;
+  payload.dateRows = serializeGradeGrid(student.dateRows);
+  return payload;
+}
+function studentFromFirestore(data){
+  data.dateRows = deserializeGradeGrid(data.dateRows, data.numRows||1, data.numCols||1);
+  if(!data.cellStyles || typeof data.cellStyles!=='object') data.cellStyles = {};
+  if(!Array.isArray(data.schedule)) data.schedule = [];
+  return data;
+}
+function countFilledInRow(row){
+  return (row||[]).filter(function(v){ return v && (v+'').trim(); }).length;
+}
+function totalFilledDates(student){
+  var total = 0;
+  (student.dateRows||[]).forEach(function(row){ total += countFilledInRow(row); });
+  return total;
+}
+function computePayment(student){
+  var rate = parseFloat((student.hourlyRate+'').replace(',','.'));
+  if(isNaN(rate)) rate = 0;
+  return totalFilledDates(student) * rate;
+}
+function fmtMoney2(n){ return n.toFixed(2).replace('.', ','); }
+
+$('#menuBtnLessons').addEventListener('click', async function(){
+  try{
+    var snap = await getDocs(privateLessonsColl(state.currentAgendaId));
+    state.privateLessons = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return studentFromFirestore(data); });
+  }catch(err){ console.error(err); showToast('Errore nel caricamento delle lezioni private.', 'error'); state.privateLessons=[]; }
+  if(state.privateLessons.length===0){
+    openStudentProfileModal(null, true);
+  } else {
+    showLessonsListScreen();
+  }
+});
+function showLessonsListScreen(){
+  renderLessonsList();
+  showScreen('screen-lessons-list');
+}
+function renderLessonsList(){
+  var wrap = $('#lpListContainer');
+  var students = sortedStudents();
+  if(students.length===0){
+    wrap.innerHTML = '<p class="empty-hint">Non hai ancora aggiunto nessun alunno.</p>';
+    return;
+  }
+  wrap.innerHTML = students.map(function(s){
+    return '<div class="np-list-item" data-id="'+s.id+'">'+
+      '<span class="np-item-name">'+escapeHtml(s.name||'Senza nome')+'</span>'+
+      '<button type="button" class="np-item-rename" data-id="'+s.id+'" title="Modifica dati alunno"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
+      '<button type="button" class="np-item-delete" data-id="'+s.id+'" title="Elimina alunno"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
+    '</div>';
+  }).join('');
+  $$('#lpListContainer .np-list-item').forEach(function(item){
+    item.addEventListener('click', function(e){
+      if(e.target.closest('.np-item-delete') || e.target.closest('.np-item-rename')) return;
+      openStudentScreen(item.dataset.id);
+    });
+  });
+  $$('#lpListContainer .np-item-rename').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var s = (state.privateLessons||[]).find(function(x){ return x.id===btn.dataset.id; });
+      if(s) openStudentProfileModal(s, false);
+    });
+  });
+  $$('#lpListContainer .np-item-delete').forEach(function(btn){
+    btn.addEventListener('click', async function(e){ e.stopPropagation(); await deleteStudent(btn.dataset.id); });
+  });
+}
+$('#lpListBack').addEventListener('click', function(){ showMenuScreen(); });
+$('#lpListAddBtn').addEventListener('click', function(){ openStudentProfileModal(null, false); });
+
+function openStudentProfileModal(existing, isFirst){
+  var scheduleData = existing ? JSON.parse(JSON.stringify(existing.schedule||[])) : [];
+  function renderScheduleRows(){
+    if(scheduleData.length===0) return '<p style="color:var(--ink-soft);font-size:.8rem;margin:4px 0;">Nessun orario aggiunto.</p>';
+    return scheduleData.map(function(s, i){
+      return '<div class="lp-sched-row" data-idx="'+i+'">'+
+        '<select class="lp-sched-day" data-idx="'+i+'">'+LP_DAYS.map(function(d){ return '<option value="'+d+'"'+(s.day===d?' selected':'')+'>'+d+'</option>'; }).join('')+'</select>'+
+        '<input type="time" class="lp-sched-from" data-idx="'+i+'" value="'+(s.from||'')+'">'+
+        '<input type="time" class="lp-sched-to" data-idx="'+i+'" value="'+(s.to||'')+'">'+
+        '<button type="button" class="lp-sched-del" data-idx="'+i+'" title="Rimuovi orario">'+iconSvg('close')+'</button>'+
+      '</div>';
+    }).join('');
+  }
+  function wireScheduleEvents(){
+    $$('.lp-sched-day').forEach(function(sel){ sel.addEventListener('change', function(){ scheduleData[+sel.dataset.idx].day = sel.value; }); });
+    $$('.lp-sched-from').forEach(function(inp){ inp.addEventListener('change', function(){ scheduleData[+inp.dataset.idx].from = inp.value; }); });
+    $$('.lp-sched-to').forEach(function(inp){ inp.addEventListener('change', function(){ scheduleData[+inp.dataset.idx].to = inp.value; }); });
+    $$('.lp-sched-del').forEach(function(btn){ btn.addEventListener('click', function(){ scheduleData.splice(+btn.dataset.idx,1); rerenderSchedule(); }); });
+  }
+  function rerenderSchedule(){
+    $('#lpScheduleList').innerHTML = renderScheduleRows();
+    wireScheduleEvents();
+  }
+  openModal(
+    '<h3>'+(existing?'Modifica alunno':'Nuovo alunno')+'</h3>'+
+    '<label for="lpName">Cognome e Nome *</label>'+
+    '<input type="text" id="lpName" value="'+(existing?escapeAttr(existing.name||''):'')+'" maxlength="80">'+
+    '<label for="lpSubject">Lezioni di:</label>'+
+    '<input type="text" id="lpSubject" placeholder="Es. Matematica" value="'+(existing?escapeAttr(existing.subject||''):'')+'" maxlength="80">'+
+    '<label>Orari lezione</label>'+
+    '<div id="lpScheduleList">'+renderScheduleRows()+'</div>'+
+    '<button type="button" class="btn-secondary" id="lpAddSchedRow" style="margin:4px 0 12px;">+ Aggiungi orario</button>'+
+    '<label for="lpRate">Tariffa oraria (€)</label>'+
+    '<input type="number" step="0.01" id="lpRate" value="'+(existing?escapeAttr(existing.hourlyRate||''):'')+'">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="lpProfCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="lpProfConfirm">'+(existing?'Salva':'Crea')+'</button>'+
+    '</div>'
+  );
+  wireScheduleEvents();
+  setTimeout(function(){ $('#lpName').focus(); }, 60);
+  $('#lpAddSchedRow').onclick = function(){ scheduleData.push({day:'Lunedì', from:'', to:''}); rerenderSchedule(); };
+  $('#lpProfCancel').onclick = function(){ closeModal(); if(isFirst) showMenuScreen(); };
+  $('#lpProfConfirm').onclick = async function(){
+    var name = $('#lpName').value.trim();
+    if(!name){ showToast('Il campo "Cognome e Nome" è obbligatorio.', 'error'); return; }
+    var subject = $('#lpSubject').value.trim();
+    var rate = $('#lpRate').value.trim();
+    try{
+      if(existing){
+        existing.name = name; existing.subject = subject; existing.schedule = scheduleData; existing.hourlyRate = rate;
+        await updateDoc(privateLessonDocRef(state.currentAgendaId, existing.id), {name:name, subject:subject, schedule:scheduleData, hourlyRate:rate});
+        closeModal();
+        if(state.currentStudentId===existing.id){ renderStudentProfile(existing); renderLessonsTable(existing); }
+        renderLessonsList();
+        showToast('Dati aggiornati.', 'success');
+      } else {
+        var newId = uid();
+        var data = defaultStudentData(name);
+        data.subject = subject; data.schedule = scheduleData; data.hourlyRate = rate;
+        await setDoc(privateLessonDocRef(state.currentAgendaId, newId), studentForFirestore(data));
+        var entry = Object.assign({id:newId}, data);
+        state.privateLessons = state.privateLessons || [];
+        state.privateLessons.push(entry);
+        closeModal();
+        openStudentScreen(newId);
+      }
+    }catch(err){ console.error(err); showToast('Errore nel salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); }
+  };
+}
+async function deleteStudent(id){
+  var s = (state.privateLessons||[]).find(function(x){ return x.id===id; });
+  if(!confirm('Eliminare definitivamente l\'alunno "'+(s?s.name:'')+'"? Questa azione non può essere annullata.')) return;
+  try{
+    await deleteDoc(privateLessonDocRef(state.currentAgendaId, id));
+    state.privateLessons = (state.privateLessons||[]).filter(function(x){ return x.id!==id; });
+    renderLessonsList();
+    showToast('Alunno eliminato.', 'info');
+  }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error'); }
+}
+
+function formatScheduleText(schedule){
+  if(!schedule || schedule.length===0) return '—';
+  return schedule.map(function(s){ return s.day+' '+(s.from||'?')+'–'+(s.to||'?'); }).join(', ');
+}
+function openStudentScreen(id){
+  state.currentStudentId = id;
+  lpDirty = false;
+  var b=$('#lpSaveBtn'); if(b) b.classList.remove('needs-save');
+  lpActiveCellKey = null;
+  clearLpFmtButtonsState();
+  var student = getCurrentStudent();
+  $('#lpAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
+  renderStudentProfile(student);
+  renderLessonsTable(student);
+  showScreen('screen-lessons');
+}
+$('#lpBack').addEventListener('click', async function(){
+  if(lpDirty){
+    var doSave = confirm('Ci sono modifiche non salvate. Vuoi salvarle prima di continuare?');
+    if(doSave) await saveStudent(true);
+  }
+  showLessonsListScreen();
+});
+function renderStudentProfile(student){
+  if(!student){ $('#lpProfileBlock').innerHTML=''; return; }
+  $('#lpProfileBlock').innerHTML =
+    '<div class="lp-profile-row">'+
+      '<div class="lp-profile-fields">'+
+        '<div class="lp-profile-item"><strong>Cognome e Nome</strong>'+escapeHtml(student.name||'')+'</div>'+
+        '<div class="lp-profile-item"><strong>Lezioni di</strong>'+escapeHtml(student.subject||'—')+'</div>'+
+        '<div class="lp-profile-item"><strong>Orari lezione</strong>'+escapeHtml(formatScheduleText(student.schedule))+'</div>'+
+        '<div class="lp-profile-item"><strong>Tariffa oraria</strong>'+(student.hourlyRate? '€ '+escapeHtml((student.hourlyRate+'').replace('.',','))+'/ora' : '—')+'</div>'+
+      '</div>'+
+      '<button type="button" class="lp-edit-profile-btn" id="lpEditProfileBtn" title="Modifica dati alunno">'+iconSvg('pencil')+'</button>'+
+    '</div>';
+  $('#lpEditProfileBtn').addEventListener('click', function(){ openStudentProfileModal(student, false); });
+}
+function buildLessonsTableInnerHTML(student){
+  var n = student.numCols;
+  var html = '<table class="lp-table"><thead><tr>';
+  for(var i=0;i<n;i++){
+    html += '<th class="lp-hdr-datecol" data-col="'+i+'" title="Colonna data '+(i+1)+'">'+(i+1)+'</th>';
+  }
+  html += '<th class="lp-total-cell">Totali</th><th></th></tr></thead><tbody>';
+  student.dateRows.forEach(function(row, r){
+    html += '<tr class="lp-date-row" data-row="'+r+'">';
+    for(var c=0;c<n;c++){
+      var v = row[c]||'';
+      var key = 'date-'+r+'-'+c;
+      html += '<td class="lp-alt lp-date-cell"><input type="date" class="lp-input" data-row="'+r+'" data-col="'+c+'" data-cellkey="'+key+'"'+cellFmtStyle(student,key)+' value="'+escapeAttr(v)+'"></td>';
+    }
+    html += '<td class="lp-count-cell" data-count-row="'+r+'">'+countFilledInRow(row)+'</td>';
+    html += '<td class="lp-row-actions">'+
+      (r===0 ? '<button type="button" class="lp-add-row-top-btn" data-row="'+r+'" title="Inserisci riga sopra">'+iconSvg('arrowUp')+'</button>' : '')+
+      '<button type="button" class="lp-del-row-btn" data-row="'+r+'" title="Elimina questa riga">'+iconSvg('close')+'</button>'+
+      '<button type="button" class="lp-add-row-btn" data-row="'+r+'" title="Inserisci riga sotto">'+iconSvg('plus')+'</button>'+
+    '</td></tr>';
+  });
+  html += '<tr class="lp-rate-row"><td class="lp-label" colspan="'+n+'">Tariffa oraria</td>'+
+    '<td colspan="2"><input type="text" inputmode="decimal" class="lp-input" data-cellkey="rate"'+cellFmtStyle(student,'rate')+' value="'+escapeAttr(student.hourlyRate||'')+'"></td></tr>';
+  html += '<tr class="lp-pay-row"><td class="lp-label" colspan="'+n+'">Pagamento totale</td>'+
+    '<td colspan="2" id="lpPaymentCell">€ '+fmtMoney2(computePayment(student))+'</td></tr>';
+  html += '</tbody></table>';
+  return html;
+}
+function renderLessonsTable(student){
+  if(!student){ $('#lpTableContainer').innerHTML=''; return; }
+  $('#lpTableContainer').innerHTML = '<h4 class="lp-table-caption">Date delle lezioni</h4>' + buildLessonsTableInnerHTML(student);
+  wireLessonsTableEvents(student);
+}
+function wireLessonsTableEvents(student){
+  $$('.lp-table input[data-row]').forEach(function(inp){
+    inp.addEventListener('focus', function(){ lpActiveCellKey = inp.dataset.cellkey; updateLpFmtButtonsState(student); });
+    inp.addEventListener('input', function(e){
+      var r = +inp.dataset.row, c = +inp.dataset.col;
+      student.dateRows[r][c] = e.target.value;
+      var cell = document.querySelector('[data-count-row="'+r+'"]');
+      if(cell) cell.textContent = countFilledInRow(student.dateRows[r]);
+      updatePaymentCell(student);
+      markLpDirty();
+    });
+  });
+  var rateInput = document.querySelector('[data-cellkey="rate"]');
+  if(rateInput){
+    rateInput.addEventListener('focus', function(){ lpActiveCellKey='rate'; updateLpFmtButtonsState(student); });
+    rateInput.addEventListener('input', function(e){ student.hourlyRate = e.target.value; updatePaymentCell(student); markLpDirty(); });
+  }
+  $$('.lp-del-row-btn').forEach(function(btn){ btn.addEventListener('click', function(){ deleteLessonRow(student, +btn.dataset.row); }); });
+  $$('.lp-add-row-btn').forEach(function(btn){ btn.addEventListener('click', function(){ insertLessonRow(student, +btn.dataset.row+1); }); });
+  $$('.lp-add-row-top-btn').forEach(function(btn){ btn.addEventListener('click', function(){ insertLessonRow(student, 0); }); });
+  $$('.lp-hdr-datecol').forEach(function(th){
+    th.addEventListener('click', function(){ openLpColumnActionsModal(student, +th.dataset.col); });
+  });
+}
+function updatePaymentCell(student){
+  var cell = $('#lpPaymentCell');
+  if(cell) cell.textContent = '€ '+fmtMoney2(computePayment(student));
+}
+function insertLessonRow(student, atIndex){
+  student.dateRows.splice(atIndex, 0, new Array(student.numCols).fill(''));
+  student.numRows = student.dateRows.length;
+  markLpDirty();
+  renderLessonsTable(student);
+}
+function deleteLessonRow(student, r){
+  if(student.dateRows.length<=1){ showToast('Deve restare almeno una riga.', 'info'); return; }
+  student.dateRows.splice(r,1);
+  student.numRows = student.dateRows.length;
+  markLpDirty();
+  renderLessonsTable(student);
+}
+function insertLessonCol(student, atIndex){
+  student.numCols++;
+  student.dateRows.forEach(function(row){ row.splice(atIndex,0,''); });
+  markLpDirty();
+  renderLessonsTable(student);
+}
+function deleteLessonColAt(student, atIndex){
+  if(student.numCols<=1){ showToast('Deve restare almeno una colonna.', 'info'); return; }
+  student.numCols--;
+  student.dateRows.forEach(function(row){ row.splice(atIndex,1); });
+  markLpDirty();
+  renderLessonsTable(student);
+}
+function openLpColumnActionsModal(student, colIndex){
+  openModal(
+    '<h3>Colonna data '+(colIndex+1)+'</h3>'+
+    '<div class="modal-choices">'+
+      '<button type="button" class="choice-btn" id="lpColInsertLeft">'+iconSvg('plus')+'<span>Inserisci colonna a sinistra</span></button>'+
+      '<button type="button" class="choice-btn" id="lpColInsertRight">'+iconSvg('plus')+'<span>Inserisci colonna a destra</span></button>'+
+      '<button type="button" class="choice-btn" id="lpColDelete">'+iconSvg('trash')+'<span>Elimina questa colonna</span></button>'+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="lpColCancel">Annulla</button>'
+  );
+  $('#lpColCancel').onclick = closeModal;
+  $('#lpColInsertLeft').onclick = function(){ closeModal(); insertLessonCol(student, colIndex); };
+  $('#lpColInsertRight').onclick = function(){ closeModal(); insertLessonCol(student, colIndex+1); };
+  $('#lpColDelete').onclick = function(){ closeModal(); deleteLessonColAt(student, colIndex); };
+}
+function updateLpFmtButtonsState(student){
+  var s = (student.cellStyles && lpActiveCellKey) ? student.cellStyles[lpActiveCellKey] : null;
+  var bBtn=$('#lpFmtBold'), iBtn=$('#lpFmtItalic'), sBtn=$('#lpFmtStrike');
+  if(bBtn) bBtn.classList.toggle('active', !!(s&&s.bold));
+  if(iBtn) iBtn.classList.toggle('active', !!(s&&s.italic));
+  if(sBtn) sBtn.classList.toggle('active', !!(s&&s.strike));
+}
+function clearLpFmtButtonsState(){
+  var bBtn=$('#lpFmtBold'), iBtn=$('#lpFmtItalic'), sBtn=$('#lpFmtStrike');
+  if(bBtn) bBtn.classList.remove('active');
+  if(iBtn) iBtn.classList.remove('active');
+  if(sBtn) sBtn.classList.remove('active');
+}
+function toggleLpCellFormat(prop){
+  var student = getCurrentStudent(); if(!student || !lpActiveCellKey){ showToast('Seleziona prima una cella.', 'info'); return; }
+  if(!student.cellStyles) student.cellStyles={};
+  var cur = student.cellStyles[lpActiveCellKey] || {bold:false,italic:false,strike:false};
+  cur[prop] = !cur[prop];
+  student.cellStyles[lpActiveCellKey] = cur;
+  markLpDirty();
+  var input = document.querySelector('[data-cellkey="'+lpActiveCellKey+'"]');
+  if(input){
+    input.style.fontWeight = cur.bold ? '700' : '';
+    input.style.fontStyle = cur.italic ? 'italic' : '';
+    input.style.textDecoration = cur.strike ? 'line-through' : '';
+    input.focus();
+  }
+  updateLpFmtButtonsState(student);
+}
+$('#lpFmtBold').addEventListener('click', function(){ toggleLpCellFormat('bold'); });
+$('#lpFmtItalic').addEventListener('click', function(){ toggleLpCellFormat('italic'); });
+$('#lpFmtStrike').addEventListener('click', function(){ toggleLpCellFormat('strike'); });
+async function saveStudent(silent){
+  var student = getCurrentStudent();
+  if(!student) return false;
+  try{
+    await setDoc(privateLessonDocRef(state.currentAgendaId, student.id), studentForFirestore(student));
+    lpDirty = false;
+    var b=$('#lpSaveBtn'); if(b) b.classList.remove('needs-save');
+    if(!silent) showToast('Modifiche salvate.', 'success');
+    return true;
+  }catch(err){ console.error(err); if(!silent) showToast('Errore durante il salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); return false; }
+}
+$('#lpSaveBtn').addEventListener('click', function(){ saveStudent(false); });
 
 function clearEmptyHint(){
   var hint = $('#dayCanvas .empty-day-hint');
