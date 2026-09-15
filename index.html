@@ -770,6 +770,8 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .lp-table tbody tr.lp-date-row:nth-child(even) td.lp-alt{background:#f2f2f2;}
 .lp-table td.lp-count-cell{background:#CFE8CB;font-weight:700;color:#1f3d1c;}
 .lp-table tr.lp-rate-row td,.lp-table tr.lp-pay-row td{background:#CFE8CB;font-weight:700;color:#1f3d1c;}
+.lp-table .lp-pay-cell{cursor:pointer;}
+.lp-table .lp-pay-cell:hover{background:#b9dcb2;}
 .lp-table tr.lp-rate-row td.lp-label,.lp-table tr.lp-pay-row td.lp-label{text-align:left;}
 .lp-table input.lp-input{border:none;background:transparent;width:100%;text-align:center;font-size:inherit;font-family:inherit;color:inherit;}
 .lp-table .lp-row-actions{display:flex;gap:2px;align-items:center;justify-content:center;}
@@ -1081,11 +1083,6 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" class="topbar-btn primary" id="lpSaveBtn" data-icon="save" data-label="Salva"></button>
   </div>
   <div class="lp-profile" id="lpProfileBlock"></div>
-  <div class="reg-toolbar">
-    <button type="button" class="icon-btn tool" id="lpFmtBold" data-icon="fmtBold" title="Grassetto"></button>
-    <button type="button" class="icon-btn tool" id="lpFmtItalic" data-icon="fmtItalic" title="Corsivo"></button>
-    <button type="button" class="icon-btn tool" id="lpFmtStrike" data-icon="fmtStrike" title="Barrato"></button>
-  </div>
   <div class="reg-table-outer">
     <div id="lpTableContainer"></div>
   </div>
@@ -4642,7 +4639,6 @@ $('#libExportPdf').addEventListener('click', function(){
 state.privateLessons = [];
 state.currentStudentId = null;
 var LP_DAYS = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
-var lpActiveCellKey = null;
 var lpDirty = false;
 function markLpDirty(){ lpDirty = true; var b=$('#lpSaveBtn'); if(b) b.classList.add('needs-save'); }
 function getCurrentStudent(){ return (state.privateLessons||[]).find(function(s){ return s.id===state.currentStudentId; }); }
@@ -4656,7 +4652,7 @@ function defaultStudentData(name){
     name:name, subject:'', schedule:[], hourlyRate:'',
     numRows:1, numCols:6,
     dateRows:[ new Array(6).fill('') ],
-    cellStyles:{},
+    cellStyles:{}, paid:false,
     createdAt: Date.now()
   };
 }
@@ -4670,6 +4666,7 @@ function studentFromFirestore(data){
   data.dateRows = deserializeGradeGrid(data.dateRows, data.numRows||1, data.numCols||1);
   if(!data.cellStyles || typeof data.cellStyles!=='object') data.cellStyles = {};
   if(!Array.isArray(data.schedule)) data.schedule = [];
+  data.paid = !!data.paid;
   return data;
 }
 function countFilledInRow(row){
@@ -4825,8 +4822,6 @@ function openStudentScreen(id){
   state.currentStudentId = id;
   lpDirty = false;
   var b=$('#lpSaveBtn'); if(b) b.classList.remove('needs-save');
-  lpActiveCellKey = null;
-  clearLpFmtButtonsState();
   var student = getCurrentStudent();
   $('#lpAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
   renderStudentProfile(student);
@@ -4878,7 +4873,7 @@ function buildLessonsTableInnerHTML(student){
   html += '<tr class="lp-rate-row"><td class="lp-label" colspan="'+n+'">Tariffa oraria</td>'+
     '<td colspan="2"><input type="text" inputmode="decimal" class="lp-input" data-cellkey="rate"'+cellFmtStyle(student,'rate')+' value="'+escapeAttr(student.hourlyRate||'')+'"></td></tr>';
   html += '<tr class="lp-pay-row"><td class="lp-label" colspan="'+n+'">Pagamento totale</td>'+
-    '<td colspan="2" id="lpPaymentCell">€ '+fmtMoney2(computePayment(student))+'</td></tr>';
+    '<td colspan="2" id="lpPaymentCell" class="lp-pay-cell" title="Clicca per segnare come pagato">'+formatPaymentCellText(student)+'</td></tr>';
   html += '</tbody></table>';
   return html;
 }
@@ -4889,7 +4884,6 @@ function renderLessonsTable(student){
 }
 function wireLessonsTableEvents(student){
   $$('.lp-table input[data-row]').forEach(function(inp){
-    inp.addEventListener('focus', function(){ lpActiveCellKey = inp.dataset.cellkey; updateLpFmtButtonsState(student); });
     inp.addEventListener('input', function(e){
       var r = +inp.dataset.row, c = +inp.dataset.col;
       student.dateRows[r][c] = e.target.value;
@@ -4901,7 +4895,6 @@ function wireLessonsTableEvents(student){
   });
   var rateInput = document.querySelector('[data-cellkey="rate"]');
   if(rateInput){
-    rateInput.addEventListener('focus', function(){ lpActiveCellKey='rate'; updateLpFmtButtonsState(student); });
     rateInput.addEventListener('input', function(e){ student.hourlyRate = e.target.value; updatePaymentCell(student); markLpDirty(); });
   }
   $$('.lp-del-row-btn').forEach(function(btn){ btn.addEventListener('click', function(){ deleteLessonRow(student, +btn.dataset.row); }); });
@@ -4910,10 +4903,38 @@ function wireLessonsTableEvents(student){
   $$('.lp-hdr-datecol').forEach(function(th){
     th.addEventListener('click', function(){ openLpColumnActionsModal(student, +th.dataset.col); });
   });
+  var payCell = $('#lpPaymentCell');
+  if(payCell) payCell.addEventListener('click', function(){ openPaymentStatusModal(student); });
+}
+function formatPaymentCellText(student){
+  var txt = '€ '+fmtMoney2(computePayment(student));
+  if(student.paid) txt += ' (PAGATO)';
+  return txt;
 }
 function updatePaymentCell(student){
   var cell = $('#lpPaymentCell');
-  if(cell) cell.textContent = '€ '+fmtMoney2(computePayment(student));
+  if(cell) cell.textContent = formatPaymentCellText(student);
+}
+function openPaymentStatusModal(student){
+  openModal(
+    '<h3>Stato pagamento</h3>'+
+    '<label style="display:flex;align-items:center;gap:10px;font-size:.95rem;cursor:pointer;margin:10px 0 4px;">'+
+      '<input type="checkbox" id="lpPaidCheckbox" style="width:20px;height:20px;"'+(student.paid?' checked':'')+'> Pagato'+
+    '</label>'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="lpPaidCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="lpPaidConfirm">Salva</button>'+
+    '</div>'
+  );
+  $('#lpPaidCancel').onclick = closeModal;
+  $('#lpPaidConfirm').onclick = async function(){
+    student.paid = $('#lpPaidCheckbox').checked;
+    updatePaymentCell(student);
+    markLpDirty();
+    closeModal();
+    try{ await updateDoc(privateLessonDocRef(state.currentAgendaId, student.id), {paid: student.paid}); }
+    catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
+  };
 }
 function insertLessonRow(student, atIndex){
   student.dateRows.splice(atIndex, 0, new Array(student.numCols).fill(''));
@@ -4956,38 +4977,6 @@ function openLpColumnActionsModal(student, colIndex){
   $('#lpColInsertRight').onclick = function(){ closeModal(); insertLessonCol(student, colIndex+1); };
   $('#lpColDelete').onclick = function(){ closeModal(); deleteLessonColAt(student, colIndex); };
 }
-function updateLpFmtButtonsState(student){
-  var s = (student.cellStyles && lpActiveCellKey) ? student.cellStyles[lpActiveCellKey] : null;
-  var bBtn=$('#lpFmtBold'), iBtn=$('#lpFmtItalic'), sBtn=$('#lpFmtStrike');
-  if(bBtn) bBtn.classList.toggle('active', !!(s&&s.bold));
-  if(iBtn) iBtn.classList.toggle('active', !!(s&&s.italic));
-  if(sBtn) sBtn.classList.toggle('active', !!(s&&s.strike));
-}
-function clearLpFmtButtonsState(){
-  var bBtn=$('#lpFmtBold'), iBtn=$('#lpFmtItalic'), sBtn=$('#lpFmtStrike');
-  if(bBtn) bBtn.classList.remove('active');
-  if(iBtn) iBtn.classList.remove('active');
-  if(sBtn) sBtn.classList.remove('active');
-}
-function toggleLpCellFormat(prop){
-  var student = getCurrentStudent(); if(!student || !lpActiveCellKey){ showToast('Seleziona prima una cella.', 'info'); return; }
-  if(!student.cellStyles) student.cellStyles={};
-  var cur = student.cellStyles[lpActiveCellKey] || {bold:false,italic:false,strike:false};
-  cur[prop] = !cur[prop];
-  student.cellStyles[lpActiveCellKey] = cur;
-  markLpDirty();
-  var input = document.querySelector('[data-cellkey="'+lpActiveCellKey+'"]');
-  if(input){
-    input.style.fontWeight = cur.bold ? '700' : '';
-    input.style.fontStyle = cur.italic ? 'italic' : '';
-    input.style.textDecoration = cur.strike ? 'line-through' : '';
-    input.focus();
-  }
-  updateLpFmtButtonsState(student);
-}
-$('#lpFmtBold').addEventListener('click', function(){ toggleLpCellFormat('bold'); });
-$('#lpFmtItalic').addEventListener('click', function(){ toggleLpCellFormat('italic'); });
-$('#lpFmtStrike').addEventListener('click', function(){ toggleLpCellFormat('strike'); });
 async function saveStudent(silent){
   var student = getCurrentStudent();
   if(!student) return false;
