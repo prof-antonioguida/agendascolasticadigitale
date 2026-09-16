@@ -6102,14 +6102,13 @@ function startDictationAt(x, y){
   var wrapper = document.querySelector('#dayCanvas [data-id="'+data.id+'"]');
   wrapper.classList.add('dictating');
   var contentEl = wrapper.querySelector('.text-content');
-  var finalText='';
   function resetSilenceTimer(){
     clearTimeout(dictationSilenceTimer);
     dictationSilenceTimer = setTimeout(function(){ if(recognizing) recognition.stop(); }, 4000);
   }
   recognition.onresult = function(ev){
-    var interim='';
-    for(var i=ev.resultIndex;i<ev.results.length;i++){
+    var finalText='', interim='';
+    for(var i=0;i<ev.results.length;i++){
       var t=ev.results[i][0].transcript;
       if(ev.results[i].isFinal) finalText+=t+' '; else interim+=t;
     }
