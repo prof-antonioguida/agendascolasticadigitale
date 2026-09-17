@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Super organizer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -143,19 +143,20 @@ input,select{font-family:inherit;}
 
 /* ---------- Home ---------- */
 .home-header{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px;}
-.home-header .user-chip{display:flex;align-items:center;gap:12px;font-size:.85rem;}
+.home-header .user-chip{display:flex;align-items:center;gap:10px;font-size:.85rem;flex-wrap:wrap;row-gap:8px;}
 .home-header .user-email{
   color:var(--ink);font-weight:600;font-size:.88rem;background:var(--surface);
   border:1px solid var(--paper-line);border-radius:20px;padding:7px 14px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;
 }
 .home-header .user-chip button#btnLogout{
   background:var(--accent);border:1px solid var(--accent-deep);color:#fff;
-  border-radius:9px;padding:8px 15px;cursor:pointer;font-weight:600;font-size:.8rem;
+  border-radius:9px;padding:8px 15px;cursor:pointer;font-weight:600;font-size:.8rem;flex-shrink:0;
 }
 .home-header .user-chip button#btnLogout:hover{background:var(--accent-deep);}
 .home-header .user-chip button#btnDeleteAccount{
   background:none;border:1px solid var(--paper-line);color:var(--ink-soft);
-  border-radius:9px;padding:8px 15px;cursor:pointer;font-weight:600;font-size:.8rem;
+  border-radius:9px;padding:8px 15px;cursor:pointer;font-weight:600;font-size:.8rem;flex-shrink:0;
 }
 .home-header .user-chip button#btnDeleteAccount:hover{background:rgba(162,58,44,.12);color:#a23a2c;border-color:#a23a2c;}
 .auth-forgot-link{
@@ -163,11 +164,11 @@ input,select{font-family:inherit;}
   padding:0;margin:-6px 0 8px;text-align:left;text-decoration:underline;
 }
 .theme-toggle{
-  width:42px;height:42px;border-radius:50%;border:2px solid var(--gold);
+  width:42px;height:42px;min-width:42px;min-height:42px;flex-shrink:0;border-radius:50%;border:2px solid var(--gold);
   background:var(--surface-alt);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;
   display:flex;align-items:center;justify-content:center;
 }
-.theme-toggle svg{width:20px;height:20px;}
+.theme-toggle svg{width:20px;height:20px;flex-shrink:0;}
 .theme-toggle .icon-moon{display:none;}
 body.dark .theme-toggle .icon-sun{display:none;}
 body.dark .theme-toggle .icon-moon{display:block;}
@@ -195,6 +196,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
 
 .fab{
   position:fixed;right:26px;bottom:26px;width:60px;height:60px;border-radius:50%;
+  right:calc(26px + env(safe-area-inset-right, 0px));bottom:calc(26px + env(safe-area-inset-bottom, 0px));
   background:var(--accent);color:#fff;border:none;box-shadow:0 10px 24px rgba(0,0,0,.35);
   display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:20;
 }
@@ -263,7 +265,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .cal-year-row{display:flex;gap:10px;align-items:center;margin:18px 0 26px;flex-wrap:wrap;}
 .cal-year-label{font-size:.88rem;color:var(--ink-soft);}
 .cal-year-row input{
-  padding:10px 12px;border-radius:8px;border:1px solid var(--paper-line);background:var(--surface);
+  padding:10px 12px;border-radius:8px;border:1px solid var(--paper-line);background:var(--surface);color:var(--ink);
   font-size:.95rem;width:160px;
 }
 .cal-year-row button{
@@ -335,6 +337,10 @@ body.dark .theme-toggle .icon-moon{display:block;}
 }
 .contact-action-icon svg{width:18px;height:18px;}
 .contact-detail-name{font-family:var(--font-display);font-size:1.25rem;font-weight:600;margin-bottom:10px;}
+.ct-multi-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.ct-multi-row input{flex:1;padding:10px 12px;border-radius:8px;border:1px solid var(--paper-line);background:var(--surface);color:var(--ink);font-size:.92rem;}
+.ct-multi-del{background:none;border:none;color:#a23a2c;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ct-multi-del svg{width:14px;height:14px;}
 .day-toolbar{
   display:flex;gap:10px;flex-wrap:wrap;padding:12px 16px;background:var(--paper-deep);
   border-radius:16px;margin:10px auto 4px;max-width:1080px;justify-content:center;
@@ -525,9 +531,9 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .empty-day-hint{text-align:center;color:var(--ink-soft);font-style:italic;padding:40px 0;}
 
 .recording-banner{
-  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;
+  position:fixed;bottom:calc(20px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;
   padding:10px 18px;border-radius:30px;display:flex;align-items:center;gap:14px;z-index:60;box-shadow:0 8px 20px rgba(0,0,0,.3);
-  font-size:.85rem;
+  font-size:.85rem;max-width:calc(100vw - 32px);
 }
 .recording-banner button{background:#fff;color:var(--accent);border:none;border-radius:16px;padding:6px 14px;font-weight:700;cursor:pointer;font-size:.8rem;}
 
@@ -581,7 +587,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   .icon-btn.tool{width:42px;height:42px;}
   .notebook-footer{padding:12px 8px;gap:8px;}
   .notebook-page-name{font-size:1.15rem;}
-  .fab{right:18px;bottom:18px;width:54px;height:54px;}
+  .fab{right:calc(18px + env(safe-area-inset-right, 0px));bottom:calc(18px + env(safe-area-inset-bottom, 0px));width:54px;height:54px;}
 }
 @media(max-width:420px){
   .day-toolbar,.reg-toolbar{justify-content:flex-start;}
@@ -626,6 +632,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regUndo{--tool-color:#7A8A99;}
 #regRedo{--tool-color:#7A8A99;}
 #balExportPdf{--tool-color:#5A6B7A;}
+#lpExportPdf{--tool-color:#5A6B7A;}
 #libExportPdf{--tool-color:#5A6B7A;}
 .reg-table-outer{overflow:auto;padding:0 16px 10px;max-width:100%;-webkit-overflow-scrolling:touch;}
 .reg-table{border-collapse:collapse;font-size:.82rem;background:#fff;margin:0 auto;color:#222;}
@@ -656,15 +663,22 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .reg-table .reg-desc-label{background:#F5E9C8;font-weight:600;}
 .reg-table .reg-desc-letter{background:#8FBF95;font-weight:700;border-color:#fff;}
 .reg-table .reg-desc-text{text-align:left;}
-.reg-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 30px;align-items:center;}
+.reg-tabs{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px 30px;align-items:center;}
 .reg-tab{
-  display:flex;align-items:center;gap:4px;padding:7px 12px;border-radius:8px 8px 0 0;border:1px solid var(--paper-line);
+  display:flex;align-items:center;gap:2px;padding:8px 6px 8px 12px;border-radius:8px 8px 0 0;border:1px solid var(--paper-line);
   border-bottom:3px solid var(--tab-color,#999);background:var(--surface);cursor:pointer;font-size:.8rem;white-space:nowrap;color:var(--ink);
+  min-height:40px;
 }
 .reg-tab.active{background:var(--surface-alt);font-weight:700;}
-.reg-tab-color{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:2px;vertical-align:middle;cursor:pointer;border:1px solid rgba(0,0,0,.25);padding:0;}
-.reg-tab-rename{background:none;border:none;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
-.reg-tab-rename svg{width:12px;height:12px;}
+.reg-tab-name{padding:4px 6px 4px 2px;}
+.reg-tab-color{width:14px;height:14px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;cursor:pointer;border:1px solid rgba(0,0,0,.25);padding:0;flex-shrink:0;}
+.reg-tab-rename{
+  background:none;border:none;border-left:1px solid var(--paper-line);color:var(--ink-soft);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0 4px 0 10px;margin-left:4px;
+  width:34px;height:34px;flex-shrink:0;
+}
+.reg-tab-rename:hover{color:var(--accent);}
+.reg-tab-rename svg{width:15px;height:15px;}
 #regPrintArea{position:fixed;left:-99999px;top:0;}
 
 /* ---------- Bilancio ---------- */
@@ -835,7 +849,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   <div class="page-rings">__RINGS__</div>
   <div class="page-wrap">
     <div class="home-header">
-      <h1>Le mie agende</h1>
+      <h1>I miei organizer</h1>
       <div class="user-chip">
         <span id="userEmailLabel" class="user-email"></span>
         <button type="button" class="theme-toggle" id="btnThemeToggle" title="Cambia tema chiaro/scuro">
@@ -1084,7 +1098,10 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
       <button type="button" class="icon-btn" id="lpBack" data-icon="arrowLeft" title="Indietro"></button>
       <span class="day-agenda-tag" id="lpAgendaName"></span>
     </div>
-    <button type="button" class="topbar-btn primary" id="lpSaveBtn" data-icon="save" data-label="Salva"></button>
+    <div style="display:flex;gap:8px;">
+      <button type="button" class="icon-btn tool" id="lpExportPdf" data-icon="pdf" title="Scarica in PDF"></button>
+      <button type="button" class="topbar-btn primary" id="lpSaveBtn" data-icon="save" data-label="Salva"></button>
+    </div>
   </div>
   <div class="lp-profile" id="lpProfileBlock"></div>
   <div class="reg-table-outer">
@@ -2395,6 +2412,13 @@ async function updateDaysWithContent(dKey, hasContent){
 function addDays(d,n){ var r=new Date(d); r.setDate(r.getDate()+n); return r; }
 function addMonths(d,n){ var r=new Date(d); r.setMonth(r.getMonth()+n); return r; }
 function addYears(d,n){ var r=new Date(d); r.setFullYear(r.getFullYear()+n); return r; }
+function parseISODateLocal(str){
+  var m = (str||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return null;
+  var d = new Date(+m[1], +m[2]-1, +m[3]);
+  d.setHours(0,0,0,0);
+  return d;
+}
 function computeRecurringDates(original, type, until){
   var dates = []; var cur = new Date(original); var guard=0;
   while(guard++<400){
@@ -2471,14 +2495,15 @@ function openDuplicateModal(data){
   $('#dupCancel').onclick = closeModal;
   $('#dupConfirm').onclick = async function(){
     var type = typeSel.value;
-    var originalDate = state.currentDate;
+    var originalDate = new Date(state.currentDate);
+    originalDate.setHours(0,0,0,0);
     var targetDates = [];
     var typeLabels = {daily:'Ogni giorno', weekly:'Ogni settimana', monthly:'Ogni mese', yearly:'Ogni anno'};
     if(type==='daily'||type==='weekly'||type==='monthly'||type==='yearly'){
       var untilStr = $('#dupUntil').value;
       if(!untilStr){ showToast('Scegli una data limite.', 'error'); return; }
-      var untilDate = new Date(untilStr+'T00:00:00');
-      if(isNaN(untilDate.getTime())){ showToast('Data limite non valida.', 'error'); return; }
+      var untilDate = parseISODateLocal(untilStr);
+      if(!untilDate || isNaN(untilDate.getTime())){ showToast('Data limite non valida.', 'error'); return; }
       if(untilDate <= originalDate){ showToast('La data limite deve essere successiva alla data di partenza ('+formatDateIt(originalDate)+').', 'error'); return; }
       targetDates = computeRecurringDates(originalDate, type, untilDate);
       if(targetDates.length===0){
@@ -2490,7 +2515,7 @@ function openDuplicateModal(data){
     } else if(type==='range'){
       var s = $('#dupRangeStart').value, e = $('#dupRangeEnd').value;
       if(!s||!e){ showToast("Scegli l'inizio e la fine dell'intervallo.", 'error'); return; }
-      targetDates = computeRangeDates(originalDate, new Date(s+'T00:00:00'), new Date(e+'T00:00:00'));
+      targetDates = computeRangeDates(originalDate, parseISODateLocal(s), parseISODateLocal(e));
       if(targetDates.length===0){ showToast('Nessuna data valida da aggiungere in questo intervallo.', 'error'); return; }
     } else if(type==='list'){
       var raw = $('#dupListInput').value.trim();
@@ -2967,7 +2992,7 @@ state.contacts = [];
 $('#menuBtnContacts').addEventListener('click', async function(){
   try{
     var snap = await getDocs(contactsColl(state.currentAgendaId));
-    state.contacts = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+    state.contacts = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return normalizeContact(data); });
   }catch(err){ console.error(err); showToast('Errore nel caricamento della rubrica.', 'error'); state.contacts=[]; }
   $('#contactsSearchInput').value = '';
   renderContactsList('');
@@ -2977,6 +3002,12 @@ $('#contactsBack').addEventListener('click', function(){ showMenuScreen(); });
 $('#contactsSearchInput').addEventListener('input', function(e){ renderContactsList(e.target.value); });
 $('#contactsAddBtn').addEventListener('click', function(){ openContactEditModal(null); });
 
+function normalizeContact(c){
+  if(!Array.isArray(c.phones)){ c.phones = c.phone ? [c.phone] : []; }
+  if(!Array.isArray(c.emails)){ c.emails = c.email ? [c.email] : []; }
+  if(typeof c.workAddress!=='string') c.workAddress = '';
+  return c;
+}
 function sortedContacts(){
   return (state.contacts||[]).slice().sort(function(a,b){
     return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
@@ -2988,7 +3019,8 @@ function renderContactsList(filter){
   var f = (filter||'').trim().toLowerCase();
   if(f){
     contacts = contacts.filter(function(c){
-      return [c.name,c.phone,c.email,c.address].some(function(v){ return v && v.toLowerCase().indexOf(f)>-1; });
+      var fields = [c.name, c.address, c.workAddress].concat(c.phones||[]).concat(c.emails||[]);
+      return fields.some(function(v){ return v && v.toLowerCase().indexOf(f)>-1; });
     });
   }
   if(contacts.length===0){
@@ -3017,22 +3049,30 @@ function renderContactsList(filter){
 }
 function openContactDetailModal(c){
   var rows = '';
-  if(c.phone){
+  (c.phones||[]).forEach(function(p){
+    if(!p) return;
     rows += '<div class="contact-detail-row">'+
-      '<a href="tel:'+escapeAttr(c.phone)+'" class="contact-action-icon" title="Chiama">'+iconSvg('phone')+'</a>'+
-      '<span class="contact-detail-text">'+escapeHtml(c.phone)+'</span>'+
+      '<a href="tel:'+escapeAttr(p)+'" class="contact-action-icon" title="Chiama">'+iconSvg('phone')+'</a>'+
+      '<span class="contact-detail-text">'+escapeHtml(p)+'</span>'+
     '</div>';
-  }
-  if(c.email){
+  });
+  (c.emails||[]).forEach(function(e){
+    if(!e) return;
     rows += '<div class="contact-detail-row">'+
-      '<a href="mailto:'+escapeAttr(c.email)+'" class="contact-action-icon" title="Invia email">'+iconSvg('email')+'</a>'+
-      '<span class="contact-detail-text">'+escapeHtml(c.email)+'</span>'+
+      '<a href="mailto:'+escapeAttr(e)+'" class="contact-action-icon" title="Invia email">'+iconSvg('email')+'</a>'+
+      '<span class="contact-detail-text">'+escapeHtml(e)+'</span>'+
     '</div>';
-  }
+  });
   if(c.address){
     rows += '<div class="contact-detail-row">'+
-      '<button type="button" class="contact-action-icon" id="contactNavBtn" title="Naviga verso l\'indirizzo">'+iconSvg('location')+'</button>'+
+      '<button type="button" class="contact-action-icon contact-nav-btn" data-address="'+escapeAttr(c.address)+'" title="Naviga verso l\'indirizzo">'+iconSvg('location')+'</button>'+
       '<span class="contact-detail-text">'+escapeHtml(c.address)+'</span>'+
+    '</div>';
+  }
+  if(c.workAddress){
+    rows += '<div class="contact-detail-row">'+
+      '<button type="button" class="contact-action-icon contact-nav-btn" data-address="'+escapeAttr(c.workAddress)+'" title="Naviga verso l\'indirizzo di lavoro">'+iconSvg('location')+'</button>'+
+      '<span class="contact-detail-text">'+escapeHtml(c.workAddress)+' <em style="opacity:.7;font-style:italic;">(lavoro)</em></span>'+
     '</div>';
   }
   if(!rows) rows = '<p style="color:var(--ink-soft);font-size:.85rem;">Nessun altro dato salvato.</p>';
@@ -3046,8 +3086,9 @@ function openContactDetailModal(c){
   );
   $('#contactDetailClose').onclick = closeModal;
   $('#contactDetailEdit').onclick = function(){ closeModal(); openContactEditModal(c); };
-  var navBtn = $('#contactNavBtn');
-  if(navBtn){ navBtn.addEventListener('click', function(){ navigateToAddress(c.address); }); }
+  $$('.contact-nav-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ navigateToAddress(btn.dataset.address); });
+  });
 }
 function navigateToAddress(address){
   if(!navigator.geolocation){
@@ -3064,30 +3105,67 @@ function navigateToAddress(address){
   });
 }
 function openContactEditModal(existing){
+  var phonesData = existing ? (existing.phones||[]).slice() : [''];
+  var emailsData = existing ? (existing.emails||[]).slice() : [''];
+  if(phonesData.length===0) phonesData = [''];
+  if(emailsData.length===0) emailsData = [''];
+  function renderMultiRows(items, cssClass, inputType, placeholder){
+    return items.map(function(v, i){
+      return '<div class="ct-multi-row" data-idx="'+i+'">'+
+        '<input type="'+inputType+'" class="'+cssClass+'-input" data-idx="'+i+'" placeholder="'+placeholder+'" value="'+escapeAttr(v||'')+'">'+
+        (items.length>1 ? '<button type="button" class="ct-multi-del" data-idx="'+i+'" title="Rimuovi">'+iconSvg('close')+'</button>' : '')+
+      '</div>';
+    }).join('');
+  }
+  function rerenderPhones(){
+    $('#ctPhonesList').innerHTML = renderMultiRows(phonesData, 'ctPhone', 'tel', 'Es. 0801234567');
+    wirePhoneEvents();
+  }
+  function rerenderEmails(){
+    $('#ctEmailsList').innerHTML = renderMultiRows(emailsData, 'ctEmail', 'email', 'Es. nome@scuola.it');
+    wireEmailEvents();
+  }
+  function wirePhoneEvents(){
+    $$('.ctPhone-input').forEach(function(inp){ inp.addEventListener('input', function(){ phonesData[+inp.dataset.idx] = inp.value; }); });
+    $$('#ctPhonesList .ct-multi-del').forEach(function(btn){ btn.addEventListener('click', function(){ phonesData.splice(+btn.dataset.idx,1); rerenderPhones(); }); });
+  }
+  function wireEmailEvents(){
+    $$('.ctEmail-input').forEach(function(inp){ inp.addEventListener('input', function(){ emailsData[+inp.dataset.idx] = inp.value; }); });
+    $$('#ctEmailsList .ct-multi-del').forEach(function(btn){ btn.addEventListener('click', function(){ emailsData.splice(+btn.dataset.idx,1); rerenderEmails(); }); });
+  }
   openModal(
     '<h3>'+(existing?'Modifica contatto':'Nuovo contatto')+'</h3>'+
     '<label for="ctName">Nome</label>'+
     '<input type="text" id="ctName" placeholder="Es. Mario Rossi" value="'+(existing?escapeAttr(existing.name||''):'')+'">'+
-    '<label for="ctPhone">Numero di telefono</label>'+
-    '<input type="tel" id="ctPhone" placeholder="Es. 0801234567" value="'+(existing?escapeAttr(existing.phone||''):'')+'">'+
-    '<label for="ctEmail">Indirizzo email</label>'+
-    '<input type="email" id="ctEmail" placeholder="Es. nome@scuola.it" value="'+(existing?escapeAttr(existing.email||''):'')+'">'+
+    '<label>Numero di telefono</label>'+
+    '<div id="ctPhonesList">'+renderMultiRows(phonesData, 'ctPhone', 'tel', 'Es. 0801234567')+'</div>'+
+    '<button type="button" class="btn-secondary" id="ctAddPhone" style="margin:4px 0 12px;">+ Aggiungi numero</button>'+
+    '<label>Indirizzo email</label>'+
+    '<div id="ctEmailsList">'+renderMultiRows(emailsData, 'ctEmail', 'email', 'Es. nome@scuola.it')+'</div>'+
+    '<button type="button" class="btn-secondary" id="ctAddEmail" style="margin:4px 0 12px;">+ Aggiungi email</button>'+
     '<label for="ctAddress">Indirizzo</label>'+
     '<input type="text" id="ctAddress" placeholder="Es. Via Roma 1, Bari" value="'+(existing?escapeAttr(existing.address||''):'')+'">'+
+    '<label for="ctWorkAddress">Indirizzo lavoro</label>'+
+    '<input type="text" id="ctWorkAddress" placeholder="Es. Via Dante 5, Bari" value="'+(existing?escapeAttr(existing.workAddress||''):'')+'">'+
     '<div class="modal-actions">'+
       '<button type="button" class="btn-secondary" id="ctCancel">Annulla</button>'+
       '<button type="button" class="btn-primary" id="ctSave">Salva</button>'+
     '</div>'
   );
+  wirePhoneEvents();
+  wireEmailEvents();
   setTimeout(function(){ $('#ctName').focus(); }, 60);
+  $('#ctAddPhone').onclick = function(){ phonesData.push(''); rerenderPhones(); };
+  $('#ctAddEmail').onclick = function(){ emailsData.push(''); rerenderEmails(); };
   $('#ctCancel').onclick = closeModal;
   $('#ctSave').onclick = async function(){
     var name = $('#ctName').value.trim();
-    var phone = $('#ctPhone').value.trim();
-    var email = $('#ctEmail').value.trim();
+    var phones = phonesData.map(function(p){ return p.trim(); }).filter(Boolean);
+    var emails = emailsData.map(function(e){ return e.trim(); }).filter(Boolean);
     var address = $('#ctAddress').value.trim();
+    var workAddress = $('#ctWorkAddress').value.trim();
     if(!name){ showToast('Inserisci almeno il nome.', 'error'); return; }
-    var payload = {name:name, phone:phone, email:email, address:address};
+    var payload = {name:name, phones:phones, emails:emails, address:address, workAddress:workAddress, phone:phones[0]||'', email:emails[0]||''};
     try{
       if(existing){
         await updateDoc(contactDocRef(state.currentAgendaId, existing.id), payload);
@@ -4998,6 +5076,37 @@ async function saveStudent(silent){
   }catch(err){ console.error(err); if(!silent) showToast('Errore durante il salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); return false; }
 }
 $('#lpSaveBtn').addEventListener('click', function(){ saveStudent(false); });
+function buildLessonsTableForPrint(student){
+  var n = student.numCols;
+  var html = '<div class="reg-print-sheet"><h2 style="font-family:inherit;margin:0 0 4px;">'+escapeHtml(student.name||'')+'</h2>'+
+    '<p style="margin:0 0 10px;font-size:.85rem;">'+
+      (student.subject?('Lezioni di: '+escapeHtml(student.subject)+' &middot; '):'')+
+      'Orari: '+escapeHtml(formatScheduleText(student.schedule))+
+      (student.hourlyRate?(' &middot; Tariffa oraria: € '+escapeHtml((student.hourlyRate+'').replace('.',','))):'')+
+    '</p>';
+  html += '<h4 class="lp-table-caption" style="text-align:left;margin:0 0 6px;">Date delle lezioni</h4>';
+  html += '<table class="lp-table"><thead><tr>';
+  for(var i=0;i<n;i++) html += '<th>'+(i+1)+'</th>';
+  html += '<th class="lp-total-cell">Totali</th></tr></thead><tbody>';
+  student.dateRows.forEach(function(row){
+    html += '<tr>';
+    for(var c=0;c<n;c++) html += '<td>'+escapeHtml(row[c]||'')+'</td>';
+    html += '<td class="lp-count-cell">'+countFilledInRow(row)+'</td></tr>';
+  });
+  html += '<tr class="lp-rate-row"><td class="lp-label" colspan="'+n+'">Tariffa oraria</td><td>€ '+escapeHtml((student.hourlyRate+'').replace('.',',')||'0')+'</td></tr>';
+  html += '<tr class="lp-pay-row"><td class="lp-label" colspan="'+n+'">Pagamento totale</td><td>'+formatPaymentCellText(student)+'</td></tr>';
+  html += '</tbody></table></div>';
+  return html;
+}
+$('#lpExportPdf').addEventListener('click', function(){
+  var student = getCurrentStudent(); if(!student) return;
+  var area = $('#regPrintArea');
+  area.innerHTML = buildLessonsTableForPrint(student);
+  setPrintPageSize('landscape');
+  document.body.classList.add('printing-register');
+  window.print();
+  setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
+});
 
 function clearEmptyHint(){
   var hint = $('#dayCanvas .empty-day-hint');
@@ -5672,7 +5781,8 @@ function startFreeDraw(){
     var r=overlay.getBoundingClientRect();
     var cx=evt.touches?evt.touches[0].clientX:evt.clientX;
     var cy=evt.touches?evt.touches[0].clientY:evt.clientY;
-    return [cx-r.left, cy-r.top];
+    var scale = getCurrentCanvasScale();
+    return [(cx-r.left)/scale, (cy-r.top)/scale];
   }
   function trackBounds(x,y){
     if(x<freeDrawMinX) freeDrawMinX=x; if(y<freeDrawMinY) freeDrawMinY=y;
@@ -6061,7 +6171,7 @@ $('#fileAudio').addEventListener('change', function(e){
 });
 
 /* ---- dettatura ---- */
-var recognition=null, recognizing=false, dictationSilenceTimer=null;
+var recognition=null, recognizing=false, dictationSilenceTimer=null, dictationManualStop=false;
 var PUNCT_MAP = [
   [/\bpunto e virgola\b/gi, ';'],
   [/\bdue punti\b/gi, ':'],
@@ -6086,7 +6196,7 @@ function applyPunctuation(text){
   return result;
 }
 $('#btnDictation').addEventListener('click', function(){
-  if(recognizing){ recognition.stop(); return; }
+  if(recognizing){ dictationManualStop = true; recognition.stop(); return; }
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR){ showToast('Il tuo browser non supporta la dettatura vocale. Prova Chrome o Edge.', 'error'); return; }
   armPlacement('dictation');
@@ -6094,37 +6204,59 @@ $('#btnDictation').addEventListener('click', function(){
 function startDictationAt(x, y){
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR){ showToast('Il tuo browser non supporta la dettatura vocale. Prova Chrome o Edge.', 'error'); return; }
-  try{ recognition = new SR(); }
-  catch(err){ showToast('Impossibile avviare la dettatura.', 'error'); return; }
-  recognition.lang='it-IT'; recognition.continuous=true; recognition.interimResults=true;
   var data = {id:uid(), type:'text', x:x, y:y, w:textLineWidth(x), html:'', size:16, bold:false, italic:false, underline:false, color:defaultTextColor()};
   addCanvasElement(data);
   var wrapper = document.querySelector('#dayCanvas [data-id="'+data.id+'"]');
   wrapper.classList.add('dictating');
   var contentEl = wrapper.querySelector('.text-content');
+  var accumulatedFinal = '';
+  dictationManualStop = false;
   function resetSilenceTimer(){
     clearTimeout(dictationSilenceTimer);
-    dictationSilenceTimer = setTimeout(function(){ if(recognizing) recognition.stop(); }, 4000);
+    dictationSilenceTimer = setTimeout(function(){ dictationManualStop = true; if(recognizing) recognition.stop(); }, 4000);
   }
-  recognition.onresult = function(ev){
-    var finalText='', interim='';
-    for(var i=0;i<ev.results.length;i++){
-      var t=ev.results[i][0].transcript;
-      if(ev.results[i].isFinal) finalText+=t+' '; else interim+=t;
-    }
-    var combined = applyPunctuation((finalText+interim).trim());
-    contentEl.textContent = combined;
-    data.html = contentEl.innerHTML;
-    markDirty();
-    resetSilenceTimer();
-  };
-  recognition.onerror = function(ev){ if(ev.error!=='no-speech') showToast('Errore microfono: '+ev.error, 'error'); };
-  recognition.onend = function(){
-    recognizing=false;
-    clearTimeout(dictationSilenceTimer);
-    $('#btnDictation').classList.remove('active');
-    wrapper.classList.remove('dictating');
-  };
+  function createRecognitionSession(){
+    var r;
+    try{ r = new SR(); }
+    catch(err){ showToast('Impossibile avviare la dettatura.', 'error'); return null; }
+    /* continuous:false evita un bug diffuso su Chrome per Android, dove la modalità
+       continua fa ripetere più volte le stesse parole già riconosciute; si riavvia
+       invece una breve sessione alla volta, incollando il testo via via ottenuto. */
+    r.lang='it-IT'; r.continuous=false; r.interimResults=true;
+    r.onresult = function(ev){
+      var sessionFinal='', interim='';
+      for(var i=0;i<ev.results.length;i++){
+        var t=ev.results[i][0].transcript;
+        if(ev.results[i].isFinal) sessionFinal+=t+' '; else interim+=t;
+      }
+      var combined = applyPunctuation((accumulatedFinal+sessionFinal+interim).trim());
+      contentEl.textContent = combined;
+      data.html = contentEl.innerHTML;
+      markDirty();
+      resetSilenceTimer();
+    };
+    r.onerror = function(ev){
+      if(ev.error==='no-speech' || ev.error==='aborted') return;
+      showToast('Errore microfono: '+ev.error, 'error');
+    };
+    r.onend = function(){
+      if(dictationManualStop){
+        recognizing=false;
+        clearTimeout(dictationSilenceTimer);
+        $('#btnDictation').classList.remove('active');
+        wrapper.classList.remove('dictating');
+        return;
+      }
+      accumulatedFinal = contentEl.textContent ? (contentEl.textContent+' ') : '';
+      recognition = createRecognitionSession();
+      if(recognition){
+        try{ recognition.start(); }catch(err){ /* sessione già in chiusura: ignora */ }
+      }
+    };
+    return r;
+  }
+  recognition = createRecognitionSession();
+  if(!recognition) return;
   try{
     recognition.start();
     recognizing=true;
