@@ -12,6 +12,7 @@
   --paper:#F3ECDC;
   --paper-deep:#EAE0C6;
   --paper-line:#D9CBA6;
+  --frame-color:#000000;
   --ink:#2E2A22;
   --ink-soft:#6B6250;
   --leather:#5B3524;
@@ -32,6 +33,7 @@ body.dark{
   --paper:#1E1B16;
   --paper-deep:#171410;
   --paper-line:#544A38;
+  --frame-color:#ffffff;
   --ink:#F0E9DA;
   --ink-soft:#C7BC9E;
   --accent:#D86753;
@@ -147,7 +149,7 @@ input,select{font-family:inherit;}
 .home-header .user-email{
   color:var(--ink);font-weight:600;font-size:.88rem;background:var(--surface);
   border:1px solid var(--paper-line);border-radius:20px;padding:7px 14px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;
+  overflow-wrap:anywhere;
 }
 .home-header .user-chip button#btnLogout{
   background:var(--accent);border:1px solid var(--accent-deep);color:#fff;
@@ -155,10 +157,16 @@ input,select{font-family:inherit;}
 }
 .home-header .user-chip button#btnLogout:hover{background:var(--accent-deep);}
 .home-header .user-chip button#btnDeleteAccount{
-  background:none;border:1px solid var(--paper-line);color:var(--ink-soft);
+  background:var(--surface);border:2px solid var(--frame-color);color:var(--ink);
+  border-radius:9px;padding:8px 15px;cursor:pointer;font-weight:600;font-size:.8rem;flex-shrink:0;
+  box-shadow:0 2px 6px rgba(0,0,0,.12);
+}
+.home-header .user-chip button#btnDeleteAccount:hover{background:#a23a2c;color:#fff;border-color:#a23a2c;}
+.home-header .user-chip button#btnChangePassword{
+  background:var(--surface);border:1px solid var(--paper-line);color:var(--ink);
   border-radius:9px;padding:8px 15px;cursor:pointer;font-weight:600;font-size:.8rem;flex-shrink:0;
 }
-.home-header .user-chip button#btnDeleteAccount:hover{background:rgba(162,58,44,.12);color:#a23a2c;border-color:#a23a2c;}
+.home-header .user-chip button#btnChangePassword:hover{border-color:var(--accent);color:var(--accent);}
 .auth-forgot-link{
   background:none;border:none;color:var(--accent);font-size:.8rem;cursor:pointer;
   padding:0;margin:-6px 0 8px;text-align:left;text-decoration:underline;
@@ -208,6 +216,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
   position:relative;width:100%;aspect-ratio:3/4;border-radius:12px;overflow:hidden;
   background:linear-gradient(160deg,var(--leather-light),var(--leather) 55%,var(--leather-deep));
   box-shadow:0 10px 22px var(--shadow), inset 0 0 0 2px rgba(201,161,94,.35);
+  border:1px solid var(--frame-color);
   color:#F3ECDC;display:flex;flex-direction:column;justify-content:flex-end;
 }
 .cover-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;}
@@ -231,11 +240,11 @@ body.dark .theme-toggle .icon-moon{display:block;}
 /* ---------- Menu screen ---------- */
 .menu-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:26px;}
 .menu-tile{
-  background:var(--surface);border:1px solid var(--paper-line);border-radius:var(--radius);
+  background:var(--surface);border:1px solid var(--frame-color);border-radius:var(--radius);
   padding:28px 22px;text-align:left;cursor:pointer;box-shadow:0 6px 16px rgba(46,32,20,.1);color:var(--ink);
 }
 .menu-tile:hover{box-shadow:0 10px 22px rgba(46,32,20,.16);}
-.menu-tile-add{border-style:dashed;background:transparent;box-shadow:none;}
+.menu-tile-add{border-style:dashed;border-width:2px;background:transparent;box-shadow:none;}
 .menu-tile-add:hover{background:var(--surface);}
 .menu-tile-add .tile-icon{color:var(--ink-soft);}
 .menu-tile .tile-icon{width:34px;height:34px;color:var(--accent);margin-bottom:14px;}
@@ -274,7 +283,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
 }
 .cal-empty{color:var(--ink-soft);font-style:italic;}
 #calGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px;}
-.cal-month{background:var(--surface);border:1px solid var(--paper-line);border-radius:10px;padding:14px;}
+.cal-month{background:var(--surface);border:1px solid var(--frame-color);border-radius:10px;padding:14px;}
 .cal-month-title{font-family:var(--font-display);font-weight:600;text-transform:capitalize;margin-bottom:8px;font-size:.98rem;}
 .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:.68rem;color:var(--ink-soft);margin-bottom:4px;}
 .cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
@@ -382,6 +391,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
 #btnAddEmail{--tool-color:#C25A8A;}
 #btnTrashPage{--tool-color:#A23A2C;}
 #btnExportPdf{--tool-color:#5A6B7A;}
+#btnSharePage{--tool-color:#4C9C6B;}
 #btnUndo{--tool-color:#7A8A99;}
 #btnRedo{--tool-color:#7A8A99;}
 
@@ -553,6 +563,8 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 }
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
 .btn-primary,.btn-secondary{padding:9px 16px;border-radius:8px;font-size:.86rem;cursor:pointer;font-weight:600;}
+#contactShareBtn{display:flex;align-items:center;justify-content:center;padding:9px 12px;margin-right:auto;}
+#contactShareBtn svg{width:17px;height:17px;}
 .btn-primary{background:var(--accent);border:1px solid var(--accent-deep);color:#fff;}
 .btn-primary:hover{background:var(--accent-deep);}
 .btn-secondary{background:var(--surface-alt);border:1px solid var(--paper-line);color:var(--ink);}
@@ -626,14 +638,18 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regDupSheet{--tool-color:#8B5FBF;}
 #regDelSheet{--tool-color:#A23A2C;}
 #regExportPdf{--tool-color:#5A6B7A;}
+#regSharePage{--tool-color:#4C9C6B;}
 #regFmtBold{--tool-color:#4E7FBD;}
 #regFmtItalic{--tool-color:#8B5FBF;}
 #regFmtStrike{--tool-color:#C0524B;}
 #regUndo{--tool-color:#7A8A99;}
 #regRedo{--tool-color:#7A8A99;}
 #balExportPdf{--tool-color:#5A6B7A;}
+#balSharePage{--tool-color:#4C9C6B;}
 #lpExportPdf{--tool-color:#5A6B7A;}
+#lpSharePage{--tool-color:#4C9C6B;}
 #libExportPdf{--tool-color:#5A6B7A;}
+#libSharePage{--tool-color:#4C9C6B;}
 .reg-table-outer{overflow:auto;padding:0 16px 10px;max-width:100%;-webkit-overflow-scrolling:touch;}
 .reg-table{border-collapse:collapse;font-size:.82rem;background:#fff;margin:0 auto;color:#222;}
 .reg-table td,.reg-table th{border:1px solid #bbb;padding:3px 5px;text-align:center;min-width:32px;}
@@ -669,7 +685,11 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   border-bottom:3px solid var(--tab-color,#999);background:var(--surface);cursor:pointer;font-size:.8rem;white-space:nowrap;color:var(--ink);
   min-height:40px;
 }
-.reg-tab.active{background:var(--surface-alt);font-weight:700;}
+.reg-tab.active{
+  background:var(--surface-alt);font-weight:700;color:var(--accent);
+  border-color:var(--accent);border-bottom-width:4px;
+  box-shadow:0 -2px 8px rgba(0,0,0,.15);
+}
 .reg-tab-name{padding:4px 6px 4px 2px;}
 .reg-tab-color{width:14px;height:14px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;cursor:pointer;border:1px solid rgba(0,0,0,.25);padding:0;flex-shrink:0;}
 .reg-tab-rename{
@@ -735,13 +755,13 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 <style>
 /* ---------- Libreria ---------- */
 .lib-table{border-collapse:collapse;font-size:.85rem;background:#fff;margin:0 auto;color:#222;width:100%;min-width:760px;table-layout:fixed;}
-.lib-table .lib-col-titolo{width:26%;}
+.lib-table .lib-col-titolo{width:30%;}
 .lib-table .lib-col-autore{width:14%;}
 .lib-table .lib-col-isbn{width:11%;}
 .lib-table .lib-col-materia{width:15%;}
 .lib-table .lib-col-prezzo{width:8%;}
 .lib-table .lib-col-collocazione{width:16%;}
-.lib-table .lib-col-actions{width:10%;}
+.lib-table .lib-col-actions{width:6%;text-align:center;}
 .lib-table td{overflow-wrap:break-word;}
 .lib-table td,.lib-table th{border:1px solid #bbb;padding:7px 9px;text-align:left;vertical-align:top;}
 .lib-table thead th{background:#F3CE7C;color:#4a3410;}
@@ -752,10 +772,10 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .lib-sort-btn svg{width:11px;height:11px;}
 .lib-table tbody tr:nth-child(odd) td{background:#fff;}
 .lib-table tbody tr:nth-child(even) td{background:#f2f2f2;}
-.lib-row-actions{display:flex;gap:4px;white-space:nowrap;}
-.lib-row-actions button{background:none;border:none;cursor:pointer;color:var(--ink-soft);padding:2px;display:flex;align-items:center;justify-content:center;}
-.lib-row-actions button:hover{color:var(--accent);}
-.lib-row-actions svg{width:13px;height:13px;}
+.lib-row-actions{display:flex;gap:8px;white-space:nowrap;align-items:center;justify-content:center;}
+.lib-row-actions button{background:none;border:none;cursor:pointer;color:var(--ink-soft);padding:4px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
+.lib-row-actions button:hover{background:rgba(0,0,0,.08);color:var(--accent);}
+.lib-row-actions svg{width:14px;height:14px;}
 .lib-empty-hint{color:var(--ink-soft);font-size:.85rem;padding:14px 4px;text-align:center;}
 </style>
 
@@ -857,6 +877,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
           <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5 A8.5 8.5 0 1 1 9.5 4 A6.8 6.8 0 0 0 20 14.5 Z"></path></svg>
         </button>
         <button type="button" id="btnLogout">Esci</button>
+        <button type="button" id="btnChangePassword">Cambia password</button>
         <button type="button" id="btnDeleteAccount">Elimina account</button>
       </div>
     </div>
@@ -957,6 +978,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" class="icon-btn tool" id="regDelSheet" data-icon="trash" title="Elimina scheda"></button>
     <span class="reg-sep"></span>
     <button type="button" class="icon-btn tool" id="regExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
+    <button type="button" class="icon-btn tool" id="regSharePage" data-icon="share" title="Condividi"></button>
     <span class="reg-sep"></span>
     <button type="button" class="icon-btn tool" id="regFmtBold" data-icon="fmtBold" title="Grassetto"></button>
     <button type="button" class="icon-btn tool" id="regFmtItalic" data-icon="fmtItalic" title="Corsivo"></button>
@@ -997,6 +1019,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   </div>
   <div class="reg-toolbar">
     <button type="button" class="icon-btn tool" id="balExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
+    <button type="button" class="icon-btn tool" id="balSharePage" data-icon="share" title="Condividi"></button>
   </div>
   <div class="reg-table-outer">
     <div id="balTableContainer"></div>
@@ -1029,6 +1052,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
       </div>
       <div style="display:flex;gap:8px;">
         <button type="button" class="icon-btn" id="shopExportPdf" data-icon="pdf" title="Scarica in PDF"></button>
+        <button type="button" class="icon-btn" id="shopSharePage" data-icon="share" title="Condividi"></button>
         <button type="button" class="topbar-btn primary" id="shopAddItemBtn" data-icon="plus" data-label="Nuovo articolo"></button>
       </div>
     </div>
@@ -1067,6 +1091,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     </div>
     <div style="display:flex;gap:8px;">
       <button type="button" class="icon-btn tool" id="libExportPdf" data-icon="pdf" title="Scarica in PDF"></button>
+      <button type="button" class="icon-btn tool" id="libSharePage" data-icon="share" title="Condividi"></button>
       <button type="button" class="topbar-btn primary" id="libAddBookBtn" data-icon="plus" data-label="Nuovo libro"></button>
     </div>
   </div>
@@ -1100,6 +1125,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     </div>
     <div style="display:flex;gap:8px;">
       <button type="button" class="icon-btn tool" id="lpExportPdf" data-icon="pdf" title="Scarica in PDF"></button>
+      <button type="button" class="icon-btn tool" id="lpSharePage" data-icon="share" title="Condividi"></button>
       <button type="button" class="topbar-btn primary" id="lpSaveBtn" data-icon="save" data-label="Salva"></button>
     </div>
   </div>
@@ -1218,6 +1244,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" class="icon-btn tool" id="btnAddEmail" data-icon="email" title="Email"></button>
     <button type="button" class="icon-btn tool" id="btnTrashPage" data-icon="trash" title="Cancella tutta la pagina"></button>
     <button type="button" class="icon-btn tool" id="btnExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
+    <button type="button" class="icon-btn tool" id="btnSharePage" data-icon="share" title="Condividi"></button>
     <span class="reg-sep"></span>
     <button type="button" class="icon-btn tool" id="btnUndo" data-icon="undo" title="Annulla ultima modifica"></button>
     <button type="button" class="icon-btn tool" id="btnRedo" data-icon="redo" title="Ripristina ultima modifica"></button>
@@ -1318,7 +1345,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/fireba
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged, sendPasswordResetEmail,
-  deleteUser, reauthenticateWithCredential, EmailAuthProvider
+  deleteUser, reauthenticateWithCredential, EmailAuthProvider, updatePassword
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 import {
   getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc,
@@ -1440,6 +1467,7 @@ var ICONS = {
   arrowRight:'<polyline points="9 4 17 12 9 20"></polyline>',
   arrowUp:'<polyline points="4 15 12 7 20 15"></polyline>',
   arrowDown:'<polyline points="4 9 12 17 20 9"></polyline>',
+  share:'<circle cx="18" cy="5" r="2.6"></circle><circle cx="6" cy="12" r="2.6"></circle><circle cx="18" cy="19" r="2.6"></circle><line x1="8.3" y1="10.6" x2="15.7" y2="6.4"></line><line x1="8.3" y1="13.4" x2="15.7" y2="17.6"></line>',
   text:'<path d="M5 6 H19 M12 6 V19"></path>',
   mic:'<rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11 A7 7 0 0 0 19 11"></path><line x1="12" y1="18" x2="12" y2="22"></line><line x1="8" y1="22" x2="16" y2="22"></line>',
   pencil:'<path d="M4 20 L4 16 L15 5 L19 9 L8 20 Z"></path><line x1="13" y1="7" x2="17" y2="11"></line>',
@@ -1764,6 +1792,44 @@ function openReauthModal(){
     }
   };
 }
+$('#btnChangePassword').addEventListener('click', function(){
+  openModal(
+    '<h3>Cambia password</h3>'+
+    '<label for="cpOldPassword">Password attuale</label>'+
+    '<input type="password" id="cpOldPassword" autocomplete="current-password">'+
+    '<label for="cpNewPassword">Nuova password</label>'+
+    '<input type="password" id="cpNewPassword" autocomplete="new-password">'+
+    '<label for="cpConfirmPassword">Conferma nuova password</label>'+
+    '<input type="password" id="cpConfirmPassword" autocomplete="new-password">'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="cpCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="cpConfirm">Salva nuova password</button>'+
+    '</div>'
+  );
+  var oldInput = $('#cpOldPassword'), newInput = $('#cpNewPassword'), confirmInput = $('#cpConfirmPassword');
+  setTimeout(function(){ oldInput.focus(); }, 60);
+  $('#cpCancel').onclick = closeModal;
+  $('#cpConfirm').onclick = async function(){
+    var oldPwd = oldInput.value, newPwd = newInput.value, confirmPwd = confirmInput.value;
+    if(!oldPwd || !newPwd || !confirmPwd){ showToast('Compila tutti i campi.', 'error'); return; }
+    if(newPwd.length<6){ showToast('La nuova password deve avere almeno 6 caratteri.', 'error'); return; }
+    if(newPwd!==confirmPwd){ showToast('La nuova password e la conferma non coincidono.', 'error'); return; }
+    if(newPwd===oldPwd){ showToast('La nuova password deve essere diversa da quella attuale.', 'error'); return; }
+    try{
+      var cred = EmailAuthProvider.credential(state.email, oldPwd);
+      await reauthenticateWithCredential(auth.currentUser, cred);
+      await updatePassword(auth.currentUser, newPwd);
+      closeModal();
+      showToast('Password aggiornata con successo.', 'success');
+    }catch(err){
+      console.error(err);
+      var msg = 'Errore durante il cambio password'+(err.message?(': '+err.message):'')+'.';
+      if(err.code==='auth/wrong-password' || err.code==='auth/invalid-credential') msg = 'La password attuale non è corretta.';
+      else if(err.code==='auth/weak-password') msg = 'La nuova password è troppo debole (minimo 6 caratteri).';
+      showToast(msg, 'error');
+    }
+  };
+});
 
 var authChecked = false;
 var authTimeoutId = setTimeout(function(){
@@ -3047,6 +3113,16 @@ function renderContactsList(filter){
     });
   });
 }
+function buildContactShareHTML(c){
+  var html = '<div style="font-family:Georgia,serif;padding:24px;width:480px;background:#fff;color:#222;">';
+  html += '<h2 style="margin:0 0 16px;">'+escapeHtml(c.name||'')+'</h2>';
+  (c.phones||[]).forEach(function(p){ if(p) html += '<p style="margin:5px 0;">Telefono: '+escapeHtml(p)+'</p>'; });
+  (c.emails||[]).forEach(function(e){ if(e) html += '<p style="margin:5px 0;">Email: '+escapeHtml(e)+'</p>'; });
+  if(c.address) html += '<p style="margin:5px 0;">Indirizzo: '+escapeHtml(c.address)+'</p>';
+  if(c.workAddress) html += '<p style="margin:5px 0;">Indirizzo lavoro: '+escapeHtml(c.workAddress)+'</p>';
+  html += '</div>';
+  return html;
+}
 function openContactDetailModal(c){
   var rows = '';
   (c.phones||[]).forEach(function(p){
@@ -3080,12 +3156,19 @@ function openContactDetailModal(c){
     '<div class="contact-detail-name">'+escapeHtml(c.name||'Senza nome')+'</div>'+
     rows+
     '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="contactShareBtn" title="Condividi">'+iconSvg('share')+'</button>'+
       '<button type="button" class="btn-secondary" id="contactDetailClose">Chiudi</button>'+
       '<button type="button" class="btn-primary" id="contactDetailEdit">Modifica</button>'+
     '</div>'
   );
   $('#contactDetailClose').onclick = closeModal;
   $('#contactDetailEdit').onclick = function(){ closeModal(); openContactEditModal(c); };
+  $('#contactShareBtn').onclick = async function(){
+    var area = $('#regPrintArea');
+    area.innerHTML = buildContactShareHTML(c);
+    await sharePageAsPDF(area, 'Contatto - '+(c.name||'contatto'), c.name||'Contatto');
+    area.innerHTML = '';
+  };
   $$('.contact-nav-btn').forEach(function(btn){
     btn.addEventListener('click', function(){ navigateToAddress(btn.dataset.address); });
   });
@@ -3867,6 +3950,63 @@ function setPrintPageSize(orientation){
   if(!styleEl){ styleEl = document.createElement('style'); styleEl.id='dynamicPageSize'; document.head.appendChild(styleEl); }
   styleEl.textContent = '@page{ size: A4 '+orientation+'; margin: 10mm; }';
 }
+/* ================= CONDIVISIONE (esporta in PDF e condivide con altre app) ================= */
+var shareLibsPromise = null;
+function loadScriptOnce(src){
+  return new Promise(function(resolve, reject){
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = function(){ reject(new Error('Impossibile caricare '+src)); };
+    document.head.appendChild(s);
+  });
+}
+function ensureShareLibsLoaded(){
+  if(!shareLibsPromise){
+    shareLibsPromise = loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
+      .then(function(){ return loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'); });
+  }
+  return shareLibsPromise;
+}
+function downloadBlob(blob, filename){
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+}
+async function sharePageAsPDF(sourceElement, filenameBase, shareTitle){
+  if(!sourceElement){ showToast('Niente da condividere.', 'error'); return; }
+  showToast('Preparazione del PDF da condividere...', 'info');
+  try{
+    await ensureShareLibsLoaded();
+    var canvas = await window.html2canvas(sourceElement, {scale:2, useCORS:true, backgroundColor:'#ffffff'});
+    var imgData = canvas.toDataURL('image/jpeg', 0.92);
+    var landscape = canvas.width > canvas.height;
+    var pdf = new window.jspdf.jsPDF({orientation: landscape?'landscape':'portrait', unit:'pt', format:'a4'});
+    var pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
+    var imgRatio = canvas.width/canvas.height, pdfRatio = pageW/pageH;
+    var drawW, drawH;
+    if(imgRatio > pdfRatio){ drawW = pageW; drawH = pageW/imgRatio; } else { drawH = pageH; drawW = pageH*imgRatio; }
+    pdf.addImage(imgData, 'JPEG', (pageW-drawW)/2, (pageH-drawH)/2, drawW, drawH);
+    var blob = pdf.output('blob');
+    var filename = filenameBase.replace(/[\\/:*?"<>|]/g,'_')+'.pdf';
+    var file = new File([blob], filename, {type:'application/pdf'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title: shareTitle||filename});
+    } else if(navigator.share){
+      downloadBlob(blob, filename);
+      showToast('Il tuo browser non permette di condividere direttamente il file: il PDF è stato scaricato, puoi condividerlo manualmente da lì.', 'info');
+    } else {
+      downloadBlob(blob, filename);
+      showToast('La condivisione non è supportata su questo browser: il PDF è stato scaricato.', 'info');
+    }
+  }catch(err){
+    if(err && err.name==='AbortError') return; /* utente ha annullato la condivisione */
+    console.error(err);
+    showToast('Errore durante la preparazione del PDF da condividere'+(err&&err.message?(': '+err.message):'')+'.', 'error');
+  }
+}
 function printRegisterSheets(sheets){
   var area = $('#regPrintArea');
   area.innerHTML = sheets.map(function(s){ return buildRegisterTableInnerHTML(s, true); }).join('');
@@ -3887,6 +4027,10 @@ $('#regExportPdf').addEventListener('click', function(){
   $('#regExpCancel').onclick = closeModal;
   $('#regExpCurrent').onclick = function(){ closeModal(); printRegisterSheets([getCurrentSheet()]); };
   $('#regExpAll').onclick = function(){ closeModal(); printRegisterSheets(state.registerSheets||[]); };
+});
+$('#regSharePage').addEventListener('click', function(){
+  var sheet = getCurrentSheet(); if(!sheet) return;
+  sharePageAsPDF($('#regTableContainer'), 'Registro - '+(sheet.name||'scheda'), sheet.name||'Registro personale');
 });
 
 /* ================= BILANCIO ================= */
@@ -4183,6 +4327,10 @@ $('#balExportPdf').addEventListener('click', function(){
   $('#balExpCurrent').onclick = function(){ closeModal(); printBalanceSheets([getCurrentBalance()]); };
   $('#balExpAll').onclick = function(){ closeModal(); printBalanceSheets(state.balanceSheets||[]); };
 });
+$('#balSharePage').addEventListener('click', function(){
+  var sheet = getCurrentBalance(); if(!sheet) return;
+  sharePageAsPDF($('#balTableContainer'), 'Bilancio - '+(sheet.name||'bilancio'), sheet.name||'Bilancio');
+});
 
 /* ================= LISTA DELLA SPESA ================= */
 state.shoppingLists = [];
@@ -4436,6 +4584,13 @@ $('#shopExportPdf').addEventListener('click', function(){
   document.body.classList.add('printing-register');
   window.print();
   setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
+});
+$('#shopSharePage').addEventListener('click', async function(){
+  var list = getCurrentShoppingList(); if(!list) return;
+  var area = $('#regPrintArea');
+  area.innerHTML = buildShoppingListForPrint(list);
+  await sharePageAsPDF(area, 'Spesa - '+(list.name||'lista'), list.name||'Lista della spesa');
+  area.innerHTML = '';
 });
 
 /* ================= LIBRERIA ================= */
@@ -4720,6 +4875,10 @@ $('#libExportPdf').addEventListener('click', function(){
   document.body.classList.add('printing-register');
   window.print();
   setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
+});
+$('#libSharePage').addEventListener('click', function(){
+  var lib = getCurrentLibrary(); if(!lib) return;
+  sharePageAsPDF($('#libTableContainer'), 'Libreria - '+(lib.name||'catalogo'), lib.name||'Libreria');
 });
 
 /* ================= LEZIONI PRIVATE ================= */
@@ -5107,6 +5266,13 @@ $('#lpExportPdf').addEventListener('click', function(){
   window.print();
   setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
 });
+$('#lpSharePage').addEventListener('click', async function(){
+  var student = getCurrentStudent(); if(!student) return;
+  var area = $('#regPrintArea');
+  area.innerHTML = buildLessonsTableForPrint(student);
+  await sharePageAsPDF(area, 'Lezioni - '+(student.name||'alunno'), student.name||'Lezioni private');
+  area.innerHTML = '';
+});
 
 function clearEmptyHint(){
   var hint = $('#dayCanvas .empty-day-hint');
@@ -5449,6 +5615,14 @@ $('#btnExportPdf').addEventListener('click', function(){
   canvas.style.setProperty('--print-scale', scale);
   setPrintPageSize('portrait');
   window.print();
+});
+$('#btnSharePage').addEventListener('click', async function(){
+  var name = pageMode==='notebook' ? ($('#npNameDisplay').textContent||'Pagina blocco note') : ('Pagina del '+formatDateIt(state.currentDate));
+  var canvas = $('#dayCanvas');
+  var prevTransform = canvas.style.transform;
+  canvas.style.transform = ''; /* cattura sempre a piena grandezza, indipendentemente dallo zoom su schermo */
+  await sharePageAsPDF(canvas, name, name);
+  canvas.style.transform = prevTransform;
 });
 
 $('#dayCanvas').addEventListener('click', function(evt){
