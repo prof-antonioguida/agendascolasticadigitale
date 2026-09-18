@@ -323,7 +323,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
 }
 .np-list-item{
   display:flex;align-items:center;justify-content:space-between;gap:10px;
-  background:var(--surface);border:1px solid var(--paper-line);border-radius:10px;
+  background:var(--surface);border:1px solid var(--frame-color);border-radius:10px;
   padding:14px 16px;margin-bottom:10px;cursor:pointer;
 }
 .np-list-item:hover{background:var(--surface-alt);}
@@ -403,7 +403,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
   background:
     repeating-linear-gradient(180deg, rgba(217,203,166,0) 0px, rgba(217,203,166,0) 31px, var(--paper-line) 32px),
     var(--surface);
-  border:1px solid var(--paper-line);border-radius:14px;box-shadow:0 14px 30px rgba(0,0,0,.15);
+  border:1px solid var(--frame-color);border-radius:14px;box-shadow:0 14px 30px rgba(0,0,0,.15);
 }
 .day-canvas.bg-righi{
   background:
@@ -613,6 +613,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 }
 @media print{
   html, body{background:#fff !important;}
+  body:not(.printing-register) .screen:not(#screen-day){display:none !important;}
   body:not(.printing-register) *{visibility:hidden;}
   body:not(.printing-register) #dayCanvas, body:not(.printing-register) #dayCanvas *{visibility:visible;}
   body:not(.printing-register) #dayCanvas{
@@ -624,9 +625,13 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   body:not(.printing-register) .day-canvas-outer{overflow:visible;background:#fff;}
 }
 @media print{
+  body.printing-register .screen{display:none !important;}
   body.printing-register *{visibility:hidden;}
   body.printing-register #regPrintArea, body.printing-register #regPrintArea *{visibility:visible;}
-  body.printing-register #regPrintArea{position:absolute;left:0;top:0;width:100%;}
+  body.printing-register #regPrintArea{
+    position:absolute;left:0;top:0;width:100%;
+    --surface:#FFFDF8; --paper-line:#D9CBA6; --ink-soft:#6B6250; --ink:#2E2A22;
+  }
   .reg-print-sheet{page-break-after:always;padding:10px;}
   .reg-print-sheet:last-child{page-break-after:auto;}
 }
@@ -728,7 +733,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .shop-header-todo{background:#F3CE7C;color:#4a3410;}
 .shop-header-done{background:#CFE8CB;color:#1f3d1c;}
 .shop-item{
-  display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--paper-line);
+  display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--frame-color);
   border-radius:10px;padding:12px 14px;margin-bottom:8px;
 }
 .shop-item-toggle{
@@ -748,7 +753,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .shop-item-rename svg,.shop-item-delete svg{width:14px;height:14px;}
 .shop-empty-hint{color:var(--ink-soft);font-size:.85rem;padding:6px 4px;}
 .shop-print-list{list-style:none;padding:0;margin:0;font-size:1rem;}
-.shop-print-list li{padding:8px 4px;border-bottom:1px solid #ccc;}
+.shop-print-list li{padding:8px 4px;}
 .shop-print-list li::before{content:"\2610";margin-right:10px;}
 </style>
 
@@ -782,7 +787,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 <style>
 /* ---------- Lezioni private ---------- */
 .lp-profile{
-  max-width:900px;margin:0 auto;padding:16px 20px;background:var(--surface);border:1px solid var(--paper-line);
+  max-width:900px;margin:0 auto;padding:16px 20px;background:var(--surface);border:1px solid var(--frame-color);
   border-radius:12px;margin-top:14px;margin-bottom:6px;
 }
 .lp-profile-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;}
@@ -3978,6 +3983,8 @@ function downloadBlob(blob, filename){
 async function sharePageAsPDF(sourceElement, filenameBase, shareTitle){
   if(!sourceElement){ showToast('Niente da condividere.', 'error'); return; }
   showToast('Preparazione del PDF da condividere...', 'info');
+  var wasDark = document.body.classList.contains('dark');
+  if(wasDark) document.body.classList.remove('dark'); /* il PDF condiviso deve avere sempre i colori della modalità chiara */
   try{
     await ensureShareLibsLoaded();
     var canvas = await window.html2canvas(sourceElement, {scale:2, useCORS:true, backgroundColor:'#ffffff'});
@@ -4005,6 +4012,8 @@ async function sharePageAsPDF(sourceElement, filenameBase, shareTitle){
     if(err && err.name==='AbortError') return; /* utente ha annullato la condivisione */
     console.error(err);
     showToast('Errore durante la preparazione del PDF da condividere'+(err&&err.message?(': '+err.message):'')+'.', 'error');
+  } finally {
+    if(wasDark) document.body.classList.add('dark');
   }
 }
 function printRegisterSheets(sheets){
@@ -5711,7 +5720,11 @@ function attachElementInteractions(wrapper, data){
   function down(evt){
     if(ignoreTarget(evt)) return;
     if(data.type==='text' && wrapper.classList.contains('editing') && evt.target.closest('.text-content')) return;
-    evt.preventDefault();
+    if(!evt.touches) evt.preventDefault();
+    /* su touch NON blocchiamo subito lo scorrimento: se l'utente vuole solo spostare la pagina
+       (zoomata) con un dito appoggiato su un elemento, il browser deve poterlo ancora scorrere.
+       Il blocco scatta più avanti, dentro move(), solo quando si conferma un vero trascinamento
+       dopo la pressione prolungata. */
     longPressActive=false; moved=false; abortedByEarlyMove=false;
     preMoveSnapshot = cloneDayElements(state.dayElements);
     var clientX=evt.touches?evt.touches[0].clientX:evt.clientX;
