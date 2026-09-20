@@ -441,6 +441,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
     var(--surface);
 }
 .day-canvas.bg-vuoto{ background: var(--surface); }
+.day-canvas.bg-bianco{ background: #ffffff !important; }
 .day-canvas.placing{cursor:crosshair;outline:2px dashed var(--accent);outline-offset:-2px;}
 .day-canvas.erasing{cursor:crosshair;outline:2px dashed #8A7F68;outline-offset:-2px;}
 
@@ -576,6 +577,11 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .choice-btn:hover{background:var(--surface-alt);}
 .choice-btn.active{border-color:var(--accent);background:var(--surface-alt);}
 .choice-btn svg{width:20px;height:20px;color:var(--accent);flex-shrink:0;}
+.modal-pick-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.modal-pick-item{display:flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:9px;border:1px solid var(--paper-line);background:var(--surface);cursor:pointer;text-align:left;color:var(--ink);width:100%;}
+.modal-pick-item:hover{background:var(--surface-alt);}
+.modal-pick-item .pick-item-name{font-weight:600;font-size:.9rem;}
+.modal-pick-item .pick-item-sub{font-size:.78rem;color:var(--ink-soft);}
 
 /* ---------- Toast ---------- */
 #toastContainer{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center;}
@@ -613,18 +619,6 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 }
 @media print{
   html, body{background:#fff !important;}
-  body:not(.printing-register) .screen:not(#screen-day){display:none !important;}
-  body:not(.printing-register) *{visibility:hidden;}
-  body:not(.printing-register) #dayCanvas, body:not(.printing-register) #dayCanvas *{visibility:visible;}
-  body:not(.printing-register) #dayCanvas{
-    position:absolute; left:0; top:0;
-    transform:scale(var(--print-scale, 1)); transform-origin:top left;
-    box-shadow:none; border:none;
-    --surface:#FFFDF8; --paper-line:#D9CBA6; --ink-soft:#6B6250; --ink:#2E2A22;
-  }
-  body:not(.printing-register) .day-canvas-outer{overflow:visible;background:#fff;}
-}
-@media print{
   body.printing-register .screen{display:none !important;}
   body.printing-register *{visibility:hidden;}
   body.printing-register #regPrintArea, body.printing-register #regPrintArea *{visibility:visible;}
@@ -930,8 +924,8 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <p>Contatti: nome, telefono, email e indirizzo</p>
       </button>
       <button type="button" class="menu-tile" id="menuBtnScheduleLink">
-        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="9" cy="9" rx="5" ry="3.2" transform="rotate(45 9 9)"></ellipse><ellipse cx="15" cy="15" rx="5" ry="3.2" transform="rotate(45 15 15)"></ellipse></svg>
-        <h3>Schedule link</h3>
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.8" width="10" height="6.4" rx="3.2" transform="rotate(45 9 9)"></rect><rect x="10" y="11.8" width="10" height="6.4" rx="3.2" transform="rotate(45 15 15)"></rect></svg>
+        <h3>Schede link</h3>
         <p>Elenco di link salvati con un nome</p>
       </button>
       <button type="button" class="menu-tile" id="menuBtnRegistro">
@@ -1234,6 +1228,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <div class="notebook-page-name" id="npNameDisplay"></div>
     <div class="notebook-bar-actions">
       <button type="button" class="icon-btn" id="npBackgroundBtn" data-icon="background" title="Sfondo"></button>
+      <button type="button" class="icon-btn" id="npOrientationBtn" data-icon="orientation" title="Orientamento"></button>
       <button type="button" class="icon-btn" id="npDeletePageBtn" data-icon="trash" title="Elimina pagina"></button>
     </div>
   </div>
@@ -1323,7 +1318,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <div class="top-header">
       <div class="header-back">
         <button type="button" class="icon-btn" id="slBack" data-icon="arrowLeft" title="Indietro"></button>
-        <h1>Schedule link</h1>
+        <h1>Schede link</h1>
       </div>
       <button type="button" class="topbar-btn primary" id="slAddBtn" data-icon="plus" data-label="Nuovo link"></button>
     </div>
@@ -1388,12 +1383,26 @@ function norm(e){ return (e||'').trim().toLowerCase(); }
 function escapeHtml(s){ var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 function escapeAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
 
+var screenHistoryStack = ['screen-loading'];
+var isPoppingScreen = false;
 function showScreen(id){
   $$('.screen').forEach(function(s){ s.classList.remove('active'); });
   var el = document.getElementById(id);
   if(el) el.classList.add('active');
   window.scrollTo(0,0);
+  if(!isPoppingScreen && screenHistoryStack[screenHistoryStack.length-1]!==id){
+    screenHistoryStack.push(id);
+    try{ history.pushState({agendaScreen:id}, '', ''); }catch(e){}
+  }
+  isPoppingScreen = false;
 }
+window.addEventListener('popstate', function(){
+  if(screenHistoryStack.length<=1) return; /* già alla schermata più esterna: si lascia uscire normalmente */
+  isPoppingScreen = true;
+  screenHistoryStack.pop();
+  var prevId = screenHistoryStack[screenHistoryStack.length-1];
+  showScreen(prevId);
+});
 
 function showToast(msg, type){
   var t = document.createElement('div');
@@ -1426,6 +1435,7 @@ $('#modalOverlay').addEventListener('click', function(e){ if(e.target.id==='moda
 function agendasColl(){ return collection(db, 'users', state.uid, 'agendas'); }
 function agendaRef(id){ return doc(db, 'users', state.uid, 'agendas', id); }
 function daysColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'days'); }
+function dayMetaDocRef(agendaId, dateKeyStr){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'days', dateKeyStr); }
 var pageMode = 'day'; /* 'day' | 'notebook' */
 var currentPageKey = null; /* dateKey per 'day', id della singola pagina per 'notebook' */
 var currentNotebookId = null; /* id del blocco note (contenitore) quando pageMode è 'notebook' */
@@ -1480,7 +1490,7 @@ var ICONS = {
   image:'<rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="10" r="1.8"></circle><path d="M4 18 L9 12 L13 16 L16 13 L20 17"></path>',
   headphones:'<path d="M4 14 V12 A8 8 0 0 1 20 12 V14"></path><rect x="2" y="14" width="5" height="7" rx="2"></rect><rect x="17" y="14" width="5" height="7" rx="2"></rect>',
   film:'<rect x="3" y="5" width="14" height="14" rx="2"></rect><path d="M17 9 L21 6 V18 L17 15 Z"></path>',
-  link:'<ellipse cx="9" cy="9" rx="5" ry="3.2" transform="rotate(45 9 9)"></ellipse><ellipse cx="15" cy="15" rx="5" ry="3.2" transform="rotate(45 15 15)"></ellipse>',
+  link:'<rect x="4" y="5.8" width="10" height="6.4" rx="3.2" transform="rotate(45 9 9)"></rect><rect x="10" y="11.8" width="10" height="6.4" rx="3.2" transform="rotate(45 15 15)"></rect>',
   trash:'<path d="M4 7 H20"></path><path d="M9 7 V4 H15 V7"></path><path d="M6 7 L7 21 H17 L18 7"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>',
   bell:'<path d="M6 10 A6 6 0 0 1 18 10 V14 L20 18 H4 L6 14 Z"></path><path d="M10 20 A2 2 0 0 0 14 20"></path>',
   externalLink:'<path d="M14 4 H20 V10"></path><line x1="20" y1="4" x2="11" y2="13"></line><path d="M18 14 V19 A1 1 0 0 1 17 20 H5 A1 1 0 0 1 4 19 V7 A1 1 0 0 1 5 6 H10"></path>',
@@ -1503,7 +1513,8 @@ var ICONS = {
   fmtStrike:'<path d="M7 6c0-1.2 1.3-2.5 5-2.5s5 1.5 5 3"></path><path d="M6.5 18c0 1.2 1.5 2.5 5.2 2.5s5.3-1.5 5.3-3.2"></path><line x1="4" y1="12" x2="20" y2="12"></line>',
   circleEmpty:'<circle cx="12" cy="12" r="9"></circle>',
   circleCheck:'<circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"></circle><path d="M8 12 L11 15 L16 9" stroke="#fff" stroke-width="2" fill="none"></path>',
-  background:'<rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="14" x2="21" y2="14"></line>'
+  background:'<rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="14" x2="21" y2="14"></line>',
+  orientation:'<rect x="7" y="3" width="10" height="14" rx="2"></rect><path d="M19 8 A6 6 0 0 1 19 16"></path><polyline points="17 14 19 16 21 14"></polyline>'
 };
 function iconSvg(name){
   return ICONS[name] ? ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS[name]+'</svg>') : '';
@@ -1534,7 +1545,7 @@ function ringsHTML(){
 var state = {
   uid:null, email:null, agende:[], currentAgendaId:null, currentAgenda:null,
   currentDate:null, dayElements:[], deletedElementIds:[], dirty:false,
-  drawColor:'#2E2A22', drawThickness:3, notebookPages:[],
+  drawColor:'#2E2A22', drawThickness:3, notebookPages:[], currentDayMeta:{background:'righi', orientation:'verticale'},
   authMode:'login', coverMainImage:null, coverRoundImage:null
 };
 
@@ -2114,7 +2125,7 @@ $('#menuBackHome').addEventListener('click', function(){ showHomeScreen(); });
 $('#menuBtnAddSections').addEventListener('click', function(){ openAddSectionsModal(); });
 var SECTION_LABELS = {
   calendar:'Calendario', schoolCalendar:'Calendario scolastico', notebook:'Blocco note', contacts:'Rubrica',
-  links:'Schedule link', register:'Registro personale', balance:'Bilancio', shopping:'Lista della spesa', library:'Libreria',
+  links:'Schede link', register:'Registro personale', balance:'Bilancio', shopping:'Lista della spesa', library:'Libreria',
   lessons:'Lezioni private'
 };
 function openAddSectionsModal(){
@@ -2122,7 +2133,7 @@ function openAddSectionsModal(){
   if(!Array.isArray(enabled)) enabled = Object.keys(SECTION_TILES);
   var options = [
     ['calendar','Calendario'], ['schoolCalendar','Calendario scolastico'], ['notebook','Blocco note'], ['contacts','Rubrica'],
-    ['links','Schedule link'], ['register','Registro personale'], ['balance','Bilancio'], ['shopping','Lista della spesa'],
+    ['links','Schede link'], ['register','Registro personale'], ['balance','Bilancio'], ['shopping','Lista della spesa'],
     ['library','Libreria'], ['lessons','Lezioni private']
   ];
   var rows = options.map(function(o){
@@ -2711,11 +2722,21 @@ async function openDayScreen(date){
   hideDeleteX();
   activeEditingText = null;
   resetDayHistory();
-  applyNotebookBackground('righi');
   canvasZoom = 1;
   var dKey = dateKey(date);
   var canvas = $('#dayCanvas');
   canvas.innerHTML = '<p class="empty-day-hint">Caricamento...</p>';
+  state.currentDayMeta = {background:'righi', orientation:'verticale'};
+  try{
+    var metaSnap = await getDoc(dayMetaDocRef(state.currentAgendaId, dKey));
+    if(metaSnap.exists()){
+      var metaData = metaSnap.data() || {};
+      state.currentDayMeta.background = metaData.background || 'righi';
+      state.currentDayMeta.orientation = metaData.orientation || 'verticale';
+    }
+  }catch(err){ console.error(err); }
+  applyNotebookBackground(state.currentDayMeta.background);
+  applyPageOrientation(state.currentDayMeta.orientation);
   try{
     var elSnap = await getDocs(elementsColl(state.currentAgendaId, dKey));
     var els = elSnap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
@@ -2740,7 +2761,8 @@ async function openDayScreen(date){
   }
   $('#dateBar').style.display = 'flex';
   $('#dayDateSub').style.display = 'block';
-  $('#notebookBar').style.display = 'none';
+  $('#npNameDisplay').textContent = '';
+  $('#notebookBar').style.display = 'flex';
   $('#notebookFooter').style.display = 'none';
   setIconButton('btnGoCalendar', 'calendar', 'Calendario');
   $('#dayDateLabel').textContent = formatDateIt(state.currentDate);
@@ -2836,7 +2858,7 @@ function openNewNotebookModal(isFirst){
       state.notebooks = state.notebooks || [];
       state.notebooks.push(entry);
       var firstPageId = uid();
-      var pageData = {createdAt: Date.now(), background:'righi'};
+      var pageData = {createdAt: Date.now(), background:'righi', orientation:'verticale'};
       await setDoc(notebookPageDocRef(state.currentAgendaId, newId, firstPageId), pageData);
       closeModal();
       openNotebook(newId, firstPageId);
@@ -2910,7 +2932,7 @@ async function openNotebook(notebookId, pageId){
   var pages = sortedCurrentNotebookPages();
   if(pages.length===0){
     var newPageId = uid();
-    var pageData = {createdAt: Date.now(), background:'righi'};
+    var pageData = {createdAt: Date.now(), background:'righi', orientation:'verticale'};
     try{ await setDoc(notebookPageDocRef(state.currentAgendaId, notebookId, newPageId), pageData); }catch(err){ console.error(err); }
     state.notebookPagesCache.push(Object.assign({id:newPageId}, pageData));
     pages = sortedCurrentNotebookPages();
@@ -2944,6 +2966,7 @@ async function openNotebookPageScreen(notebookId, pageId){
     }catch(err){ console.error(err); }
   }
   applyNotebookBackground(pageInfo ? pageInfo.background : 'righi');
+  applyPageOrientation(pageInfo ? pageInfo.orientation : 'verticale');
   try{
     var elSnap = await getDocs(elementsColl(state.currentAgendaId, pageId));
     var els = elSnap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
@@ -2981,7 +3004,7 @@ $('#npAddBtn').addEventListener('click', async function(){
   if(pageMode!=='notebook' || !currentNotebookId) return;
   try{
     var newPageId = uid();
-    var pageData = {createdAt: Date.now(), background:'righi'};
+    var pageData = {createdAt: Date.now(), background:'righi', orientation:'verticale'};
     await setDoc(notebookPageDocRef(state.currentAgendaId, currentNotebookId, newPageId), pageData);
     state.notebookPagesCache = state.notebookPagesCache || [];
     state.notebookPagesCache.push(Object.assign({id:newPageId}, pageData));
@@ -2989,6 +3012,7 @@ $('#npAddBtn').addEventListener('click', async function(){
   }catch(err){ console.error(err); showToast('Errore nella creazione della pagina.', 'error'); }
 });
 $('#npDeletePageBtn').addEventListener('click', async function(){
+  if(pageMode==='day'){ clearCurrentPageContent(); return; }
   if(pageMode!=='notebook' || !currentNotebookId) return;
   var pages = sortedCurrentNotebookPages();
   if(pages.length<=1){ showToast('Questa è l\'unica pagina del blocco note: elimina l\'intero blocco note dall\'elenco, se vuoi rimuoverlo.', 'info'); return; }
@@ -3010,7 +3034,7 @@ $('#npDeletePageBtn').addEventListener('click', async function(){
 });
 var NP_BACKGROUNDS = [
   ['righi','A righi'], ['quadretti','A quadretti'], ['millimetrata','Carta millimetrata'],
-  ['pentagrammato','Pentagrammato'], ['vuoto','Vuoto']
+  ['pentagrammato','Pentagrammato'], ['vuoto','Vuoto'], ['bianco','Bianco']
 ];
 function applyNotebookBackground(bg){
   var canvas = $('#dayCanvas');
@@ -3018,10 +3042,28 @@ function applyNotebookBackground(bg){
   NP_BACKGROUNDS.forEach(function(b){ canvas.classList.remove('bg-'+b[0]); });
   canvas.classList.add('bg-'+(bg||'righi'));
 }
+async function savePageBackground(bg){
+  if(pageMode==='notebook'){
+    var pageInfo = (state.notebookPagesCache||[]).find(function(p){ return p.id===currentPageKey; });
+    if(pageInfo){
+      pageInfo.background = bg;
+      try{ await updateDoc(notebookPageDocRef(state.currentAgendaId, currentNotebookId, currentPageKey), {background: bg}); }
+      catch(err){ console.error(err); showToast('Errore nel salvataggio dello sfondo.', 'error'); }
+    }
+  } else {
+    state.currentDayMeta.background = bg;
+    try{ await setDoc(dayMetaDocRef(state.currentAgendaId, dateKey(state.currentDate)), {background: bg}, {merge:true}); }
+    catch(err){ console.error(err); showToast('Errore nel salvataggio dello sfondo.', 'error'); }
+  }
+}
 $('#npBackgroundBtn').addEventListener('click', function(){
-  if(pageMode!=='notebook') return;
-  var pageInfo = (state.notebookPagesCache||[]).find(function(p){ return p.id===currentPageKey; });
-  var current = pageInfo ? (pageInfo.background||'righi') : 'righi';
+  var current;
+  if(pageMode==='notebook'){
+    var pageInfo = (state.notebookPagesCache||[]).find(function(p){ return p.id===currentPageKey; });
+    current = pageInfo ? (pageInfo.background||'righi') : 'righi';
+  } else {
+    current = state.currentDayMeta.background || 'righi';
+  }
   openModal(
     '<h3>Sfondo della pagina</h3>'+
     '<div class="modal-choices">'+
@@ -3037,11 +3079,46 @@ $('#npBackgroundBtn').addEventListener('click', function(){
       var bg = btn.dataset.bg;
       applyNotebookBackground(bg);
       closeModal();
-      if(pageInfo){
-        pageInfo.background = bg;
-        try{ await updateDoc(notebookPageDocRef(state.currentAgendaId, currentNotebookId, currentPageKey), {background: bg}); }
-        catch(err){ console.error(err); showToast('Errore nel salvataggio dello sfondo.', 'error'); }
-      }
+      await savePageBackground(bg);
+    });
+  });
+});
+var NP_ORIENTATIONS = [ ['verticale','Verticale'], ['orizzontale','Orizzontale'] ];
+async function savePageOrientation(o){
+  if(pageMode==='notebook'){
+    var pageInfo = (state.notebookPagesCache||[]).find(function(p){ return p.id===currentPageKey; });
+    if(pageInfo){
+      pageInfo.orientation = o;
+      try{ await updateDoc(notebookPageDocRef(state.currentAgendaId, currentNotebookId, currentPageKey), {orientation: o}); }
+      catch(err){ console.error(err); showToast("Errore nel salvataggio dell'orientamento.", 'error'); }
+    }
+  } else {
+    state.currentDayMeta.orientation = o;
+    try{ await setDoc(dayMetaDocRef(state.currentAgendaId, dateKey(state.currentDate)), {orientation: o}, {merge:true}); }
+    catch(err){ console.error(err); showToast("Errore nel salvataggio dell'orientamento.", 'error'); }
+  }
+}
+$('#npOrientationBtn').addEventListener('click', function(){
+  var current = (pageMode==='notebook')
+    ? (function(){ var pageInfo = (state.notebookPagesCache||[]).find(function(p){ return p.id===currentPageKey; }); return pageInfo ? (pageInfo.orientation||'verticale') : 'verticale'; })()
+    : (state.currentDayMeta.orientation || 'verticale');
+  openModal(
+    '<h3>Orientamento del foglio</h3>'+
+    '<div class="modal-choices">'+
+      NP_ORIENTATIONS.map(function(o){
+        return '<button type="button" class="choice-btn np-orient-choice'+(o[0]===current?' active':'')+'" data-orient="'+o[0]+'">'+iconSvg('orientation')+'<span>'+o[1]+'</span></button>';
+      }).join('')+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="npOrientCancel">Chiudi</button>'
+  );
+  $('#npOrientCancel').onclick = closeModal;
+  $$('.np-orient-choice').forEach(function(btn){
+    btn.addEventListener('click', async function(){
+      var o = btn.dataset.orient;
+      applyPageOrientation(o);
+      growCanvasIfNeeded();
+      closeModal();
+      await savePageOrientation(o);
     });
   });
 });
@@ -3319,14 +3396,22 @@ function renderScheduleLinkList(filter){
   wrap.innerHTML = links.map(function(l){
     return '<div class="np-list-item" data-id="'+l.id+'">'+
       '<span class="np-item-name">'+escapeHtml(l.name||'Senza nome')+'</span>'+
+      '<button type="button" class="np-item-rename" data-id="'+l.id+'" title="Modifica link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
       '<button type="button" class="np-item-delete" data-id="'+l.id+'" title="Elimina link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
     '</div>';
   }).join('');
   $$('#slListContainer .np-list-item').forEach(function(item){
     item.addEventListener('click', function(e){
-      if(e.target.closest('.np-item-delete')) return;
+      if(e.target.closest('.np-item-delete') || e.target.closest('.np-item-rename')) return;
       var l = state.scheduleLinks.find(function(x){ return x.id===item.dataset.id; });
       if(l && l.url) window.open(l.url, '_blank', 'noopener');
+    });
+  });
+  $$('#slListContainer .np-item-rename').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var l = state.scheduleLinks.find(function(x){ return x.id===btn.dataset.id; });
+      if(l) openScheduleLinkEditModal(l);
     });
   });
   $$('#slListContainer .np-item-delete').forEach(function(btn){
@@ -3980,32 +4065,39 @@ function downloadBlob(blob, filename){
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
 }
-async function sharePageAsPDF(sourceElement, filenameBase, shareTitle){
+async function generatePdfBlob(sourceElement, filenameBase, preserveTheme){
+  await ensureShareLibsLoaded();
+  var canvas = await window.html2canvas(sourceElement, {scale:2, useCORS:true, backgroundColor: preserveTheme ? null : '#ffffff'});
+  var imgData = canvas.toDataURL('image/jpeg', 0.92);
+  var landscape = canvas.width > canvas.height;
+  var pdf = new window.jspdf.jsPDF({orientation: landscape?'landscape':'portrait', unit:'pt', format:'a4'});
+  var pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
+  var imgRatio = canvas.width/canvas.height, pdfRatio = pageW/pageH;
+  var drawW, drawH;
+  if(imgRatio > pdfRatio){ drawW = pageW; drawH = pageW/imgRatio; } else { drawH = pageH; drawW = pageH*imgRatio; }
+  pdf.addImage(imgData, 'JPEG', (pageW-drawW)/2, (pageH-drawH)/2, drawW, drawH);
+  var blob = pdf.output('blob');
+  var filename = filenameBase.replace(/[\\/:*?"<>|]/g,'_')+'.pdf';
+  return {blob:blob, filename:filename};
+}
+/* preserveTheme: true = "screenshot" fedele (blocco note/calendario, con i colori della modalità
+   attuale, chiara o scura); false/omesso = forza sempre i colori della modalità chiara (lezioni
+   private, lista della spesa, schede link, registro, bilancio, libreria, contatti). */
+async function sharePageAsPDF(sourceElement, filenameBase, shareTitle, preserveTheme){
   if(!sourceElement){ showToast('Niente da condividere.', 'error'); return; }
   showToast('Preparazione del PDF da condividere...', 'info');
-  var wasDark = document.body.classList.contains('dark');
-  if(wasDark) document.body.classList.remove('dark'); /* il PDF condiviso deve avere sempre i colori della modalità chiara */
+  var wasDark = !preserveTheme && document.body.classList.contains('dark');
+  if(wasDark) document.body.classList.remove('dark'); /* il PDF condiviso deve avere sempre i colori della modalità chiara, tranne quando si preserva il tema */
   try{
-    await ensureShareLibsLoaded();
-    var canvas = await window.html2canvas(sourceElement, {scale:2, useCORS:true, backgroundColor:'#ffffff'});
-    var imgData = canvas.toDataURL('image/jpeg', 0.92);
-    var landscape = canvas.width > canvas.height;
-    var pdf = new window.jspdf.jsPDF({orientation: landscape?'landscape':'portrait', unit:'pt', format:'a4'});
-    var pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
-    var imgRatio = canvas.width/canvas.height, pdfRatio = pageW/pageH;
-    var drawW, drawH;
-    if(imgRatio > pdfRatio){ drawW = pageW; drawH = pageW/imgRatio; } else { drawH = pageH; drawW = pageH*imgRatio; }
-    pdf.addImage(imgData, 'JPEG', (pageW-drawW)/2, (pageH-drawH)/2, drawW, drawH);
-    var blob = pdf.output('blob');
-    var filename = filenameBase.replace(/[\\/:*?"<>|]/g,'_')+'.pdf';
-    var file = new File([blob], filename, {type:'application/pdf'});
+    var result = await generatePdfBlob(sourceElement, filenameBase, preserveTheme);
+    var file = new File([result.blob], result.filename, {type:'application/pdf'});
     if(navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({files:[file], title: shareTitle||filename});
+      await navigator.share({files:[file], title: shareTitle||result.filename});
     } else if(navigator.share){
-      downloadBlob(blob, filename);
+      downloadBlob(result.blob, result.filename);
       showToast('Il tuo browser non permette di condividere direttamente il file: il PDF è stato scaricato, puoi condividerlo manualmente da lì.', 'info');
     } else {
-      downloadBlob(blob, filename);
+      downloadBlob(result.blob, result.filename);
       showToast('La condivisione non è supportata su questo browser: il PDF è stato scaricato.', 'info');
     }
   }catch(err){
@@ -4016,13 +4108,63 @@ async function sharePageAsPDF(sourceElement, filenameBase, shareTitle){
     if(wasDark) document.body.classList.add('dark');
   }
 }
-function printRegisterSheets(sheets){
+async function downloadPagePDF(sourceElement, filenameBase, preserveTheme){
+  if(!sourceElement){ showToast('Niente da scaricare.', 'error'); return; }
+  showToast('Preparazione del PDF...', 'info');
+  var wasDark = !preserveTheme && document.body.classList.contains('dark');
+  if(wasDark) document.body.classList.remove('dark');
+  try{
+    var result = await generatePdfBlob(sourceElement, filenameBase, preserveTheme);
+    downloadBlob(result.blob, result.filename);
+  }catch(err){
+    console.error(err);
+    showToast('Errore durante la preparazione del PDF'+(err&&err.message?(': '+err.message):'')+'.', 'error');
+  } finally {
+    if(wasDark) document.body.classList.add('dark');
+  }
+}
+/* Scaricamento in PDF basato su html2canvas+jsPDF (invece di window.print()), usato da
+   Registro personale, Bilancio, Lista della spesa, Libreria e Lezioni private: su alcuni
+   browser mobili, in particolare quando l'app è installata come app da schermata Home,
+   window.print() non produce alcun effetto visibile. Genera una o più pagine (una per
+   ciascun elemento di "items", renderizzato con buildFn dentro l'area di stampa nascosta)
+   e forza sempre i colori della modalità chiara, indipendentemente dal tema attivo. */
+async function downloadItemsAsPDF(buildFn, items, filenameBase){
+  if(!items || !items.length){ showToast('Niente da scaricare.', 'error'); return; }
   var area = $('#regPrintArea');
-  area.innerHTML = sheets.map(function(s){ return buildRegisterTableInnerHTML(s, true); }).join('');
-  setPrintPageSize('landscape');
-  document.body.classList.add('printing-register');
-  window.print();
-  setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
+  showToast('Preparazione del PDF...', 'info');
+  var wasDark = document.body.classList.contains('dark');
+  if(wasDark) document.body.classList.remove('dark');
+  try{
+    await ensureShareLibsLoaded();
+    var pdf = null;
+    for(var i=0;i<items.length;i++){
+      area.innerHTML = buildFn(items[i]);
+      var canvas = await window.html2canvas(area, {scale:2, useCORS:true, backgroundColor:'#ffffff'});
+      var imgData = canvas.toDataURL('image/jpeg', 0.92);
+      var landscape = canvas.width > canvas.height;
+      if(!pdf){ pdf = new window.jspdf.jsPDF({orientation: landscape?'landscape':'portrait', unit:'pt', format:'a4'}); }
+      else { pdf.addPage('a4', landscape?'landscape':'portrait'); }
+      var pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
+      var imgRatio = canvas.width/canvas.height, pdfRatio = pageW/pageH;
+      var drawW, drawH;
+      if(imgRatio > pdfRatio){ drawW = pageW; drawH = pageW/imgRatio; } else { drawH = pageH; drawW = pageH*imgRatio; }
+      pdf.addImage(imgData, 'JPEG', (pageW-drawW)/2, (pageH-drawH)/2, drawW, drawH);
+    }
+    var blob = pdf.output('blob');
+    var filename = filenameBase.replace(/[\\/:*?"<>|]/g,'_')+'.pdf';
+    downloadBlob(blob, filename);
+  }catch(err){
+    console.error(err);
+    showToast('Errore durante la preparazione del PDF'+(err&&err.message?(': '+err.message):'')+'.', 'error');
+  } finally {
+    area.innerHTML = '';
+    if(wasDark) document.body.classList.add('dark');
+  }
+}
+function printRegisterSheets(sheets){
+  downloadItemsAsPDF(function(s){ return buildRegisterTableInnerHTML(s, true); }, sheets,
+    (sheets.length===1 ? ('Registro - '+(sheets[0].name||'scheda')) : 'Registro - tutte le schede'));
 }
 $('#regExportPdf').addEventListener('click', function(){
   openModal(
@@ -4316,12 +4458,8 @@ function buildBalanceTableForPrint(sheet){
   return '<div class="reg-print-sheet"><h2 style="font-family:inherit;margin:0 0 8px;">'+escapeHtml(sheet.name)+'</h2>'+html+'</div>';
 }
 function printBalanceSheets(sheets){
-  var area = $('#regPrintArea');
-  area.innerHTML = sheets.map(function(s){ return buildBalanceTableForPrint(s); }).join('');
-  setPrintPageSize('portrait');
-  document.body.classList.add('printing-register');
-  window.print();
-  setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
+  downloadItemsAsPDF(buildBalanceTableForPrint, sheets,
+    (sheets.length===1 ? ('Bilancio - '+(sheets[0].name||'bilancio')) : 'Bilancio - tutti i bilanci'));
 }
 $('#balExportPdf').addEventListener('click', function(){
   openModal(
@@ -4587,12 +4725,7 @@ function buildShoppingListForPrint(list){
 }
 $('#shopExportPdf').addEventListener('click', function(){
   var list = getCurrentShoppingList(); if(!list) return;
-  var area = $('#regPrintArea');
-  area.innerHTML = buildShoppingListForPrint(list);
-  setPrintPageSize('portrait');
-  document.body.classList.add('printing-register');
-  window.print();
-  setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
+  downloadItemsAsPDF(buildShoppingListForPrint, [list], 'Spesa - '+(list.name||'lista'));
 });
 $('#shopSharePage').addEventListener('click', async function(){
   var list = getCurrentShoppingList(); if(!list) return;
@@ -4866,8 +4999,7 @@ $('#libAddBookBtn').addEventListener('click', function(){
   var lib = getCurrentLibrary(); if(!lib) return;
   openBookModal(lib, null);
 });
-$('#libExportPdf').addEventListener('click', function(){
-  var lib = getCurrentLibrary(); if(!lib) return;
+function buildLibraryTableForPrint(lib){
   var books = getFilteredSortedBooks(lib, $('#libSearchInput').value);
   var html = '<div class="reg-print-sheet"><h2 style="font-family:inherit;margin:0 0 8px;">'+escapeHtml(lib.name)+'</h2><table class="lib-table"><thead><tr>';
   LIB_FIELDS.forEach(function(fld){ html += '<th>'+fld.label+'</th>'; });
@@ -4878,12 +5010,11 @@ $('#libExportPdf').addEventListener('click', function(){
     html += '</tr>';
   });
   html += '</tbody></table></div>';
-  var area = $('#regPrintArea');
-  area.innerHTML = html;
-  setPrintPageSize('landscape');
-  document.body.classList.add('printing-register');
-  window.print();
-  setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
+  return html;
+}
+$('#libExportPdf').addEventListener('click', function(){
+  var lib = getCurrentLibrary(); if(!lib) return;
+  downloadItemsAsPDF(buildLibraryTableForPrint, [lib], 'Libreria - '+(lib.name||'catalogo'));
 });
 $('#libSharePage').addEventListener('click', function(){
   var lib = getCurrentLibrary(); if(!lib) return;
@@ -5268,12 +5399,7 @@ function buildLessonsTableForPrint(student){
 }
 $('#lpExportPdf').addEventListener('click', function(){
   var student = getCurrentStudent(); if(!student) return;
-  var area = $('#regPrintArea');
-  area.innerHTML = buildLessonsTableForPrint(student);
-  setPrintPageSize('landscape');
-  document.body.classList.add('printing-register');
-  window.print();
-  setTimeout(function(){ document.body.classList.remove('printing-register'); area.innerHTML=''; }, 500);
+  downloadItemsAsPDF(buildLessonsTableForPrint, [student], 'Lezioni - '+(student.name||'alunno'));
 });
 $('#lpSharePage').addEventListener('click', async function(){
   var student = getCurrentStudent(); if(!student) return;
@@ -5344,7 +5470,7 @@ function growCanvasIfNeeded(){
     var bottom = el.offsetTop + el.offsetHeight;
     if(bottom>maxBottom) maxBottom = bottom;
   });
-  canvas.style.minHeight = Math.max(1000, maxBottom+150)+'px';
+  canvas.style.minHeight = Math.max(getPageMinHeight(), maxBottom+150)+'px';
   applyCanvasResponsiveScale();
 }
 var canvasZoom = 1; /* moltiplicatore di zoom controllato dall'utente (pinch) */
@@ -5362,12 +5488,12 @@ function applyCanvasResponsiveScale(){
   if(!outer || !spacer || !canvas) return;
   var availableWidth = outer.clientWidth;
   if(availableWidth<=0) return;
-  canvasFitScale = availableWidth < PAGE_WIDTH ? (availableWidth/PAGE_WIDTH) : 1;
+  var naturalWidth = getPageWidth();
+  canvasFitScale = availableWidth < naturalWidth ? (availableWidth/naturalWidth) : 1;
   var effectiveScale = canvasFitScale * canvasZoom;
   canvas.style.transformOrigin = 'top left';
   canvas.style.transform = (effectiveScale!==1) ? 'scale('+effectiveScale+')' : '';
   var naturalHeight = parseFloat(canvas.style.minHeight) || canvas.scrollHeight;
-  var naturalWidth = PAGE_WIDTH;
   spacer.style.width = Math.ceil(naturalWidth*effectiveScale)+'px';
   spacer.style.height = Math.ceil(naturalHeight*effectiveScale)+'px';
   outer.style.height = Math.ceil(naturalHeight*canvasFitScale)+'px';
@@ -5439,8 +5565,21 @@ var pendingPlacement = null;
 var activeDeleteWrapper = null;
 var activeEditingText = null;
 var PAGE_MARGIN = 19; /* ~0.5cm a 96dpi */
-var PAGE_WIDTH = 760;
-function textLineWidth(x){ return Math.max(80, PAGE_WIDTH - PAGE_MARGIN - x); }
+var PAGE_WIDTH = 760; /* larghezza "verticale" (portrait), usata come riferimento di base */
+var PAGE_WIDTH_LANDSCAPE = 1074;
+var PAGE_MINHEIGHT_PORTRAIT = 1000;
+var PAGE_MINHEIGHT_LANDSCAPE = 760;
+var currentPageOrientation = 'verticale'; /* 'verticale' | 'orizzontale', per la pagina attualmente aperta */
+function getPageWidth(){ return currentPageOrientation==='orizzontale' ? PAGE_WIDTH_LANDSCAPE : PAGE_WIDTH; }
+function getPageMinHeight(){ return currentPageOrientation==='orizzontale' ? PAGE_MINHEIGHT_LANDSCAPE : PAGE_MINHEIGHT_PORTRAIT; }
+function textLineWidth(x){ return Math.max(80, getPageWidth() - PAGE_MARGIN - x); }
+function applyPageOrientation(o){
+  currentPageOrientation = (o==='orizzontale') ? 'orizzontale' : 'verticale';
+  var canvas = $('#dayCanvas');
+  if(!canvas) return;
+  canvas.style.width = getPageWidth()+'px';
+  canvas.style.minHeight = getPageMinHeight()+'px';
+}
 
 var pendingTextStyle = { font:"'Work Sans',sans-serif", size:16, color:'#2E2A22', colorCustom:false, bold:false, italic:false, underline:false };
 
@@ -5602,7 +5741,7 @@ $('#dayCanvas').addEventListener('touchmove', function(evt){
   eraseAtPoint(evt);
 }, {capture:true, passive:false});
 $('#dayCanvas').addEventListener('touchend', function(){ erasing = false; }, true);
-$('#btnTrashPage').addEventListener('click', function(){
+function clearCurrentPageContent(){
   if(state.dayElements.length===0){ showToast('La pagina è già vuota.', 'info'); return; }
   if(confirm('Cancellare tutto il contenuto di questa pagina?')){
     pushDayHistory();
@@ -5612,25 +5751,25 @@ $('#btnTrashPage').addEventListener('click', function(){
     markDirty();
     growCanvasIfNeeded();
   }
-});
-$('#btnExportPdf').addEventListener('click', function(){
+}
+$('#btnTrashPage').addEventListener('click', function(){ clearCurrentPageContent(); });
+$('#btnExportPdf').addEventListener('click', async function(){
+  /* Il blocco note e le pagine del giorno vengono scaricate come una sorta di "screenshot"
+     fedele della pagina (colori e sfondo della modalità attuale inclusi), adattata a un
+     foglio A4, invece di forzare sempre la modalità chiara come per registro/bilancio/ecc. */
+  var name = pageMode==='notebook' ? ($('#npNameDisplay').textContent||'Pagina blocco note') : ('Pagina del '+formatDateIt(state.currentDate));
   var canvas = $('#dayCanvas');
-  var PX_PER_MM = 3.7795;
-  var printableWpx = (210 - 20) * PX_PER_MM;
-  var printableHpx = (297 - 20) * PX_PER_MM;
-  var naturalW = PAGE_WIDTH;
-  var naturalH = canvas.scrollHeight || naturalW;
-  var scale = Math.min(printableWpx/naturalW, printableHpx/naturalH, 1);
-  canvas.style.setProperty('--print-scale', scale);
-  setPrintPageSize('portrait');
-  window.print();
+  var prevTransform = canvas.style.transform;
+  canvas.style.transform = ''; /* cattura sempre a piena grandezza, indipendentemente dallo zoom su schermo */
+  await downloadPagePDF(canvas, name, true);
+  canvas.style.transform = prevTransform;
 });
 $('#btnSharePage').addEventListener('click', async function(){
   var name = pageMode==='notebook' ? ($('#npNameDisplay').textContent||'Pagina blocco note') : ('Pagina del '+formatDateIt(state.currentDate));
   var canvas = $('#dayCanvas');
   var prevTransform = canvas.style.transform;
   canvas.style.transform = ''; /* cattura sempre a piena grandezza, indipendentemente dallo zoom su schermo */
-  await sharePageAsPDF(canvas, name, name);
+  await sharePageAsPDF(canvas, name, name, true);
   canvas.style.transform = prevTransform;
 });
 
@@ -5657,7 +5796,7 @@ function placeElementAt(type, x, y){
       color:pendingTextStyle.color, colorCustom:pendingTextStyle.colorCustom};
     addCanvasElement(data);
     var wrapper = document.querySelector('#dayCanvas [data-id="'+data.id+'"]');
-    if(wrapper) enterTextEditMode(wrapper, data);
+    if(wrapper) enterTextEditMode(wrapper, data, true);
   } else if(type==='dictation'){
     startDictationAt(x, y);
   } else if(type==='image'){
@@ -5665,12 +5804,125 @@ function placeElementAt(type, x, y){
   } else if(type==='audio'){
     openMediaNameModal('audio', x, y);
   } else if(type==='link'){
-    openLinkModal(x, y, null, null);
+    openLinkSourceChoice(x, y);
   } else if(type==='phone'){
-    openPhoneModal(x, y, null, null);
+    openPhoneSourceChoice(x, y);
   } else if(type==='email'){
-    openEmailModal(x, y, null, null);
+    openEmailSourceChoice(x, y);
   }
+}
+/* ---- scelta della fonte per link/telefono/email: inserimento manuale oppure
+   presa da un elenco già esistente (Schede link / Rubrica), se ce ne sono ---- */
+async function fetchScheduleLinksFresh(){
+  try{
+    var snap = await getDocs(scheduleLinksColl(state.currentAgendaId));
+    state.scheduleLinks = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+  }catch(err){ console.error(err); }
+  return state.scheduleLinks || [];
+}
+async function fetchContactsFresh(){
+  try{
+    var snap = await getDocs(contactsColl(state.currentAgendaId));
+    state.contacts = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return normalizeContact(data); });
+  }catch(err){ console.error(err); }
+  return state.contacts || [];
+}
+async function openLinkSourceChoice(x, y){
+  var links = await fetchScheduleLinksFresh();
+  if(!links.length){ openLinkModal(x, y, null, null); return; }
+  openModal(
+    '<h3>Inserisci link</h3>'+
+    '<div class="modal-choices">'+
+      '<button type="button" class="choice-btn" id="linkSrcManual">'+iconSvg('link')+'<span>Inserisci manualmente</span></button>'+
+      '<button type="button" class="choice-btn" id="linkSrcList">'+iconSvg('link')+'<span>Scegli da Schede link</span></button>'+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="linkSrcCancel">Annulla</button>'
+  );
+  $('#linkSrcCancel').onclick = closeModal;
+  $('#linkSrcManual').onclick = function(){ closeModal(); openLinkModal(x, y, null, null); };
+  $('#linkSrcList').onclick = function(){ openLinkPickModal(x, y, links); };
+}
+function openLinkPickModal(x, y, links){
+  var sorted = links.slice().sort(function(a,b){ return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'}); });
+  openModal(
+    '<h3>Scegli da Schede link</h3>'+
+    '<div class="modal-pick-list">'+
+      sorted.map(function(l){
+        return '<button type="button" class="modal-pick-item" data-id="'+l.id+'">'+
+          '<span class="pick-item-name">'+escapeHtml(l.name||'Senza nome')+'</span>'+
+          '<span class="pick-item-sub">'+escapeHtml(l.url||'')+'</span>'+
+        '</button>';
+      }).join('')+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="linkPickCancel">Annulla</button>'
+  );
+  $('#linkPickCancel').onclick = closeModal;
+  $$('.modal-pick-item').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var l = links.find(function(x){ return x.id===btn.dataset.id; });
+      closeModal();
+      if(l) addCanvasElement({id:uid(), type:'link', x:x, y:y, url:l.url, label:l.name||l.url});
+    });
+  });
+}
+async function openPhoneSourceChoice(x, y){
+  var contacts = await fetchContactsFresh();
+  var items = [];
+  contacts.forEach(function(c){ (c.phones||[]).forEach(function(p){ if(p) items.push({name:c.name||'Contatto', value:p}); }); });
+  if(!items.length){ openPhoneModal(x, y, null, null); return; }
+  openModal(
+    '<h3>Numero di telefono</h3>'+
+    '<div class="modal-choices">'+
+      '<button type="button" class="choice-btn" id="phoneSrcManual">'+iconSvg('phone')+'<span>Inserisci manualmente</span></button>'+
+      '<button type="button" class="choice-btn" id="phoneSrcList">'+iconSvg('phone')+'<span>Scegli dalla Rubrica</span></button>'+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="phoneSrcCancel">Annulla</button>'
+  );
+  $('#phoneSrcCancel').onclick = closeModal;
+  $('#phoneSrcManual').onclick = function(){ closeModal(); openPhoneModal(x, y, null, null); };
+  $('#phoneSrcList').onclick = function(){ openContactValuePickModal(x, y, items, 'phone'); };
+}
+async function openEmailSourceChoice(x, y){
+  var contacts = await fetchContactsFresh();
+  var items = [];
+  contacts.forEach(function(c){ (c.emails||[]).forEach(function(e){ if(e) items.push({name:c.name||'Contatto', value:e}); }); });
+  if(!items.length){ openEmailModal(x, y, null, null); return; }
+  openModal(
+    '<h3>Email</h3>'+
+    '<div class="modal-choices">'+
+      '<button type="button" class="choice-btn" id="emailSrcManual">'+iconSvg('email')+'<span>Inserisci manualmente</span></button>'+
+      '<button type="button" class="choice-btn" id="emailSrcList">'+iconSvg('email')+'<span>Scegli dalla Rubrica</span></button>'+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="emailSrcCancel">Annulla</button>'
+  );
+  $('#emailSrcCancel').onclick = closeModal;
+  $('#emailSrcManual').onclick = function(){ closeModal(); openEmailModal(x, y, null, null); };
+  $('#emailSrcList').onclick = function(){ openContactValuePickModal(x, y, items, 'email'); };
+}
+function openContactValuePickModal(x, y, items, kind){
+  var sorted = items.slice().sort(function(a,b){ return a.name.localeCompare(b.name, 'it', {sensitivity:'base'}); });
+  openModal(
+    '<h3>Scegli dalla Rubrica</h3>'+
+    '<div class="modal-pick-list">'+
+      sorted.map(function(it, idx){
+        return '<button type="button" class="modal-pick-item" data-idx="'+idx+'">'+
+          '<span class="pick-item-name">'+escapeHtml(it.name)+'</span>'+
+          '<span class="pick-item-sub">'+escapeHtml(it.value)+'</span>'+
+        '</button>';
+      }).join('')+
+    '</div>'+
+    '<button type="button" class="btn-secondary" id="contactPickCancel">Annulla</button>'
+  );
+  $('#contactPickCancel').onclick = closeModal;
+  $$('.modal-pick-item').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var it = sorted[+btn.dataset.idx];
+      closeModal();
+      if(!it) return;
+      if(kind==='phone') addCanvasElement({id:uid(), type:'phone', x:x, y:y, label:it.name, phone:it.value});
+      else addCanvasElement({id:uid(), type:'email', x:x, y:y, label:it.name, email:it.value});
+    });
+  });
 }
 function addCanvasElement(data, skipInteractions){
   pushDayHistory();
@@ -5844,9 +6096,12 @@ function fourHandlesHTML(){
 }
 
 /* ---- testo ---- */
-function enterTextEditMode(wrapper, data){
+function enterTextEditMode(wrapper, data, skipHistory){
   if(activeEditingText && activeEditingText!==wrapper) exitTextEditMode(activeEditingText);
-  pushDayHistory();
+  /* skipHistory: quando il box di testo è appena stato creato, addCanvasElement() ha già
+     registrato lo stato "prima" corretto; una seconda registrazione qui obbligherebbe
+     l'utente a premere Annulla due volte per far sparire un testo appena scritto. */
+  if(!skipHistory) pushDayHistory();
   wrapper.classList.add('editing');
   var contentEl = wrapper.querySelector('.text-content');
   contentEl.contentEditable = 'true';
