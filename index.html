@@ -548,29 +548,6 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 }
 .recording-banner button{background:#fff;color:var(--accent);border:none;border-radius:16px;padding:6px 14px;font-weight:700;cursor:pointer;font-size:.8rem;}
 
-/* ---------- Archivio ---------- */
-.archive-file-icon{width:22px;height:22px;flex-shrink:0;color:var(--accent);display:flex;align-items:center;justify-content:center;}
-.archive-file-icon svg{width:100%;height:100%;}
-.file-viewer-overlay{
-  position:fixed;inset:0;background:rgba(10,8,6,.94);display:none;align-items:center;justify-content:center;
-  z-index:110;padding:50px 16px 16px;flex-direction:column;
-}
-.file-viewer-overlay.active{display:flex;}
-.file-viewer-close,.file-viewer-fullscreen{
-  position:fixed;top:calc(14px + env(safe-area-inset-top, 0px));width:40px;height:40px;border-radius:50%;
-  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.4);color:#fff;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;z-index:111;
-}
-.file-viewer-close{right:calc(14px + env(safe-area-inset-right, 0px));}
-.file-viewer-fullscreen{right:calc(64px + env(safe-area-inset-right, 0px));}
-.file-viewer-close svg,.file-viewer-fullscreen svg{width:18px;height:18px;}
-.file-viewer-title{color:#fff;font-size:.9rem;opacity:.85;margin-bottom:10px;text-align:center;max-width:90vw;overflow-wrap:break-word;}
-.file-viewer-content{max-width:100%;max-height:calc(100vh - 110px);display:flex;align-items:center;justify-content:center;width:100%;flex:1;}
-.file-viewer-content img{max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;border-radius:6px;}
-.file-viewer-content video{max-width:100%;max-height:calc(100vh - 110px);border-radius:6px;background:#000;}
-.file-viewer-content audio{width:100%;max-width:420px;}
-.file-viewer-content iframe{width:100%;height:calc(100vh - 110px);border:none;background:#fff;border-radius:6px;}
-
 /* ---------- Modal ---------- */
 #modalOverlay{
   position:fixed;inset:0;background:rgba(20,12,7,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;
@@ -976,11 +953,6 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <h3>Lezioni private</h3>
         <p>Alunni, orari e pagamenti</p>
       </button>
-      <button type="button" class="menu-tile" id="menuBtnArchive">
-        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="6" rx="1.5"></rect><path d="M4 9 V19 A2 2 0 0 0 6 21 H18 A2 2 0 0 0 20 19 V9"></path><line x1="10" y1="13" x2="14" y2="13"></line></svg>
-        <h3>Archivio</h3>
-        <p>File di ogni tipo: immagini, pdf, audio e altro</p>
-      </button>
       <button type="button" class="menu-tile menu-tile-add" id="menuBtnAddSections">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         <h3>Aggiungi/rimuovi sezioni</h3>
@@ -1159,39 +1131,6 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   <div class="lp-profile" id="lpProfileBlock"></div>
   <div class="reg-table-outer">
     <div id="lpTableContainer"></div>
-  </div>
-</div>
-
-<!-- ============ ARCHIVIO - elenco ============ -->
-<div id="screen-archive-list" class="screen paper">
-  <div class="page-rings">__RINGS__</div>
-  <div class="page-wrap">
-    <div class="top-header">
-      <div class="header-back">
-        <button type="button" class="icon-btn" id="archListBack" data-icon="arrowLeft" title="Indietro"></button>
-        <h1>Archivio</h1>
-      </div>
-      <button type="button" class="topbar-btn primary" id="archListAddBtn" data-icon="plus" data-label="Nuovo archivio"></button>
-    </div>
-    <input type="text" id="archListSearchInput" class="np-search" placeholder="Cerca tra gli archivi...">
-    <div id="archListContainer"></div>
-  </div>
-</div>
-
-<!-- ============ ARCHIVIO - file ============ -->
-<div id="screen-archive" class="screen paper">
-  <div class="page-rings">__RINGS__</div>
-  <div class="page-wrap">
-    <div class="top-header">
-      <div class="header-back">
-        <button type="button" class="icon-btn" id="archBack" data-icon="arrowLeft" title="Indietro"></button>
-        <h1 id="archName"></h1>
-      </div>
-      <button type="button" class="topbar-btn primary" id="archAddFileBtn" data-icon="plus" data-label="Aggiungi file"></button>
-    </div>
-    <input type="text" id="archSearchInput" class="np-search" placeholder="Cerca tra i file...">
-    <div id="archFilesContainer"></div>
-    <input type="file" id="archFileInput" multiple style="display:none;">
   </div>
 </div>
 
@@ -1401,13 +1340,6 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   <div class="el-action-bubble-arrow"></div>
 </div>
 
-<div id="fileViewerOverlay" class="file-viewer-overlay">
-  <button type="button" id="fileViewerClose" class="file-viewer-close" title="Chiudi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg></button>
-  <button type="button" id="fileViewerFullscreen" class="file-viewer-fullscreen" title="Schermo intero" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 4 4 4 4 9"></polyline><polyline points="15 20 20 20 20 15"></polyline><line x1="4" y1="4" x2="10" y2="10"></line><line x1="20" y1="20" x2="14" y2="14"></line></svg></button>
-  <div id="fileViewerTitle" class="file-viewer-title"></div>
-  <div id="fileViewerContent" class="file-viewer-content"></div>
-</div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 import {
@@ -1537,10 +1469,6 @@ function contactsColl(agendaId){ return collection(db, 'users', state.uid, 'agen
 function contactDocRef(agendaId, contactId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'contacts', contactId); }
 function scheduleLinksColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'scheduleLinks'); }
 function scheduleLinkDocRef(agendaId, linkId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'scheduleLinks', linkId); }
-function archivesColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'archives'); }
-function archiveDocRef(agendaId, archiveId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'archives', archiveId); }
-function archiveFilesColl(agendaId, archiveId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'archives', archiveId, 'files'); }
-function archiveFileDocRef(agendaId, archiveId, fileId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'archives', archiveId, 'files', fileId); }
 
 /* ================= Icons ================= */
 var ICONS = {
@@ -1586,11 +1514,7 @@ var ICONS = {
   circleEmpty:'<circle cx="12" cy="12" r="9"></circle>',
   circleCheck:'<circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"></circle><path d="M8 12 L11 15 L16 9" stroke="#fff" stroke-width="2" fill="none"></path>',
   background:'<rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="14" x2="21" y2="14"></line>',
-  orientation:'<rect x="7" y="3" width="10" height="14" rx="2"></rect><path d="M19 8 A6 6 0 0 1 19 16"></path><polyline points="17 14 19 16 21 14"></polyline>',
-  file:'<path d="M6 2 H14 L19 7 V22 H6 Z"></path><path d="M14 2 V7 H19"></path>',
-  archiveBox:'<rect x="3" y="3" width="18" height="6" rx="1.5"></rect><path d="M4 9 V19 A2 2 0 0 0 6 21 H18 A2 2 0 0 0 20 19 V9"></path><line x1="10" y1="13" x2="14" y2="13"></line>',
-  expand:'<polyline points="9 4 4 4 4 9"></polyline><polyline points="15 20 20 20 20 15"></polyline><line x1="4" y1="4" x2="10" y2="10"></line><line x1="20" y1="20" x2="14" y2="14"></line>',
-  move:'<path d="M4 7 H15"></path><polyline points="11 3 15 7 11 11"></polyline><path d="M20 17 H9"></path><polyline points="13 21 9 17 13 13"></polyline>'
+  orientation:'<rect x="7" y="3" width="10" height="14" rx="2"></rect><path d="M19 8 A6 6 0 0 1 19 16"></path><polyline points="17 14 19 16 21 14"></polyline>'
 };
 function iconSvg(name){
   return ICONS[name] ? ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS[name]+'</svg>') : '';
@@ -2168,17 +2092,6 @@ async function deleteAgendaCascade(agendaId){
     lpSnap.docs.forEach(function(d){ lpBatch.delete(d.ref); });
     await lpBatch.commit();
   }
-  var arSnap = await getDocs(archivesColl(agendaId));
-  for(var p=0;p<arSnap.docs.length;p++){
-    var arDoc = arSnap.docs[p];
-    var arFilesSnap = await getDocs(archiveFilesColl(agendaId, arDoc.id));
-    if(arFilesSnap.docs.length>0){
-      var arFilesBatch = writeBatch(db);
-      arFilesSnap.docs.forEach(function(d){ arFilesBatch.delete(d.ref); });
-      await arFilesBatch.commit();
-    }
-    await deleteDoc(arDoc.ref);
-  }
   await deleteDoc(agendaRef(agendaId));
 }
 
@@ -2193,8 +2106,7 @@ var SECTION_TILES = {
   balance: 'menuBtnBalance',
   shopping: 'menuBtnShopping',
   library: 'menuBtnLibrary',
-  lessons: 'menuBtnLessons',
-  archive: 'menuBtnArchive'
+  lessons: 'menuBtnLessons'
 };
 function showMenuScreen(){
   $('#menuAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
@@ -2214,7 +2126,7 @@ $('#menuBtnAddSections').addEventListener('click', function(){ openAddSectionsMo
 var SECTION_LABELS = {
   calendar:'Calendario', schoolCalendar:'Calendario scolastico', notebook:'Blocco note', contacts:'Rubrica',
   links:'Schede link', register:'Registro personale', balance:'Bilancio', shopping:'Lista della spesa', library:'Libreria',
-  lessons:'Lezioni private', archive:'Archivio'
+  lessons:'Lezioni private'
 };
 function openAddSectionsModal(){
   var enabled = state.currentAgenda.enabledSections;
@@ -2222,7 +2134,7 @@ function openAddSectionsModal(){
   var options = [
     ['calendar','Calendario'], ['schoolCalendar','Calendario scolastico'], ['notebook','Blocco note'], ['contacts','Rubrica'],
     ['links','Schede link'], ['register','Registro personale'], ['balance','Bilancio'], ['shopping','Lista della spesa'],
-    ['library','Libreria'], ['lessons','Lezioni private'], ['archive','Archivio']
+    ['library','Libreria'], ['lessons','Lezioni private']
   ];
   var rows = options.map(function(o){
     var checked = enabled.indexOf(o[0])>-1 ? ' checked' : '';
@@ -2343,19 +2255,6 @@ async function deleteSectionData(agendaId, key){
         await lpBatch.commit();
       }
       state.privateLessons = [];
-    } else if(key==='archive'){
-      var arSnap = await getDocs(archivesColl(agendaId));
-      for(var m=0;m<arSnap.docs.length;m++){
-        var arDoc = arSnap.docs[m];
-        var arFilesSnap = await getDocs(archiveFilesColl(agendaId, arDoc.id));
-        if(arFilesSnap.docs.length>0){
-          var arFilesBatch = writeBatch(db);
-          arFilesSnap.docs.forEach(function(d){ arFilesBatch.delete(d.ref); });
-          await arFilesBatch.commit();
-        }
-        await deleteDoc(arDoc.ref);
-      }
-      state.archives = [];
     }
   }catch(err){ console.error(err); showToast('Errore durante la rimozione dei dati di "'+SECTION_LABELS[key]+'".', 'error'); }
 }
@@ -5509,410 +5408,6 @@ $('#lpSharePage').addEventListener('click', async function(){
   await sharePageAsPDF(area, 'Lezioni - '+(student.name||'alunno'), student.name||'Lezioni private');
   area.innerHTML = '';
 });
-
-/* ================= ARCHIVIO =================
-   Senza Firebase Storage attivo, i file restano salvati (come base64) dentro Firestore,
-   che ha un limite di 1MB per documento: per questo ogni singolo file è limitato a circa
-   700KB (vedi MEDIA_FILE_MAX_BYTES), esattamente come già avviene per gli audio inseriti
-   nel blocco note. Questo significa, in pratica, che nell'Archivio si possono inserire
-   immagini, PDF leggeri e audio brevi, ma non video o file di installazione pesanti. */
-state.archives = [];
-state.currentArchiveId = null;
-state.archiveFiles = [];
-function getCurrentArchive(){ return (state.archives||[]).find(function(a){ return a.id===state.currentArchiveId; }); }
-function sortedArchives(){
-  return (state.archives||[]).slice().sort(function(a,b){
-    return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
-  });
-}
-$('#menuBtnArchive').addEventListener('click', async function(){
-  try{
-    var snap = await getDocs(archivesColl(state.currentAgendaId));
-    state.archives = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
-  }catch(err){ console.error(err); showToast("Errore nel caricamento dell'archivio.", 'error'); state.archives=[]; }
-  if(state.archives.length===0){
-    openNewArchiveModal(true);
-  } else {
-    showArchiveListScreen();
-  }
-});
-function showArchiveListScreen(){
-  $('#archListSearchInput').value = '';
-  renderArchiveList('');
-  showScreen('screen-archive-list');
-}
-function renderArchiveList(filter){
-  var wrap = $('#archListContainer');
-  var archives = sortedArchives();
-  var f = (filter||'').trim().toLowerCase();
-  if(f) archives = archives.filter(function(a){ return (a.name||'').toLowerCase().indexOf(f)>-1; });
-  if(archives.length===0){
-    wrap.innerHTML = '<p class="empty-hint">'+(f?'Nessun archivio corrisponde alla ricerca.':'Non hai ancora creato nessun archivio.')+'</p>';
-    return;
-  }
-  wrap.innerHTML = archives.map(function(a){
-    return '<div class="np-list-item" data-id="'+a.id+'">'+
-      '<span class="archive-file-icon">'+iconSvg('archiveBox')+'</span>'+
-      '<span class="np-item-name">'+escapeHtml(a.name||'Senza nome')+'</span>'+
-      '<button type="button" class="np-item-rename" data-id="'+a.id+'" title="Rinomina archivio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
-      '<button type="button" class="np-item-delete" data-id="'+a.id+'" title="Elimina archivio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
-    '</div>';
-  }).join('');
-  $$('#archListContainer .np-list-item').forEach(function(item){
-    item.addEventListener('click', function(e){
-      if(e.target.closest('.np-item-delete') || e.target.closest('.np-item-rename')) return;
-      openArchiveScreen(item.dataset.id);
-    });
-  });
-  $$('#archListContainer .np-item-rename').forEach(function(btn){
-    btn.addEventListener('click', function(e){ e.stopPropagation(); renameArchive(btn.dataset.id); });
-  });
-  $$('#archListContainer .np-item-delete').forEach(function(btn){
-    btn.addEventListener('click', async function(e){ e.stopPropagation(); await deleteArchive(btn.dataset.id); });
-  });
-}
-$('#archListBack').addEventListener('click', function(){ showMenuScreen(); });
-$('#archListSearchInput').addEventListener('input', function(e){ renderArchiveList(e.target.value); });
-$('#archListAddBtn').addEventListener('click', function(){ openNewArchiveModal(false); });
-function openNewArchiveModal(isFirst){
-  openModal(
-    '<h3>Nuovo archivio</h3>'+
-    '<label for="archNameInput">Nome dell\'archivio</label>'+
-    '<input type="text" id="archNameInput" placeholder="Es. Documenti scolastici" maxlength="60">'+
-    '<div class="modal-actions">'+
-      '<button type="button" class="btn-secondary" id="archNameCancel">Annulla</button>'+
-      '<button type="button" class="btn-primary" id="archNameConfirm">Crea</button>'+
-    '</div>'
-  );
-  var input = $('#archNameInput');
-  setTimeout(function(){ input.focus(); }, 60);
-  $('#archNameCancel').onclick = function(){ closeModal(); if(isFirst) showMenuScreen(); };
-  $('#archNameConfirm').onclick = async function(){
-    var name = input.value.trim();
-    if(!name){ showToast("Inserisci un nome per l'archivio.", 'error'); return; }
-    try{
-      var newId = uid();
-      var data = {name:name, createdAt: Date.now()};
-      await setDoc(archiveDocRef(state.currentAgendaId, newId), data);
-      var entry = Object.assign({id:newId}, data);
-      state.archives = state.archives || [];
-      state.archives.push(entry);
-      closeModal();
-      openArchiveScreen(newId);
-    }catch(err){ console.error(err); showToast("Errore nella creazione dell'archivio.", 'error'); }
-  };
-}
-function renameArchive(id){
-  var a = (state.archives||[]).find(function(x){ return x.id===id; });
-  if(!a) return;
-  openModal(
-    '<h3>Rinomina archivio</h3>'+
-    '<label for="archRenameInput">Nome dell\'archivio</label>'+
-    '<input type="text" id="archRenameInput" value="'+escapeAttr(a.name||'')+'" maxlength="60">'+
-    '<div class="modal-actions">'+
-      '<button type="button" class="btn-secondary" id="archRenameCancel">Annulla</button>'+
-      '<button type="button" class="btn-primary" id="archRenameConfirm">Salva</button>'+
-    '</div>'
-  );
-  var input = $('#archRenameInput');
-  setTimeout(function(){ input.focus(); input.select(); }, 60);
-  $('#archRenameCancel').onclick = closeModal;
-  $('#archRenameConfirm').onclick = async function(){
-    var nuovoNome = input.value.trim();
-    if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
-    a.name = nuovoNome;
-    try{
-      await updateDoc(archiveDocRef(state.currentAgendaId, id), {name: nuovoNome});
-      if(state.currentArchiveId===id) $('#archName').textContent = nuovoNome;
-      closeModal();
-      renderArchiveList($('#archListSearchInput').value);
-      showToast('Archivio rinominato.', 'success');
-    }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
-  };
-}
-async function deleteArchive(id){
-  var a = (state.archives||[]).find(function(x){ return x.id===id; });
-  if(!confirm('Eliminare definitivamente l\'archivio "'+(a?a.name:'')+'" con tutti i file contenuti? Questa azione non può essere annullata.')) return;
-  try{
-    var filesSnap = await getDocs(archiveFilesColl(state.currentAgendaId, id));
-    if(filesSnap.docs.length>0){
-      var batch = writeBatch(db);
-      filesSnap.docs.forEach(function(d){ batch.delete(d.ref); });
-      await batch.commit();
-    }
-    await deleteDoc(archiveDocRef(state.currentAgendaId, id));
-    state.archives = (state.archives||[]).filter(function(x){ return x.id!==id; });
-    renderArchiveList($('#archListSearchInput').value);
-    showToast('Archivio eliminato.', 'info');
-  }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error'); }
-}
-
-/* ---- file dentro un archivio ---- */
-async function openArchiveScreen(id){
-  state.currentArchiveId = id;
-  var a = getCurrentArchive();
-  $('#archName').textContent = a ? a.name : '';
-  $('#archSearchInput').value = '';
-  try{
-    var snap = await getDocs(archiveFilesColl(state.currentAgendaId, id));
-    state.archiveFiles = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
-  }catch(err){ console.error(err); showToast('Errore nel caricamento dei file.', 'error'); state.archiveFiles=[]; }
-  renderArchiveFiles('');
-  showScreen('screen-archive');
-}
-$('#archBack').addEventListener('click', function(){ showArchiveListScreen(); });
-$('#archSearchInput').addEventListener('input', function(e){ renderArchiveFiles(e.target.value); });
-function sortedArchiveFiles(){
-  return (state.archiveFiles||[]).slice().sort(function(a,b){
-    return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
-  });
-}
-function archiveFileIconName(mimeType){
-  mimeType = mimeType || '';
-  if(mimeType.indexOf('image/')===0) return 'image';
-  if(mimeType.indexOf('audio/')===0) return 'headphones';
-  if(mimeType.indexOf('video/')===0) return 'film';
-  if(mimeType==='application/pdf') return 'pdf';
-  return 'file';
-}
-function attachLongPress(el, onShortClick, onLongPress){
-  var timer=null, longFired=false, startX=0, startY=0;
-  function start(evt){
-    longFired=false;
-    var t = evt.touches ? evt.touches[0] : evt;
-    startX=t.clientX; startY=t.clientY;
-    timer = setTimeout(function(){ longFired=true; onLongPress(); }, 550);
-  }
-  function move(evt){
-    var t = evt.touches ? evt.touches[0] : evt;
-    if(Math.abs(t.clientX-startX)>10 || Math.abs(t.clientY-startY)>10) clearTimeout(timer);
-  }
-  function end(){
-    clearTimeout(timer);
-    if(!longFired) onShortClick();
-  }
-  el.addEventListener('mousedown', start);
-  el.addEventListener('touchstart', start, {passive:true});
-  el.addEventListener('mousemove', move);
-  el.addEventListener('touchmove', move, {passive:true});
-  el.addEventListener('mouseup', end);
-  el.addEventListener('touchend', end);
-  el.addEventListener('mouseleave', function(){ clearTimeout(timer); });
-}
-function renderArchiveFiles(filter){
-  var wrap = $('#archFilesContainer');
-  var files = sortedArchiveFiles();
-  var f = (filter||'').trim().toLowerCase();
-  if(f) files = files.filter(function(fl){ return (fl.name||'').toLowerCase().indexOf(f)>-1; });
-  if(files.length===0){
-    wrap.innerHTML = '<p class="empty-hint">'+(f?'Nessun file corrisponde alla ricerca.':'Non hai ancora aggiunto nessun file. Usa il tasto "+" qui sopra.')+'</p>';
-    return;
-  }
-  wrap.innerHTML = files.map(function(fl){
-    return '<div class="np-list-item archive-file-item" data-id="'+fl.id+'">'+
-      '<span class="archive-file-icon">'+iconSvg(archiveFileIconName(fl.mimeType))+'</span>'+
-      '<span class="np-item-name">'+escapeHtml(fl.name||'Senza nome')+'</span>'+
-    '</div>';
-  }).join('');
-  $$('#archFilesContainer .archive-file-item').forEach(function(item){
-    var fl = state.archiveFiles.find(function(x){ return x.id===item.dataset.id; });
-    if(!fl) return;
-    attachLongPress(item,
-      function(){ openArchiveFile(fl); },
-      function(){ openFileActionsModal(fl); }
-    );
-  });
-}
-$('#archAddFileBtn').addEventListener('click', function(){ $('#archFileInput').click(); });
-$('#archFileInput').addEventListener('change', async function(e){
-  var files = Array.prototype.slice.call(e.target.files||[]);
-  e.target.value = '';
-  if(!files.length) return;
-  showToast('Caricamento dei file...', 'info');
-  for(var i=0;i<files.length;i++){
-    await addFileToCurrentArchive(files[i]);
-  }
-  renderArchiveFiles($('#archSearchInput').value);
-});
-function readFileAsDataURL(file){
-  return new Promise(function(resolve, reject){
-    var reader = new FileReader();
-    reader.onload = function(){ resolve(reader.result); };
-    reader.onerror = function(){ reject(reader.error); };
-    reader.readAsDataURL(file);
-  });
-}
-async function addFileToCurrentArchive(file){
-  try{
-    var dataURL;
-    if(file.type && file.type.indexOf('image/')===0){
-      dataURL = await resizeImageFile(file, 1000, 0.75);
-      if(dataUrlTooBig(dataURL)){ showToast('"'+file.name+'": immagine troppo pesante anche dopo la compressione.', 'error'); return; }
-    } else {
-      if(file.size > MEDIA_FILE_MAX_BYTES){ showToast('"'+file.name+'": file troppo grande (max circa 700KB).', 'error'); return; }
-      dataURL = await readFileAsDataURL(file);
-      if(dataUrlTooBig(dataURL)){ showToast('"'+file.name+'": file troppo grande.', 'error'); return; }
-    }
-    var newId = uid();
-    var data = {name:file.name, mimeType:file.type||'application/octet-stream', size:file.size, dataURL:dataURL, createdAt: Date.now()};
-    await setDoc(archiveFileDocRef(state.currentAgendaId, state.currentArchiveId, newId), data);
-    state.archiveFiles.push(Object.assign({id:newId}, data));
-  }catch(err){ console.error(err); showToast('Errore nel caricamento di "'+file.name+'".', 'error'); }
-}
-function dataURLtoBlob(dataURL){
-  var parts = dataURL.split(',');
-  var mimeMatch = parts[0].match(/:(.*?);/);
-  var mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
-  var binary = atob(parts[1]);
-  var arr = new Uint8Array(binary.length);
-  for(var i=0;i<binary.length;i++) arr[i] = binary.charCodeAt(i);
-  return new Blob([arr], {type:mime});
-}
-function downloadRawFile(dataURL, filename){
-  var blob = dataURLtoBlob(dataURL);
-  downloadBlob(blob, filename);
-}
-async function shareRawFile(fl){
-  try{
-    var blob = dataURLtoBlob(fl.dataURL);
-    var file = new File([blob], fl.name, {type: fl.mimeType||'application/octet-stream'});
-    if(navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({files:[file], title: fl.name});
-    } else if(navigator.share){
-      downloadRawFile(fl.dataURL, fl.name);
-      showToast('Il tuo browser non permette di condividere direttamente il file: è stato scaricato.', 'info');
-    } else {
-      downloadRawFile(fl.dataURL, fl.name);
-      showToast('La condivisione non è supportata su questo browser: il file è stato scaricato.', 'info');
-    }
-  }catch(err){
-    if(err && err.name==='AbortError') return;
-    console.error(err);
-    showToast('Errore durante la condivisione del file.', 'error');
-  }
-}
-/* ---- visualizzatore file (immagini, audio, video, pdf) ---- */
-function openArchiveFile(fl){
-  var mt = fl.mimeType||'';
-  var isViewable = mt.indexOf('image/')===0 || mt.indexOf('audio/')===0 || mt.indexOf('video/')===0 || mt==='application/pdf';
-  if(!isViewable){
-    downloadRawFile(fl.dataURL, fl.name);
-    return;
-  }
-  var content = $('#fileViewerContent');
-  var fsBtn = $('#fileViewerFullscreen');
-  fsBtn.style.display = 'none';
-  fsBtn.onclick = null;
-  if(mt.indexOf('image/')===0){
-    content.innerHTML = '<img src="'+fl.dataURL+'" alt="'+escapeAttr(fl.name)+'">';
-  } else if(mt.indexOf('audio/')===0){
-    content.innerHTML = '<audio controls autoplay src="'+fl.dataURL+'"></audio>';
-  } else if(mt.indexOf('video/')===0){
-    content.innerHTML = '<video controls autoplay playsinline src="'+fl.dataURL+'"></video>';
-    fsBtn.style.display = 'flex';
-    fsBtn.onclick = function(){
-      var v = content.querySelector('video');
-      if(v){ if(v.requestFullscreen) v.requestFullscreen(); else if(v.webkitEnterFullscreen) v.webkitEnterFullscreen(); }
-    };
-  } else if(mt==='application/pdf'){
-    content.innerHTML = '<iframe src="'+fl.dataURL+'" title="'+escapeAttr(fl.name)+'"></iframe>';
-  }
-  $('#fileViewerTitle').textContent = fl.name||'';
-  $('#fileViewerOverlay').classList.add('active');
-}
-function closeFileViewer(){
-  $('#fileViewerOverlay').classList.remove('active');
-  var content = $('#fileViewerContent');
-  content.innerHTML = ''; /* interrompe la riproduzione di audio/video */
-}
-$('#fileViewerClose').addEventListener('click', closeFileViewer);
-$('#fileViewerOverlay').addEventListener('click', function(e){ if(e.target.id==='fileViewerOverlay') closeFileViewer(); });
-/* ---- azioni sul file: rinomina / sposta / condividi / elimina (pressione prolungata) ---- */
-function openFileActionsModal(fl){
-  openModal(
-    '<h3>'+escapeHtml(fl.name||'')+'</h3>'+
-    '<div class="modal-choices">'+
-      '<button type="button" class="choice-btn" id="fileActRename">'+iconSvg('pencil')+'<span>Rinomina</span></button>'+
-      '<button type="button" class="choice-btn" id="fileActMove">'+iconSvg('move')+'<span>Sposta in un altro archivio</span></button>'+
-      '<button type="button" class="choice-btn" id="fileActShare">'+iconSvg('share')+'<span>Condividi</span></button>'+
-      '<button type="button" class="choice-btn" id="fileActDelete">'+iconSvg('trash')+'<span>Elimina</span></button>'+
-    '</div>'+
-    '<button type="button" class="btn-secondary" id="fileActCancel">Annulla</button>'
-  );
-  $('#fileActCancel').onclick = closeModal;
-  $('#fileActRename').onclick = function(){ closeModal(); renameArchiveFile(fl); };
-  $('#fileActMove').onclick = function(){ openMoveFileModal(fl); };
-  $('#fileActShare').onclick = function(){ closeModal(); shareRawFile(fl); };
-  $('#fileActDelete').onclick = function(){ closeModal(); deleteArchiveFile(fl); };
-}
-function renameArchiveFile(fl){
-  openModal(
-    '<h3>Rinomina file</h3>'+
-    '<label for="archFileRenameInput">Nome del file</label>'+
-    '<input type="text" id="archFileRenameInput" value="'+escapeAttr(fl.name||'')+'" maxlength="120">'+
-    '<div class="modal-actions">'+
-      '<button type="button" class="btn-secondary" id="archFileRenameCancel">Annulla</button>'+
-      '<button type="button" class="btn-primary" id="archFileRenameConfirm">Salva</button>'+
-    '</div>'
-  );
-  var input = $('#archFileRenameInput');
-  setTimeout(function(){ input.focus(); input.select(); }, 60);
-  $('#archFileRenameCancel').onclick = closeModal;
-  $('#archFileRenameConfirm').onclick = async function(){
-    var nuovoNome = input.value.trim();
-    if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
-    fl.name = nuovoNome;
-    try{
-      await updateDoc(archiveFileDocRef(state.currentAgendaId, state.currentArchiveId, fl.id), {name: nuovoNome});
-      closeModal();
-      renderArchiveFiles($('#archSearchInput').value);
-      showToast('File rinominato.', 'success');
-    }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
-  };
-}
-function openMoveFileModal(fl){
-  var others = sortedArchives().filter(function(a){ return a.id!==state.currentArchiveId; });
-  if(others.length===0){
-    closeModal();
-    showToast("Non ci sono altri archivi. Creane uno nuovo per poter spostare questo file.", 'info');
-    return;
-  }
-  openModal(
-    '<h3>Sposta in...</h3>'+
-    '<div class="modal-pick-list">'+
-      others.map(function(a){
-        return '<button type="button" class="modal-pick-item" data-id="'+a.id+'">'+
-          '<span class="pick-item-name">'+escapeHtml(a.name||'Senza nome')+'</span>'+
-        '</button>';
-      }).join('')+
-    '</div>'+
-    '<button type="button" class="btn-secondary" id="moveFileCancel">Annulla</button>'
-  );
-  $('#moveFileCancel').onclick = closeModal;
-  $$('.modal-pick-item').forEach(function(btn){
-    btn.addEventListener('click', async function(){
-      var destId = btn.dataset.id;
-      closeModal();
-      try{
-        var payload = {name:fl.name, mimeType:fl.mimeType, size:fl.size, dataURL:fl.dataURL, createdAt: fl.createdAt||Date.now()};
-        await setDoc(archiveFileDocRef(state.currentAgendaId, destId, fl.id), payload);
-        await deleteDoc(archiveFileDocRef(state.currentAgendaId, state.currentArchiveId, fl.id));
-        state.archiveFiles = (state.archiveFiles||[]).filter(function(x){ return x.id!==fl.id; });
-        renderArchiveFiles($('#archSearchInput').value);
-        showToast('File spostato.', 'success');
-      }catch(err){ console.error(err); showToast('Errore durante lo spostamento del file.', 'error'); }
-    });
-  });
-}
-async function deleteArchiveFile(fl){
-  if(!confirm('Eliminare definitivamente il file "'+(fl.name||'')+'"? Questa azione non può essere annullata.')) return;
-  try{
-    await deleteDoc(archiveFileDocRef(state.currentAgendaId, state.currentArchiveId, fl.id));
-    state.archiveFiles = (state.archiveFiles||[]).filter(function(x){ return x.id!==fl.id; });
-    renderArchiveFiles($('#archSearchInput').value);
-    showToast('File eliminato.', 'info');
-  }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error'); }
-}
 
 function clearEmptyHint(){
   var hint = $('#dayCanvas .empty-day-hint');
