@@ -657,6 +657,8 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .reg-table td.reg-alt.excluded{background-image:repeating-linear-gradient(135deg, rgba(0,0,0,.05) 0px, rgba(0,0,0,.05) 4px, transparent 4px, transparent 8px);}
 .reg-table .reg-hdr-grade[data-quarter]:hover{background:#79b382;}
 .reg-table .reg-name-cell{text-align:left;padding-left:8px;min-width:200px;}
+.reg-table .reg-note-cell{width:12mm;min-width:12mm;max-width:12mm;padding:2px;}
+.reg-table input.reg-note-input{text-align:center;}
 .reg-table .reg-row-actions{display:flex;gap:2px;align-items:center;justify-content:center;}
 .reg-table .reg-del-row-btn,.reg-table .reg-add-row-btn,.reg-table .reg-add-row-top-btn{background:none;border:none;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;}
 .reg-table .reg-del-row-btn{color:#a23a2c;}
@@ -3483,6 +3485,7 @@ function defaultSheetData(name, color){
   return {
     name:name, color:color, className:'', numRows:10,
     names:new Array(10).fill(''),
+    notes:new Array(10).fill(''),
     numCols1:9, numCols2:9,
     grades1:Array.from({length:10}, function(){ return new Array(9).fill(''); }),
     grades2:Array.from({length:10}, function(){ return new Array(9).fill(''); }),
@@ -3521,6 +3524,7 @@ function sheetFromFirestore(data){
   data.grades2 = deserializeGradeGrid(data.grades2, data.numRows, data.numCols2);
   if(!Array.isArray(data.excluded1) || data.excluded1.length!==data.numCols1) data.excluded1 = new Array(data.numCols1).fill(false);
   if(!Array.isArray(data.excluded2) || data.excluded2.length!==data.numCols2) data.excluded2 = new Array(data.numCols2).fill(false);
+  if(!Array.isArray(data.notes) || data.notes.length!==data.numRows) data.notes = new Array(data.numRows).fill('');
   if(!data.cellStyles || typeof data.cellStyles!=='object') data.cellStyles = {};
   return data;
 }
@@ -3581,8 +3585,7 @@ function renderRegisterTabs(){
 }
 async function switchRegisterSheet(id){
   if(registerDirty){
-    var doSave = confirm('Ci sono modifiche non salvate in questa scheda. Vuoi salvarle prima di continuare?');
-    if(doSave) await saveRegisterSheet(true);
+    await saveRegisterSheet(true);
   }
   state.currentSheetId = id;
   registerDirty = false;
@@ -3718,11 +3721,11 @@ function cellBgStyle(sheet, key){
 }
 function buildRegisterTableInnerHTML(sheet, forPrint){
   var n1 = sheet.numCols1, n2 = sheet.numCols2;
-  var totalCols = 1+2+n1+1+n2+1;
+  var totalCols = 1+3+n1+1+n2+1;
   var html = '<table class="reg-table"><thead>';
   html += '<tr>';
   html += '<th class="reg-num-hdr" title="Numero d\'elenco">N.</th>';
-  html += '<th class="reg-classe-cell" colspan="2"'+cellBgStyle(sheet,'classname')+'>CLASSE: '+(forPrint ? '<span'+cellFmtStyle(sheet,'classname')+'>'+escapeHtml(sheet.className||'')+'</span>' : '<input type="text" class="reg-input" id="regClassName" data-cellkey="classname"'+cellFmtStyle(sheet,'classname')+' value="'+escapeAttr(sheet.className||'')+'">')+'</th>';
+  html += '<th class="reg-classe-cell" colspan="3"'+cellBgStyle(sheet,'classname')+'>CLASSE: '+(forPrint ? '<span'+cellFmtStyle(sheet,'classname')+'>'+escapeHtml(sheet.className||'')+'</span>' : '<input type="text" class="reg-input" id="regClassName" data-cellkey="classname"'+cellFmtStyle(sheet,'classname')+' value="'+escapeAttr(sheet.className||'')+'">')+'</th>';
   for(var i=0;i<n1;i++){
     var excl1 = !!(sheet.excluded1 && sheet.excluded1[i]);
     html += '<th class="reg-hdr-grade'+(excl1?' excluded':'')+'"'+(forPrint?'':' data-quarter="1" data-col="'+i+'"')+' title="'+(excl1?'Colonna esclusa dalla media':'')+'">'+colLetter(i)+(excl1?'<span class="reg-excl-mark">✕</span>':'')+'</th>';
@@ -3738,6 +3741,8 @@ function buildRegisterTableInnerHTML(sheet, forPrint){
     html += '<tr class="reg-data-row" data-row="'+r+'">';
     html += '<td class="reg-alt reg-num-cell">'+(r+1)+'</td>';
     html += '<td class="reg-alt reg-name-cell"'+cellBgStyle(sheet,nameKey)+'>'+(forPrint ? '<span'+cellFmtStyle(sheet,nameKey)+'>'+escapeHtml(sheet.names[r]||'')+'</span>' : '<input type="text" class="reg-input reg-name-input" data-row="'+r+'" data-cellkey="'+nameKey+'"'+cellFmtStyle(sheet,nameKey)+' value="'+escapeAttr(sheet.names[r]||'')+'">')+'</td>';
+    var noteKey = 'note-'+r;
+    html += '<td class="reg-alt reg-note-cell"'+cellBgStyle(sheet,noteKey)+'>'+(forPrint ? '<span'+cellFmtStyle(sheet,noteKey)+'>'+escapeHtml((sheet.notes&&sheet.notes[r])||'')+'</span>' : '<input type="text" class="reg-input reg-note-input" data-row="'+r+'" data-cellkey="'+noteKey+'"'+cellFmtStyle(sheet,noteKey)+' value="'+escapeAttr((sheet.notes&&sheet.notes[r])||'')+'">')+'</td>';
     html += '<td class="reg-alt reg-row-actions">'+(forPrint ? '' :
       (r===0 ? '<button type="button" class="reg-add-row-top-btn" data-row="'+r+'" title="Inserisci riga sopra">'+iconSvg('arrowUp')+'</button>' : '')+
       '<button type="button" class="reg-del-row-btn" data-row="'+r+'" title="Elimina questa riga">'+iconSvg('close')+'</button>'+
@@ -3767,7 +3772,7 @@ function buildRegisterTableInnerHTML(sheet, forPrint){
   var maxDesc = Math.max(n1,n2);
   for(var d=0; d<maxDesc; d++){
     html += '<tr>';
-    if(d===0) html += '<td class="reg-desc-label" colspan="3" rowspan="'+maxDesc+'">Descrizione voti</td>';
+    if(d===0) html += '<td class="reg-desc-label" colspan="4" rowspan="'+maxDesc+'">Descrizione voti</td>';
     if(d<n1){
       var dv1 = sheet.desc1[d]||'';
       var dKey1 = 'desc-1-'+d;
@@ -3800,6 +3805,15 @@ function wireRegisterTableEvents(sheet){
     inp.addEventListener('focus', function(){ pushRegisterHistory(); });
     inp.addEventListener('input', function(e){ sheet.names[+inp.dataset.row] = e.target.value; markRegisterDirty(); });
     inp.addEventListener('keydown', handleNameArrowNav);
+  });
+  $$('.reg-note-input').forEach(function(inp){
+    inp.addEventListener('focus', function(){ pushRegisterHistory(); });
+    inp.addEventListener('input', function(e){
+      if(!Array.isArray(sheet.notes)) sheet.notes = new Array(sheet.numRows).fill('');
+      sheet.notes[+inp.dataset.row] = e.target.value;
+      markRegisterDirty();
+    });
+    inp.addEventListener('keydown', handleNoteArrowNav);
   });
   $$('.reg-del-row-btn').forEach(function(btn){
     btn.addEventListener('click', function(){ deleteRegisterRow(sheet, +btn.dataset.row); });
@@ -3923,6 +3937,17 @@ function handleNameArrowNav(evt){
   var target = key==='ArrowUp' ? findNameInput(row-1) : findNameInput(row+1);
   if(target){ evt.preventDefault(); target.focus(); target.select(); }
 }
+function findNoteInput(row){
+  return document.querySelector('.reg-note-input[data-row="'+row+'"]');
+}
+function handleNoteArrowNav(evt){
+  var key = evt.key;
+  if(key!=='ArrowUp' && key!=='ArrowDown') return;
+  var input = evt.target;
+  var row = +input.dataset.row;
+  var target = key==='ArrowUp' ? findNoteInput(row-1) : findNoteInput(row+1);
+  if(target){ evt.preventDefault(); target.focus(); target.select(); }
+}
 function handleGradeArrowNav(evt){
   var key = evt.key;
   if(key!=='ArrowUp' && key!=='ArrowDown' && key!=='ArrowLeft' && key!=='ArrowRight') return;
@@ -3953,6 +3978,8 @@ function updateRowMedia(sheet, r){
 function insertRegisterRow(sheet, atIndex){
   pushRegisterHistory();
   sheet.names.splice(atIndex,0,'');
+  if(!Array.isArray(sheet.notes)) sheet.notes = new Array(sheet.numRows).fill('');
+  sheet.notes.splice(atIndex,0,'');
   sheet.grades1.splice(atIndex,0,new Array(sheet.numCols1).fill(''));
   sheet.grades2.splice(atIndex,0,new Array(sheet.numCols2).fill(''));
   sheet.numRows++;
@@ -3963,6 +3990,8 @@ function deleteRegisterRow(sheet, r){
   if(sheet.numRows<=1){ showToast('Deve restare almeno una riga.', 'info'); return; }
   pushRegisterHistory();
   sheet.names.splice(r,1);
+  if(!Array.isArray(sheet.notes)) sheet.notes = new Array(sheet.numRows).fill('');
+  sheet.notes.splice(r,1);
   sheet.grades1.splice(r,1);
   sheet.grades2.splice(r,1);
   sheet.numRows--;
