@@ -676,7 +676,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .reg-table .reg-desc-label{background:#F5E9C8;font-weight:600;}
 .reg-table .reg-desc-letter{background:#8FBF95;font-weight:700;border-color:#fff;}
 .reg-table .reg-desc-text{text-align:left;}
-.reg-table td.reg-cell-selected,.reg-table th.reg-cell-selected{outline:2px solid #3D7FD1;outline-offset:-2px;background-color:rgba(61,127,209,.22) !important;}
+.reg-table td.reg-cell-selected,.reg-table th.reg-cell-selected{outline:2px solid #3D7FD1;outline-offset:-2px;box-shadow:inset 0 0 0 9999px rgba(61,127,209,.22);}
 .reg-tabs{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px 30px;align-items:center;}
 .reg-tab{
   display:flex;align-items:center;gap:2px;padding:8px 6px 8px 12px;border-radius:8px 8px 0 0;border:1px solid var(--paper-line);
@@ -3906,11 +3906,18 @@ function wireRegisterTableEvents(sheet){
   $$('.reg-grade-input').forEach(function(inp){
     inp.addEventListener('focus', function(){ pushRegisterHistory(); });
     inp.addEventListener('input', function(e){
+      var val = e.target.value;
+      if(val.indexOf('.')!==-1){
+        var pos = e.target.selectionStart;
+        val = val.replace(/\./g, ',');
+        e.target.value = val;
+        if(pos!==null && typeof e.target.setSelectionRange==='function') e.target.setSelectionRange(pos, pos);
+      }
       var q = inp.dataset.quarter, r = +inp.dataset.row, c = +inp.dataset.col;
-      if(q==='1') sheet.grades1[r][c] = e.target.value; else sheet.grades2[r][c] = e.target.value;
+      if(q==='1') sheet.grades1[r][c] = val; else sheet.grades2[r][c] = val;
       updateRowMedia(sheet, r);
       var td = inp.closest('td');
-      if(td) td.classList.toggle('low', isLowGrade(e.target.value));
+      if(td) td.classList.toggle('low', isLowGrade(val));
       markRegisterDirty();
     });
     inp.addEventListener('keydown', handleGradeArrowNav);
@@ -4085,7 +4092,7 @@ function toggleRegCellFormat(prop){
     }
   });
   markRegisterDirty();
-  if(regActiveCellKey){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
+  if(keys.length===1 && regActiveCellKey){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
   updateRegFmtButtonsState(sheet);
 }
 $('#regFmtBold').addEventListener('click', function(){ toggleRegCellFormat('bold'); });
@@ -4111,7 +4118,7 @@ function applyCellColor(prop, value){
     }
   });
   markRegisterDirty();
-  if(regActiveCellKey){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
+  if(keys.length===1 && regActiveCellKey){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
 }
 $('#regFmtBgColor').addEventListener('click', function(){
   var sheet = getCurrentSheet(); var keys = regSelectionOrActiveKeys();
