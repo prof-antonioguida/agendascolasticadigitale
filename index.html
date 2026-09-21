@@ -61,7 +61,6 @@ input,select{font-family:inherit;}
 .screen.active{display:block;}
 .paper{
   background:
-    repeating-linear-gradient(180deg, rgba(217,203,166,0) 0px, rgba(217,203,166,0) 27px, rgba(217,203,166,.55) 28px),
     radial-gradient(circle at 12% 8%, rgba(255,255,255,.35), transparent 45%),
     var(--paper);
 }
@@ -192,14 +191,6 @@ body.dark .theme-toggle .icon-moon{display:block;}
 }
 .agenda-delete svg{width:15px;height:15px;}
 .agenda-delete:hover{background:var(--accent);}
-.agenda-name-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:9px;}
-.agenda-name{font-family:var(--font-display);font-weight:600;font-size:1.02rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.agenda-rename{
-  background:none;border:none;color:var(--ink-soft);cursor:pointer;flex-shrink:0;
-  width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;
-}
-.agenda-rename:hover{background:var(--paper-deep);color:var(--ink);}
-.agenda-rename svg{width:14px;height:14px;}
 .empty-hint{color:var(--ink-soft);font-size:.95rem;padding:30px 0;}
 
 .fab{
@@ -727,7 +718,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .shop-header-todo{background:#F3CE7C;color:#4a3410;}
 .shop-header-done{background:#CFE8CB;color:#1f3d1c;}
 .shop-item{
-  display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--frame-color);
+  display:flex;align-items:flex-start;gap:12px;background:var(--surface);border:1px solid var(--frame-color);
   border-radius:10px;padding:12px 14px;margin-bottom:8px;
 }
 .shop-item-toggle{
@@ -736,7 +727,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 }
 .shop-item-toggle svg{width:22px;height:22px;}
 .shop-item.done .shop-item-toggle{color:#3E9C5C;}
-.shop-item-name{flex:1;font-size:.95rem;color:var(--ink);}
+.shop-item-name{flex:1;font-size:.95rem;color:var(--ink);white-space:normal;word-break:break-word;overflow-wrap:anywhere;padding-top:2px;}
 .shop-item.done .shop-item-name{color:var(--ink-soft);}
 .shop-item-rename,.shop-item-delete{
   background:none;border:none;color:var(--ink-soft);cursor:pointer;flex-shrink:0;
@@ -1915,15 +1906,11 @@ function renderHomeList(){
     return '<div class="agenda-card" data-id="'+a.id+'" tabindex="0">'+
       '<button type="button" class="agenda-delete" data-id="'+a.id+'" title="Elimina agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
       renderCoverHTML(a.cover, true)+
-      '<div class="agenda-name-row">'+
-        '<div class="agenda-name">'+escapeHtml(a.nome)+'</div>'+
-        '<button type="button" class="agenda-rename" data-id="'+a.id+'" title="Rinomina agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
-      '</div>'+
     '</div>';
   }).join('');
   $$('.agenda-card').forEach(function(card){
     card.addEventListener('click', async function(e){
-      if(e.target.closest('.agenda-delete') || e.target.closest('.agenda-rename')) return;
+      if(e.target.closest('.agenda-delete')) return;
       await openAgendaById(card.dataset.id);
       showMenuScreen();
     });
@@ -1943,12 +1930,6 @@ function renderHomeList(){
         console.error(err);
         showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error');
       }
-    });
-  });
-  $$('.agenda-rename').forEach(function(btn){
-    btn.addEventListener('click', function(e){
-      e.stopPropagation();
-      openRenameAgendaModal(btn.dataset.id);
     });
   });
 }
@@ -1994,38 +1975,6 @@ async function openAgendaById(id){
     if(snap.exists()){ var data=snap.data(); data.id=id; state.currentAgendaId=id; state.currentAgenda=data; }
   }catch(err){ console.error(err); showToast('Errore nel caricamento agenda.', 'error'); }
 }
-function openRenameAgendaModal(id){
-  var a = state.agende.find(function(x){ return x.id===id; });
-  if(!a) return;
-  openModal(
-    '<h3>Rinomina agenda</h3>'+
-    '<label for="renameAgendaInput">Nome dell\'agenda</label>'+
-    '<input type="text" id="renameAgendaInput" value="'+escapeAttr(a.nome)+'" maxlength="60">'+
-    '<div class="modal-actions">'+
-      '<button type="button" class="btn-secondary" id="renameAgendaCancel">Annulla</button>'+
-      '<button type="button" class="btn-primary" id="renameAgendaConfirm">Salva</button>'+
-    '</div>'
-  );
-  var input = $('#renameAgendaInput');
-  setTimeout(function(){ input.focus(); input.select(); }, 60);
-  $('#renameAgendaCancel').onclick = closeModal;
-  $('#renameAgendaConfirm').onclick = async function(){
-    var nuovoNome = input.value.trim();
-    if(!nuovoNome){ showToast("Inserisci un nome per l'agenda.", 'error'); return; }
-    a.nome = nuovoNome;
-    if(state.currentAgenda && state.currentAgenda.id===id) state.currentAgenda.nome = nuovoNome;
-    try{
-      await updateDoc(agendaRef(id), {nome: nuovoNome});
-      closeModal();
-      renderHomeList();
-      showToast('Agenda rinominata.', 'success');
-    }catch(err){
-      console.error(err);
-      showToast('Errore nel salvataggio'+(err.message?(': '+err.message):'')+'.', 'error');
-    }
-  };
-}
-
 async function deleteAgendaCascade(agendaId){
   var daysSnap = await getDocs(daysColl(agendaId));
   for(var i=0;i<daysSnap.docs.length;i++){
@@ -2337,11 +2286,13 @@ $('#coverRoundImageInput').addEventListener('change', async function(e){
 });
 $('#coverSave').addEventListener('click', async function(){
   var cover = currentCoverData();
+  if(!cover.cognomeNome){ showToast('Il campo "Titolo" è obbligatorio.', 'error'); $('#coverCognomeNome').focus(); return; }
   state.currentAgenda.cover = cover;
+  state.currentAgenda.nome = cover.cognomeNome;
   try{
-    await updateDoc(agendaRef(state.currentAgendaId), {cover: cover});
+    await updateDoc(agendaRef(state.currentAgendaId), {cover: cover, nome: cover.cognomeNome});
     var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
-    if(listEntry) listEntry.cover = cover;
+    if(listEntry){ listEntry.cover = cover; listEntry.nome = cover.cognomeNome; }
     showToast('Copertina salvata.', 'success');
   }catch(err){
     console.error(err);
@@ -3852,6 +3803,7 @@ function wireRegisterTableEvents(sheet){
   $$('.reg-name-input').forEach(function(inp){
     inp.addEventListener('focus', function(){ pushRegisterHistory(); });
     inp.addEventListener('input', function(e){ sheet.names[+inp.dataset.row] = e.target.value; markRegisterDirty(); });
+    inp.addEventListener('keydown', handleNameArrowNav);
   });
   $$('.reg-del-row-btn').forEach(function(btn){
     btn.addEventListener('click', function(){ deleteRegisterRow(sheet, +btn.dataset.row); });
@@ -3930,6 +3882,17 @@ $('#regFmtItalic').addEventListener('click', function(){ toggleRegCellFormat('it
 $('#regFmtStrike').addEventListener('click', function(){ toggleRegCellFormat('strike'); });
 function findGradeInput(quarter, row, col){
   return document.querySelector('.reg-grade-input[data-quarter="'+quarter+'"][data-row="'+row+'"][data-col="'+col+'"]');
+}
+function findNameInput(row){
+  return document.querySelector('.reg-name-input[data-row="'+row+'"]');
+}
+function handleNameArrowNav(evt){
+  var key = evt.key;
+  if(key!=='ArrowUp' && key!=='ArrowDown') return;
+  var input = evt.target;
+  var row = +input.dataset.row;
+  var target = key==='ArrowUp' ? findNameInput(row-1) : findNameInput(row+1);
+  if(target){ evt.preventDefault(); target.focus(); target.select(); }
 }
 function handleGradeArrowNav(evt){
   var key = evt.key;
@@ -4659,7 +4622,7 @@ function renameShoppingItem(list, itemId){
   openModal(
     '<h3>Rinomina articolo</h3>'+
     '<label for="shopItemRenameInput">Nome articolo</label>'+
-    '<input type="text" id="shopItemRenameInput" value="'+escapeAttr(item.name||'')+'" maxlength="80">'+
+    '<input type="text" id="shopItemRenameInput" value="'+escapeAttr(item.name||'')+'">'+
     '<div class="modal-actions">'+
       '<button type="button" class="btn-secondary" id="shopItemRenameCancel">Annulla</button>'+
       '<button type="button" class="btn-primary" id="shopItemRenameConfirm">Salva</button>'+
@@ -4691,7 +4654,7 @@ $('#shopAddItemBtn').addEventListener('click', function(){
   openModal(
     '<h3>Nuovo articolo</h3>'+
     '<label for="shopNewItemInput">Nome articolo</label>'+
-    '<input type="text" id="shopNewItemInput" placeholder="Es. latte" maxlength="80">'+
+    '<input type="text" id="shopNewItemInput" placeholder="Es. latte">'+
     '<div class="modal-actions">'+
       '<button type="button" class="btn-secondary" id="shopNewItemCancel">Annulla</button>'+
       '<button type="button" class="btn-primary" id="shopNewItemConfirm">Aggiungi</button>'+
