@@ -1355,7 +1355,8 @@ import {
   deleteUser, reauthenticateWithCredential, EmailAuthProvider, updatePassword
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 import {
-  getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc,
+  getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc,
   collection, writeBatch, collectionGroup, query, where
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
@@ -1380,7 +1381,32 @@ var firebaseConfig = {
 };
 var app = initializeApp(firebaseConfig);
 var auth = getAuth(app);
-var db = getFirestore(app);
+/* Persistenza offline: i dati letti restano disponibili anche senza connessione, e le
+   modifiche fatte offline vengono messe in coda e sincronizzate da sole appena torna
+   la rete. Se il browser non la supporta (es. navigazione privata su alcuni browser),
+   si ricade su Firestore senza cache locale, così l'app funziona comunque online. */
+var db;
+try{
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+}catch(err){
+  console.warn('Persistenza offline non disponibile in questo browser, continuo senza.', err);
+  db = getFirestore(app);
+}
+
+/* Registra il service worker (file sw.js caricato nella stessa cartella di
+   questo file su GitHub) così l'app si può aprire anche senza connessione.
+   Se sw.js non è presente (es. il file non è stato ancora caricato), la
+   registrazione fallisce silenziosamente e l'app continua a funzionare
+   normalmente online. */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(err){
+      console.warn('Service worker non registrato (probabilmente sw.js non è ancora stato caricato su GitHub insieme a questo file).', err);
+    });
+  });
+}
 
 /* ================= Utilities ================= */
 function $(sel){ return document.querySelector(sel); }
