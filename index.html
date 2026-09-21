@@ -3564,22 +3564,19 @@ function renderRegisterTabs(){
   var wrap = $('#regTabs');
   wrap.innerHTML = (state.registerSheets||[]).map(function(s){
     return '<div class="reg-tab'+(s.id===state.currentSheetId?' active':'')+'" data-id="'+s.id+'" style="--tab-color:'+s.color+';">'+
-      '<button type="button" class="reg-tab-color" data-id="'+s.id+'" style="background:'+s.color+';" title="Cambia colore"></button>'+
+      '<span class="reg-tab-color" data-id="'+s.id+'" style="background:'+s.color+';"></span>'+
       '<span class="reg-tab-name" data-id="'+s.id+'">'+escapeHtml(s.name)+'</span>'+
-      '<button type="button" class="reg-tab-rename" data-id="'+s.id+'" title="Rinomina scheda">'+iconSvg('pencil')+'</button>'+
+      '<button type="button" class="reg-tab-rename" data-id="'+s.id+'" title="Rinomina scheda e cambia colore">'+iconSvg('pencil')+'</button>'+
     '</div>';
   }).join('');
   $$('.reg-tab').forEach(function(tab){
     tab.addEventListener('click', function(e){
-      if(e.target.closest('.reg-tab-color') || e.target.closest('.reg-tab-rename')) return;
+      if(e.target.closest('.reg-tab-rename')) return;
       switchRegisterSheet(tab.dataset.id);
     });
   });
   $$('.reg-tab-rename').forEach(function(btn){
     btn.addEventListener('click', function(e){ e.stopPropagation(); renameRegisterSheet(btn.dataset.id); });
-  });
-  $$('.reg-tab-color').forEach(function(swatch){
-    swatch.addEventListener('click', function(e){ e.stopPropagation(); openColorPickerForSheet(swatch.dataset.id); });
   });
 }
 async function switchRegisterSheet(id){
@@ -3600,9 +3597,11 @@ function renameRegisterSheet(id){
   var sheet = (state.registerSheets||[]).find(function(s){ return s.id===id; });
   if(!sheet) return;
   openModal(
-    '<h3>Rinomina scheda</h3>'+
+    '<h3>Modifica scheda</h3>'+
     '<label for="regRenameInput">Nome scheda</label>'+
     '<input type="text" id="regRenameInput" value="'+escapeAttr(sheet.name)+'" maxlength="30">'+
+    '<label for="regColorInput">Colore scheda</label>'+
+    '<input type="color" id="regColorInput" value="'+sheet.color+'" style="width:100%;height:44px;border:none;cursor:pointer;">'+
     '<div class="modal-actions">'+
       '<button type="button" class="btn-secondary" id="regRenameCancel">Annulla</button>'+
       '<button type="button" class="btn-primary" id="regRenameConfirm">Salva</button>'+
@@ -3614,35 +3613,14 @@ function renameRegisterSheet(id){
   $('#regRenameConfirm').onclick = async function(){
     var nuovoNome = input.value.trim();
     if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
+    var nuovoColore = $('#regColorInput').value;
     sheet.name = nuovoNome;
+    sheet.color = nuovoColore;
     try{
-      await updateDoc(registerSheetDocRef(state.currentAgendaId, id), {name: nuovoNome});
+      await updateDoc(registerSheetDocRef(state.currentAgendaId, id), {name: nuovoNome, color: nuovoColore});
       closeModal();
       renderRegisterTabs();
-      showToast('Scheda rinominata.', 'success');
-    }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
-  };
-}
-function openColorPickerForSheet(id){
-  var sheet = (state.registerSheets||[]).find(function(s){ return s.id===id; });
-  if(!sheet) return;
-  openModal(
-    '<h3>Colore scheda</h3>'+
-    '<input type="color" id="regColorInput" value="'+sheet.color+'" style="width:100%;height:44px;border:none;cursor:pointer;">'+
-    '<div class="modal-actions">'+
-      '<button type="button" class="btn-secondary" id="regColorCancel">Annulla</button>'+
-      '<button type="button" class="btn-primary" id="regColorConfirm">Salva</button>'+
-    '</div>'
-  );
-  $('#regColorCancel').onclick = closeModal;
-  $('#regColorConfirm').onclick = async function(){
-    var color = $('#regColorInput').value;
-    sheet.color = color;
-    try{
-      await updateDoc(registerSheetDocRef(state.currentAgendaId, id), {color: color});
-      closeModal();
-      renderRegisterTabs();
-      showToast('Colore aggiornato.', 'success');
+      showToast('Scheda aggiornata.', 'success');
     }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
   };
 }
