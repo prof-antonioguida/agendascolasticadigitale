@@ -634,6 +634,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regFmtStrike{--tool-color:#C0524B;}
 #regFmtBgColor{--tool-color:#D19A3D;}
 #regFmtTextColor{--tool-color:#3D7FD1;}
+#regFmtClear{--tool-color:#A23A2C;}
 #regUndo{--tool-color:#7A8A99;}
 #regRedo{--tool-color:#7A8A99;}
 #balExportPdf{--tool-color:#5A6B7A;}
@@ -675,6 +676,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .reg-table .reg-desc-label{background:#F5E9C8;font-weight:600;}
 .reg-table .reg-desc-letter{background:#8FBF95;font-weight:700;border-color:#fff;}
 .reg-table .reg-desc-text{text-align:left;}
+.reg-table td.reg-cell-selected,.reg-table th.reg-cell-selected{outline:2px solid #3D7FD1;outline-offset:-2px;background-color:rgba(61,127,209,.22) !important;}
 .reg-tabs{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px 30px;align-items:center;}
 .reg-tab{
   display:flex;align-items:center;gap:2px;padding:8px 6px 8px 12px;border-radius:8px 8px 0 0;border:1px solid var(--paper-line);
@@ -984,6 +986,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" class="icon-btn tool" id="regFmtTextColor" data-icon="textColor" title="Colore testo"></button>
     <input type="color" id="regBgColorInput" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;">
     <input type="color" id="regTextColorInput" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;">
+    <button type="button" class="icon-btn tool" id="regFmtClear" data-icon="eraser" title="Cancella contenuto celle selezionate"></button>
     <span class="reg-sep"></span>
     <button type="button" class="icon-btn tool" id="regUndo" data-icon="undo" title="Annulla ultima modifica"></button>
     <button type="button" class="icon-btn tool" id="regRedo" data-icon="redo" title="Ripristina ultima modifica"></button>
@@ -3551,6 +3554,8 @@ async function enterRegisterSection(){
   registerDirty = false;
   resetRegisterHistory();
   regActiveCellKey = null;
+  regSelectedCells = [];
+  regSelectionAnchorKey = null;
   clearRegFmtButtonsState();
   $('#regAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
   renderRegisterTabs();
@@ -3662,6 +3667,8 @@ async function switchRegisterSheet(id){
   registerDirty = false;
   resetRegisterHistory();
   regActiveCellKey = null;
+  regSelectedCells = [];
+  regSelectionAnchorKey = null;
   clearRegFmtButtonsState();
   var b=$('#regSaveBtn'); if(b) b.classList.remove('needs-save');
   renderRegisterTabs();
@@ -3924,11 +3931,125 @@ function wireRegisterTableEvents(sheet){
   $$('[data-cellkey]').forEach(function(inp){
     inp.addEventListener('focus', function(){
       regActiveCellKey = inp.dataset.cellkey;
+      if(!regDragSelectActive){
+        regSelectedCells = [inp.dataset.cellkey];
+        regSelectionAnchorKey = inp.dataset.cellkey;
+        applyRegSelectionHighlight();
+      }
       updateRegFmtButtonsState(sheet);
     });
   });
 }
 var regActiveCellKey = null;
+var regSelectedCells = [];
+var regSelectionAnchorKey = null;
+var regDragSelectActive = false;
+function parseRegCellKey(key){
+  if(key==='classname') return {region:'classname', row:0, col:0};
+  var m;
+  if((m=/^name-(\d+)$/.exec(key))) return {region:'name', row:+m[1], col:0};
+  if((m=/^note-(\d+)$/.exec(key))) return {region:'note', row:+m[1], col:0};
+  if((m=/^grade-(1|2)-(\d+)-(\d+)$/.exec(key))) return {region:'grade'+m[1], row:+m[2], col:+m[3]};
+  if((m=/^desc-(1|2)-(\d+)$/.exec(key))) return {region:'desc'+m[1], row:0, col:+m[2]};
+  return null;
+}
+function regCellKeysInRange(region, r1, c1, r2, c2){
+  var rowMin=Math.min(r1,r2), rowMax=Math.max(r1,r2), colMin=Math.min(c1,c2), colMax=Math.max(c1,c2);
+  var keys = [], r, c;
+  if(region==='classname'){ keys.push('classname'); return keys; }
+  if(region==='name' || region==='note'){
+    for(r=rowMin;r<=rowMax;r++) keys.push(region+'-'+r);
+    return keys;
+  }
+  if(region==='grade1' || region==='grade2'){
+    var q = region==='grade1'?'1':'2';
+    for(r=rowMin;r<=rowMax;r++) for(c=colMin;c<=colMax;c++) keys.push('grade-'+q+'-'+r+'-'+c);
+    return keys;
+  }
+  if(region==='desc1' || region==='desc2'){
+    var q2 = region==='desc1'?'1':'2';
+    for(c=colMin;c<=colMax;c++) keys.push('desc-'+q2+'-'+c);
+    return keys;
+  }
+  return keys;
+}
+function clearRegSelectionHighlight(){
+  $$('.reg-cell-selected').forEach(function(el){ el.classList.remove('reg-cell-selected'); });
+}
+function applyRegSelectionHighlight(){
+  clearRegSelectionHighlight();
+  regSelectedCells.forEach(function(key){
+    var el = document.querySelector('[data-cellkey="'+key+'"]');
+    if(el){ var cell = el.closest('td,th')||el; cell.classList.add('reg-cell-selected'); }
+  });
+}
+function startRegSelection(key){
+  regSelectedCells = [key];
+  regSelectionAnchorKey = key;
+  applyRegSelectionHighlight();
+}
+function extendRegSelectionTo(key){
+  if(!regSelectionAnchorKey){ startRegSelection(key); return; }
+  var a = parseRegCellKey(regSelectionAnchorKey), b = parseRegCellKey(key);
+  if(!a || !b || a.region!==b.region){ startRegSelection(key); return; }
+  regSelectedCells = regCellKeysInRange(a.region, a.row, a.col, b.row, b.col);
+  applyRegSelectionHighlight();
+}
+function regSelectionOrActiveKeys(){
+  if(regSelectedCells && regSelectedCells.length>1) return regSelectedCells.slice();
+  return regActiveCellKey ? [regActiveCellKey] : [];
+}
+function initRegCellSelection(){
+  var container = $('#regTableContainer');
+  if(!container) return;
+  container.addEventListener('mousedown', function(e){
+    var target = e.target.closest('[data-cellkey]');
+    if(!target) return;
+    var key = target.dataset.cellkey;
+    if(e.shiftKey && regSelectionAnchorKey){
+      extendRegSelectionTo(key);
+    } else {
+      startRegSelection(key);
+    }
+    regDragSelectActive = true;
+  });
+  container.addEventListener('mouseover', function(e){
+    if(!regDragSelectActive) return;
+    if(typeof e.buttons==='number' && e.buttons===0){ regDragSelectActive = false; return; }
+    var target = e.target.closest('[data-cellkey]');
+    if(!target) return;
+    extendRegSelectionTo(target.dataset.cellkey);
+    if(window.getSelection) window.getSelection().removeAllRanges();
+  });
+  window.addEventListener('mouseup', function(){ regDragSelectActive = false; });
+  container.addEventListener('touchstart', function(e){
+    var touch = e.touches[0]; if(!touch) return;
+    var el = document.elementFromPoint(touch.clientX, touch.clientY);
+    var target = el && el.closest('[data-cellkey]');
+    if(!target) return;
+    startRegSelection(target.dataset.cellkey);
+    regDragSelectActive = true;
+  }, {passive:true});
+  container.addEventListener('touchmove', function(e){
+    if(!regDragSelectActive) return;
+    var touch = e.touches[0]; if(!touch) return;
+    var el = document.elementFromPoint(touch.clientX, touch.clientY);
+    var target = el && el.closest('[data-cellkey]');
+    if(!target) return;
+    extendRegSelectionTo(target.dataset.cellkey);
+  }, {passive:true});
+  container.addEventListener('touchend', function(){ regDragSelectActive = false; });
+  document.addEventListener('keydown', function(e){
+    if(e.key!=='Escape') return;
+    var scr = document.getElementById('screen-registro');
+    if(scr && scr.classList.contains('active') && regSelectedCells.length>1){
+      regSelectedCells = regActiveCellKey ? [regActiveCellKey] : [];
+      clearRegSelectionHighlight();
+      applyRegSelectionHighlight();
+    }
+  });
+}
+initRegCellSelection();
 function clearRegFmtButtonsState(){
   var bBtn = $('#regFmtBold'), iBtn = $('#regFmtItalic'), sBtn = $('#regFmtStrike');
   if(bBtn) bBtn.classList.remove('active');
@@ -3936,65 +4057,93 @@ function clearRegFmtButtonsState(){
   if(sBtn) sBtn.classList.remove('active');
 }
 function updateRegFmtButtonsState(sheet){
-  var s = (sheet.cellStyles && regActiveCellKey) ? sheet.cellStyles[regActiveCellKey] : null;
+  var keys = regSelectionOrActiveKeys();
   var bBtn = $('#regFmtBold'), iBtn = $('#regFmtItalic'), sBtn = $('#regFmtStrike');
-  if(bBtn) bBtn.classList.toggle('active', !!(s && s.bold));
-  if(iBtn) iBtn.classList.toggle('active', !!(s && s.italic));
-  if(sBtn) sBtn.classList.toggle('active', !!(s && s.strike));
+  function allHave(prop){
+    return keys.length>0 && keys.every(function(k){ var s = sheet.cellStyles && sheet.cellStyles[k]; return !!(s && s[prop]); });
+  }
+  if(bBtn) bBtn.classList.toggle('active', allHave('bold'));
+  if(iBtn) iBtn.classList.toggle('active', allHave('italic'));
+  if(sBtn) sBtn.classList.toggle('active', allHave('strike'));
 }
 function toggleRegCellFormat(prop){
-  var sheet = getCurrentSheet(); if(!sheet || !regActiveCellKey) { showToast('Seleziona prima una cella.', 'info'); return; }
+  var sheet = getCurrentSheet(); var keys = regSelectionOrActiveKeys();
+  if(!sheet || keys.length===0){ showToast('Seleziona prima una cella.', 'info'); return; }
   pushRegisterHistory();
   if(!sheet.cellStyles) sheet.cellStyles = {};
-  var cur = sheet.cellStyles[regActiveCellKey] || {bold:false, italic:false, strike:false};
-  cur[prop] = !cur[prop];
-  sheet.cellStyles[regActiveCellKey] = cur;
+  var allOn = keys.every(function(k){ var s = sheet.cellStyles[k]; return !!(s && s[prop]); });
+  var newVal = !allOn;
+  keys.forEach(function(k){
+    var cur = sheet.cellStyles[k] || {bold:false, italic:false, strike:false};
+    cur[prop] = newVal;
+    sheet.cellStyles[k] = cur;
+    var input = document.querySelector('[data-cellkey="'+k+'"]');
+    if(input){
+      input.style.fontWeight = cur.bold ? '700' : '';
+      input.style.fontStyle = cur.italic ? 'italic' : '';
+      input.style.textDecoration = cur.strike ? 'line-through' : '';
+    }
+  });
   markRegisterDirty();
-  var input = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]');
-  if(input){
-    input.style.fontWeight = cur.bold ? '700' : '';
-    input.style.fontStyle = cur.italic ? 'italic' : '';
-    input.style.textDecoration = cur.strike ? 'line-through' : '';
-    input.focus();
-  }
+  if(regActiveCellKey){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
   updateRegFmtButtonsState(sheet);
 }
 $('#regFmtBold').addEventListener('click', function(){ toggleRegCellFormat('bold'); });
 $('#regFmtItalic').addEventListener('click', function(){ toggleRegCellFormat('italic'); });
 $('#regFmtStrike').addEventListener('click', function(){ toggleRegCellFormat('strike'); });
 function applyCellColor(prop, value){
-  var sheet = getCurrentSheet(); if(!sheet || !regActiveCellKey) return;
+  var sheet = getCurrentSheet(); var keys = regSelectionOrActiveKeys();
+  if(!sheet || keys.length===0) return;
   pushRegisterHistory();
   if(!sheet.cellStyles) sheet.cellStyles = {};
-  var cur = sheet.cellStyles[regActiveCellKey] || {bold:false, italic:false, strike:false};
-  cur[prop] = value;
-  sheet.cellStyles[regActiveCellKey] = cur;
-  markRegisterDirty();
-  var input = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]');
-  if(input){
-    if(prop==='color'){
-      input.style.color = value;
-    } else if(prop==='bg'){
-      var cell = input.closest('td,th');
-      if(cell) cell.style.backgroundColor = value;
+  keys.forEach(function(k){
+    var cur = sheet.cellStyles[k] || {bold:false, italic:false, strike:false};
+    cur[prop] = value;
+    sheet.cellStyles[k] = cur;
+    var input = document.querySelector('[data-cellkey="'+k+'"]');
+    if(input){
+      if(prop==='color'){
+        input.style.color = value;
+      } else if(prop==='bg'){
+        var cell = input.closest('td,th');
+        if(cell) cell.style.backgroundColor = value;
+      }
     }
-    input.focus();
-  }
+  });
+  markRegisterDirty();
+  if(regActiveCellKey){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
 }
 $('#regFmtBgColor').addEventListener('click', function(){
-  var sheet = getCurrentSheet(); if(!sheet || !regActiveCellKey){ showToast('Seleziona prima una cella.', 'info'); return; }
-  var cur = (sheet.cellStyles && sheet.cellStyles[regActiveCellKey]) || {};
+  var sheet = getCurrentSheet(); var keys = regSelectionOrActiveKeys();
+  if(!sheet || keys.length===0){ showToast('Seleziona prima una cella.', 'info'); return; }
+  var cur = (sheet.cellStyles && sheet.cellStyles[keys[0]]) || {};
   $('#regBgColorInput').value = cur.bg || '#ffffff';
   $('#regBgColorInput').click();
 });
 $('#regBgColorInput').addEventListener('input', function(e){ applyCellColor('bg', e.target.value); });
 $('#regFmtTextColor').addEventListener('click', function(){
-  var sheet = getCurrentSheet(); if(!sheet || !regActiveCellKey){ showToast('Seleziona prima una cella.', 'info'); return; }
-  var cur = (sheet.cellStyles && sheet.cellStyles[regActiveCellKey]) || {};
+  var sheet = getCurrentSheet(); var keys = regSelectionOrActiveKeys();
+  if(!sheet || keys.length===0){ showToast('Seleziona prima una cella.', 'info'); return; }
+  var cur = (sheet.cellStyles && sheet.cellStyles[keys[0]]) || {};
   $('#regTextColorInput').value = cur.color || '#222222';
   $('#regTextColorInput').click();
 });
 $('#regTextColorInput').addEventListener('input', function(e){ applyCellColor('color', e.target.value); });
+function clearRegSelectedCellsContent(){
+  var sheet = getCurrentSheet(); var keys = regSelectionOrActiveKeys();
+  if(!sheet || keys.length===0){ showToast('Seleziona prima una cella.', 'info'); return; }
+  pushRegisterHistory();
+  keys.forEach(function(k){
+    var input = document.querySelector('[data-cellkey="'+k+'"]');
+    if(input && 'value' in input && input.value!==''){
+      input.value = '';
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+    }
+  });
+  markRegisterDirty();
+  showToast('Contenuto cancellato.', 'info');
+}
+$('#regFmtClear').addEventListener('click', clearRegSelectedCellsContent);
 function findGradeInput(quarter, row, col){
   return document.querySelector('.reg-grade-input[data-quarter="'+quarter+'"][data-row="'+row+'"][data-col="'+col+'"]');
 }
