@@ -235,6 +235,8 @@ body.dark .theme-toggle .icon-moon{display:block;}
   padding:28px 22px;text-align:left;cursor:pointer;box-shadow:0 6px 16px rgba(46,32,20,.1);color:var(--ink);
 }
 .menu-tile:hover{box-shadow:0 10px 22px rgba(46,32,20,.16);}
+.menu-tile[data-tile-key]{touch-action:none;user-select:none;-webkit-user-select:none;}
+.menu-tile.dragging{opacity:.55;box-shadow:0 10px 26px rgba(0,0,0,.3);cursor:grabbing;position:relative;z-index:5;}
 .menu-tile-add{border-style:dashed;border-width:2px;background:transparent;box-shadow:none;}
 .menu-tile-add:hover{background:var(--surface);}
 .menu-tile-add .tile-icon{color:var(--ink-soft);}
@@ -898,57 +900,57 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
       </div>
     </div>
     <div class="menu-tiles">
-      <button type="button" class="menu-tile" id="menuBtnCover">
+      <button type="button" class="menu-tile" id="menuBtnCover" data-tile-key="cover">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="4" y1="7" x2="20" y2="7"></line></svg>
         <h3>Modifica copertina</h3>
         <p>Personalizza nome, dati e foto</p>
       </button>
-      <button type="button" class="menu-tile" id="menuBtnCalendar">
+      <button type="button" class="menu-tile" id="menuBtnCalendar" data-tile-key="calendar">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
         <h3>Calendario</h3>
         <p>Genera il calendario dell'anno (Gennaio - Dicembre)</p>
       </button>
-      <button type="button" class="menu-tile" id="menuBtnSchoolCalendar">
+      <button type="button" class="menu-tile" id="menuBtnSchoolCalendar" data-tile-key="schoolCalendar">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><path d="M7 14 L10 15.5 L7 17"></path></svg>
         <h3>Calendario scolastico</h3>
         <p>Genera il calendario dell'anno scolastico (Settembre - Luglio)</p>
       </button>
-      <button type="button" class="menu-tile" id="menuBtnNotebook">
+      <button type="button" class="menu-tile" id="menuBtnNotebook" data-tile-key="notebook">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="8" y1="8" x2="16" y2="8"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="16" x2="13" y2="16"></line></svg>
         <h3>Blocco note</h3>
         <p>Pagine libere, non legate al calendario</p>
       </button>
-      <button type="button" class="menu-tile" id="menuBtnContacts">
+      <button type="button" class="menu-tile" id="menuBtnContacts" data-tile-key="contacts">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="3"></rect><circle cx="12" cy="10" r="2.5"></circle><path d="M8 17 a4 4 0 0 1 8 0"></path></svg>
         <h3>Rubrica</h3>
         <p>Contatti: nome, telefono, email e indirizzo</p>
       </button>
-      <button type="button" class="menu-tile" id="menuBtnScheduleLink">
+      <button type="button" class="menu-tile" id="menuBtnScheduleLink" data-tile-key="links">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.8" width="10" height="6.4" rx="3.2" transform="rotate(45 9 9)"></rect><rect x="10" y="11.8" width="10" height="6.4" rx="3.2" transform="rotate(45 15 15)"></rect></svg>
         <h3>Schede link</h3>
         <p>Elenco di link salvati con un nome</p>
       </button>
-      <button type="button" class="menu-tile" id="menuBtnRegistro">
+      <button type="button" class="menu-tile" id="menuBtnRegistro" data-tile-key="register">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="9" x2="9" y2="20"></line><line x1="15" y1="9" x2="15" y2="20"></line></svg>
         <h3>Registro personale</h3>
         <p>Voti, medie e schede per classe</p>
       </button>
-      <button type="button" class="menu-tile" id="menuBtnBalance">
+      <button type="button" class="menu-tile" id="menuBtnBalance" data-tile-key="balance">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
         <h3>Bilancio</h3>
         <p>Entrate, uscite e totali</p>
       </button>
-      <button type="button" class="menu-tile" id="menuBtnShopping">
+      <button type="button" class="menu-tile" id="menuBtnShopping" data-tile-key="shopping">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.3"></circle><circle cx="17" cy="20" r="1.3"></circle><path d="M2 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.6L21 7H6"></path></svg>
         <h3>Lista della spesa</h3>
         <p>Articoli da acquistare e già acquistati</p>
       </button>
-      <button type="button" class="menu-tile" id="menuBtnLibrary">
+      <button type="button" class="menu-tile" id="menuBtnLibrary" data-tile-key="library">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4 H10 A1.5 1.5 0 0 1 11.5 5.5 V20 H5.5 A1.5 1.5 0 0 1 4 18.5 Z"></path><path d="M20 4 H14 A1.5 1.5 0 0 0 12.5 5.5 V20 H18.5 A1.5 1.5 0 0 0 20 18.5 Z"></path><line x1="12" y1="7" x2="12" y2="20"></line></svg>
         <h3>Libreria</h3>
         <p>Catalogo libri con ricerca e ordinamento</p>
       </button>
-      <button type="button" class="menu-tile" id="menuBtnLessons">
+      <button type="button" class="menu-tile" id="menuBtnLessons" data-tile-key="lessons">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"></circle><path d="M5 20c0-3.8 3.1-6.5 7-6.5s7 2.7 7 6.5"></path><path d="M15.5 3.5 L17 5 L20 2"></path></svg>
         <h3>Lezioni private</h3>
         <p>Alunni, orari e pagamenti</p>
@@ -2073,6 +2075,18 @@ var SECTION_TILES = {
   library: 'menuBtnLibrary',
   lessons: 'menuBtnLessons'
 };
+var DEFAULT_TILE_ORDER = ['cover','calendar','schoolCalendar','notebook','contacts','links','register','balance','shopping','library','lessons'];
+function applyMenuTileOrder(){
+  var order = (state.currentAgenda && Array.isArray(state.currentAgenda.tileOrder)) ? state.currentAgenda.tileOrder : DEFAULT_TILE_ORDER;
+  var full = order.slice();
+  DEFAULT_TILE_ORDER.forEach(function(k){ if(full.indexOf(k)===-1) full.push(k); });
+  full.forEach(function(key, idx){
+    var el = document.querySelector('.menu-tile[data-tile-key="'+key+'"]');
+    if(el) el.style.order = idx;
+  });
+  var addTile = $('#menuBtnAddSections');
+  if(addTile) addTile.style.order = 9999;
+}
 function showMenuScreen(){
   $('#menuAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
   var enabled = state.currentAgenda ? state.currentAgenda.enabledSections : null;
@@ -2081,6 +2095,7 @@ function showMenuScreen(){
     var el = $('#'+SECTION_TILES[key]);
     if(el) el.style.display = (showAll || enabled.indexOf(key)>-1) ? '' : 'none';
   });
+  applyMenuTileOrder();
   showScreen('screen-menu');
 }
 $('#menuBtnCover').addEventListener('click', function(){ showCoverEditor(); });
@@ -2088,6 +2103,66 @@ $('#menuBtnCalendar').addEventListener('click', function(){ showCalendarScreen('
 $('#menuBtnSchoolCalendar').addEventListener('click', function(){ showCalendarScreen('school'); });
 $('#menuBackHome').addEventListener('click', function(){ showHomeScreen(); });
 $('#menuBtnAddSections').addEventListener('click', function(){ openAddSectionsModal(); });
+var menuTileDragState = null;
+var menuTileJustDragged = false;
+function persistMenuTileOrder(){
+  var keys = $$('.menu-tile[data-tile-key]')
+    .slice()
+    .sort(function(a,b){ return (parseInt(a.style.order,10)||0) - (parseInt(b.style.order,10)||0); })
+    .map(function(el){ return el.dataset.tileKey; });
+  if(!state.currentAgenda) return;
+  state.currentAgenda.tileOrder = keys;
+  var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
+  if(listEntry) listEntry.tileOrder = keys;
+  updateDoc(agendaRef(state.currentAgendaId), {tileOrder: keys}).catch(function(err){ console.error(err); });
+}
+function initMenuTilesDragReorder(){
+  var wrap = $('.menu-tiles');
+  if(!wrap) return;
+  wrap.addEventListener('pointerdown', function(e){
+    if(e.button !== undefined && e.button !== 0) return;
+    var tile = e.target.closest('.menu-tile[data-tile-key]');
+    if(!tile) return;
+    menuTileDragState = { tile: tile, startX: e.clientX, startY: e.clientY, dragging: false, pointerId: e.pointerId };
+  });
+  wrap.addEventListener('pointermove', function(e){
+    if(!menuTileDragState || menuTileDragState.pointerId !== e.pointerId) return;
+    if(!menuTileDragState.dragging){
+      var dx = e.clientX - menuTileDragState.startX, dy = e.clientY - menuTileDragState.startY;
+      if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      menuTileDragState.dragging = true;
+      menuTileDragState.tile.classList.add('dragging');
+      try{ menuTileDragState.tile.setPointerCapture(e.pointerId); }catch(err){}
+    }
+    e.preventDefault();
+    var el = document.elementFromPoint(e.clientX, e.clientY);
+    var target = el && el.closest('.menu-tile[data-tile-key]');
+    if(!target || target===menuTileDragState.tile) return;
+    var tiles = $$('.menu-tile[data-tile-key]').sort(function(a,b){ return (parseInt(a.style.order,10)||0) - (parseInt(b.style.order,10)||0); });
+    var fromIdx = tiles.indexOf(menuTileDragState.tile);
+    var toIdx = tiles.indexOf(target);
+    if(fromIdx===-1 || toIdx===-1) return;
+    tiles.splice(fromIdx,1);
+    tiles.splice(toIdx,0,menuTileDragState.tile);
+    tiles.forEach(function(t, idx){ t.style.order = idx; });
+  });
+  function endDrag(e){
+    if(!menuTileDragState || menuTileDragState.pointerId !== e.pointerId) return;
+    if(menuTileDragState.dragging){
+      menuTileDragState.tile.classList.remove('dragging');
+      menuTileJustDragged = true;
+      setTimeout(function(){ menuTileJustDragged = false; }, 0);
+      persistMenuTileOrder();
+    }
+    menuTileDragState = null;
+  }
+  wrap.addEventListener('pointerup', endDrag);
+  wrap.addEventListener('pointercancel', endDrag);
+  wrap.addEventListener('click', function(e){
+    if(menuTileJustDragged){ e.stopPropagation(); e.preventDefault(); menuTileJustDragged = false; }
+  }, true);
+}
+initMenuTilesDragReorder();
 var SECTION_LABELS = {
   calendar:'Calendario', schoolCalendar:'Calendario scolastico', notebook:'Blocco note', contacts:'Rubrica',
   links:'Schede link', register:'Registro personale', balance:'Bilancio', shopping:'Lista della spesa', library:'Libreria',
