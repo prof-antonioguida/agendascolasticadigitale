@@ -679,8 +679,9 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .reg-tab{
   display:flex;align-items:center;gap:2px;padding:8px 6px 8px 12px;border-radius:8px 8px 0 0;border:1px solid var(--paper-line);
   border-bottom:3px solid var(--tab-color,#999);background:var(--surface);cursor:pointer;font-size:.8rem;white-space:nowrap;color:var(--ink);
-  min-height:40px;
+  min-height:40px;touch-action:none;user-select:none;-webkit-user-select:none;
 }
+.reg-tab.dragging{opacity:.55;box-shadow:0 4px 12px rgba(0,0,0,.3);cursor:grabbing;position:relative;z-index:5;}
 .reg-tab.active{
   background:var(--surface-alt);font-weight:700;color:var(--accent);
   border-color:var(--accent);border-bottom-width:4px;
@@ -3536,6 +3537,11 @@ async function enterRegisterSection(){
   try{
     var snap = await getDocs(registerSheetsColl(state.currentAgendaId));
     state.registerSheets = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return sheetFromFirestore(data); });
+    state.registerSheets.sort(function(a,b){
+      var oa = (typeof a.order==='number') ? a.order : 999999;
+      var ob = (typeof b.order==='number') ? b.order : 999999;
+      return oa-ob;
+    });
   }catch(err){ console.error(err); showToast('Errore nel caricamento del registro.', 'error'); state.registerSheets=[]; }
   if(state.registerSheets.length===0){
     await createRegisterSheet('1', REG_COLORS[0]);
@@ -3554,6 +3560,7 @@ async function enterRegisterSection(){
 async function createRegisterSheet(name, color){
   var newId = uid();
   var data = defaultSheetData(name, color || REG_COLORS[(state.registerSheets||[]).length % REG_COLORS.length]);
+  data.order = (state.registerSheets||[]).length;
   try{
     await setDoc(registerSheetDocRef(state.currentAgendaId, newId), sheetForFirestore(data));
     var entry = Object.assign({id:newId}, data);
@@ -3576,6 +3583,7 @@ function renderRegisterTabs(){
   $$('.reg-tab').forEach(function(tab){
     tab.addEventListener('click', function(e){
       if(e.target.closest('.reg-tab-rename')) return;
+      if(regTabJustDragged){ regTabJustDragged = false; return; }
       switchRegisterSheet(tab.dataset.id);
     });
   });
@@ -3583,6 +3591,69 @@ function renderRegisterTabs(){
     btn.addEventListener('click', function(e){ e.stopPropagation(); renameRegisterSheet(btn.dataset.id); });
   });
 }
+var regTabDragState = null;
+var regTabJustDragged = false;
+function initRegTabsDragReorder(){
+  var wrap = $('#regTabs');
+  if(!wrap) return;
+  wrap.addEventListener('pointerdown', function(e){
+    if(e.button !== undefined && e.button !== 0) return;
+    var tab = e.target.closest('.reg-tab');
+    if(!tab) return;
+    if(e.target.closest('.reg-tab-rename')) return;
+    regTabDragState = { tab: tab, startX: e.clientX, startY: e.clientY, dragging: false, pointerId: e.pointerId };
+  });
+  wrap.addEventListener('pointermove', function(e){
+    if(!regTabDragState || regTabDragState.pointerId !== e.pointerId) return;
+    if(!regTabDragState.dragging){
+      var dx = e.clientX - regTabDragState.startX, dy = e.clientY - regTabDragState.startY;
+      if(Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      regTabDragState.dragging = true;
+      regTabDragState.tab.classList.add('dragging');
+      try{ regTabDragState.tab.setPointerCapture(e.pointerId); }catch(err){}
+    }
+    e.preventDefault();
+    var children = Array.prototype.slice.call(wrap.children).filter(function(el){ return el.classList.contains('reg-tab'); });
+    var draggedIndex = children.indexOf(regTabDragState.tab);
+    for(var i=0;i<children.length;i++){
+      if(children[i]===regTabDragState.tab) continue;
+      var r = children[i].getBoundingClientRect();
+      var midX = r.left + r.width/2;
+      if(e.clientX < midX && i < draggedIndex){
+        wrap.insertBefore(regTabDragState.tab, children[i]);
+        break;
+      } else if(e.clientX > midX && i > draggedIndex){
+        wrap.insertBefore(regTabDragState.tab, children[i].nextSibling);
+        break;
+      }
+    }
+  });
+  function endDrag(e){
+    if(!regTabDragState || regTabDragState.pointerId !== e.pointerId) return;
+    if(regTabDragState.dragging){
+      regTabDragState.tab.classList.remove('dragging');
+      regTabJustDragged = true;
+      setTimeout(function(){ regTabJustDragged = false; }, 0);
+      persistRegisterTabsOrder();
+    }
+    regTabDragState = null;
+  }
+  wrap.addEventListener('pointerup', endDrag);
+  wrap.addEventListener('pointercancel', endDrag);
+}
+function persistRegisterTabsOrder(){
+  var ids = $$('.reg-tab').map(function(t){ return t.dataset.id; });
+  var reordered = ids.map(function(id){ return (state.registerSheets||[]).find(function(s){ return s.id===id; }); }).filter(Boolean);
+  if(reordered.length !== (state.registerSheets||[]).length) return;
+  state.registerSheets = reordered;
+  state.registerSheets.forEach(function(s, idx){
+    if(s.order !== idx){
+      s.order = idx;
+      updateDoc(registerSheetDocRef(state.currentAgendaId, s.id), {order: idx}).catch(function(err){ console.error(err); });
+    }
+  });
+}
+initRegTabsDragReorder();
 async function switchRegisterSheet(id){
   if(registerDirty){
     await saveRegisterSheet(true);
@@ -3656,6 +3727,7 @@ $('#regDupSheet').addEventListener('click', async function(){
   delete copy.id;
   copy.name = sheet.name + ' (copia)';
   copy.createdAt = Date.now();
+  copy.order = state.registerSheets.length;
   try{
     await setDoc(registerSheetDocRef(state.currentAgendaId, newId), sheetForFirestore(copy));
     var entry = Object.assign({id:newId}, copy);
