@@ -130,7 +130,7 @@ input,select{font-family:inherit;}
 .auth-field label{display:block;color:#e8dcc4;font-size:.8rem;margin-bottom:5px;}
 .auth-field input{
   width:100%;padding:11px 12px;border-radius:9px;border:1px solid rgba(201,161,94,.4);
-  background:rgba(255,251,242,.94);color:var(--ink);font-size:.95rem;
+  background:rgba(255,251,242,.94);color:#2E2A22;font-size:.95rem;
 }
 .auth-error{color:#ffb4a8;font-size:.82rem;min-height:18px;margin:4px 0 6px;}
 .auth-submit{
@@ -519,6 +519,11 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .canvas-text .text-mini-toolbar button{width:26px;height:26px;border-radius:5px;border:1px solid var(--paper-line);background:var(--surface-alt);cursor:pointer;font-weight:700;font-size:.72rem;}
 .canvas-text .text-mini-toolbar button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 .canvas-text .text-mini-toolbar input[type=color]{width:26px;height:26px;padding:0;border-radius:5px;border:1px solid var(--paper-line);cursor:pointer;}
+/* In modalità scura i controlli nativi (select, pulsanti G/C/S) restano scuri di default:
+   li rendiamo bianchi perché risaltino sullo sfondo scuro della barra stile del testo. */
+body.dark .canvas-text .text-mini-toolbar select,
+body.dark .canvas-text .text-mini-toolbar button{color:#fff;}
+body.dark .canvas-text .text-mini-toolbar select option{color:#2E2A22;}
 .canvas-text .text-content{min-width:60px;outline:none;line-height:1.45;padding:2px 3px;cursor:text;}
 .canvas-text:not(.editing) .text-content:empty:before{content:'(vuoto)';color:#B4A98C;}
 .canvas-text.dictating .text-content:empty:before{content:'Parla...';color:var(--accent);font-style:italic;}
@@ -670,6 +675,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regFmtClear{--tool-color:#A23A2C;}
 #regUndo{--tool-color:#7A8A99;}
 #regRedo{--tool-color:#7A8A99;}
+#balTrashPage{--tool-color:#A23A2C;}
 #balExportPdf{--tool-color:#5A6B7A;}
 #balSharePage{--tool-color:#4C9C6B;}
 #lpExportPdf{--tool-color:#5A6B7A;}
@@ -1060,6 +1066,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" class="topbar-btn primary" id="balSaveBtn" data-icon="save" data-label="Salva"></button>
   </div>
   <div class="reg-toolbar">
+    <button type="button" class="icon-btn tool" id="balTrashPage" data-icon="trash" title="Cancella tutta la pagina"></button>
     <button type="button" class="icon-btn tool" id="balExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
     <button type="button" class="icon-btn tool" id="balSharePage" data-icon="share" title="Condividi"></button>
   </div>
@@ -5228,6 +5235,18 @@ function printBalanceSheets(sheets){
   downloadItemsAsPDF(buildBalanceTableForPrint, sheets,
     (sheets.length===1 ? ('Bilancio - '+(sheets[0].name||'bilancio')) : 'Bilancio - tutti i bilanci'));
 }
+function clearBalanceSheetContent(){
+  var sheet = getCurrentBalance();
+  if(!sheet) return;
+  var hasContent = (sheet.rows||[]).some(function(r){ return (r.date||r.description||r.uscita||r.entrata); });
+  if(!hasContent){ showToast('Il bilancio è già vuoto.', 'info'); return; }
+  if(confirm('Cancellare tutti i dati di questo bilancio?')){
+    sheet.rows = defaultBalanceRows();
+    renderBalanceTable(sheet);
+    markBalanceDirty();
+  }
+}
+$('#balTrashPage').addEventListener('click', function(){ clearBalanceSheetContent(); });
 $('#balExportPdf').addEventListener('click', function(){
   openModal(
     '<h3>Esporta in PDF</h3>'+
@@ -6263,7 +6282,16 @@ function applyCanvasResponsiveScale(){
   var naturalHeight = parseFloat(canvas.style.minHeight) || canvas.scrollHeight;
   spacer.style.width = Math.ceil(naturalWidth*effectiveScale)+'px';
   spacer.style.height = Math.ceil(naturalHeight*effectiveScale)+'px';
-  outer.style.height = Math.ceil(naturalHeight*canvasFitScale)+'px';
+  /* #dayCanvasOuter è "box-sizing:border-box" e ha un padding verticale (0 in alto, 60px in
+     basso): bisogna aggiungerlo all'altezza impostata via JS, altrimenti lo spacer risulta
+     più alto dell'area di contenuto disponibile per quel tanto di padding, l'elemento
+     risulta "internamente" scorribile di pochi pixel anche senza zoom, e questo produce sia
+     un secondo ascensore (accanto a quello della pagina) sia uno scorrimento con la rotellina
+     che si blocca dopo pochi pixel (una volta esaurito quel piccolo scorrimento interno, il
+     preventDefault() dell'evento "wheel" impedisce che la pagina continui a scorrere). */
+  var outerCs = window.getComputedStyle(outer);
+  var outerVPad = (parseFloat(outerCs.paddingTop)||0) + (parseFloat(outerCs.paddingBottom)||0);
+  outer.style.height = (Math.ceil(naturalHeight*canvasFitScale) + outerVPad)+'px';
 }
 window.addEventListener('resize', function(){ applyCanvasResponsiveScale(); });
 window.addEventListener('orientationchange', function(){ setTimeout(applyCanvasResponsiveScale, 250); });
