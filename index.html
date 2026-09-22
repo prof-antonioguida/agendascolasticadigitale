@@ -4839,11 +4839,125 @@ function downloadBlob(blob, filename){
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
 }
-async function generatePdfBlob(sourceElement, filenameBase, preserveTheme){
+/* html2canvas non supporta affatto la proprietà CSS "hyphens" e ricalcola da solo, con un motore
+   di testo "fatto in casa", dove va a capo il testo giustificato: per questo, senza questa
+   funzione, nel PDF il testo andava a capo in punti diversi da quelli mostrati a schermo e i
+   trattini di sillabazione automatica sparivano del tutto. Qui misuriamo dove il *vero* motore
+   di rendering del browser ha effettivamente mandato a capo ogni testo in giustificato (con i
+   rettangoli di un Range, riga per riga) e "cristallizziamo" quell'informazione nel suo HTML,
+   come "<br>" e trattini "-" veri e propri, subito prima della cattura: così html2canvas deve
+   solo disegnare righe già pronte, senza dover reinventare la sillabazione. Il testo originale
+   (contenteditable) viene ripristinato subito dopo, quindi l'utente non vede alcuna differenza:
+   la trasformazione esiste solo per l'istante dello screenshot.
+   (In precedenza si era tentata la strada "ufficiale" di html2canvas, l'opzione
+   foreignObjectRendering:true, che delega il disegno del testo al browser stesso; però, verificata
+   con un browser reale, quell'opzione produceva un'immagine vuota o mal posizionata con la
+   versione di html2canvas usata qui: per questo si è passati a questa ricostruzione manuale,
+   verificata invece con un confronto pixel-per-pixel contro il rendering reale del browser.) */
+function bakeOneJustifiedElementForCapture(el){
+  var originalHTML = el.innerHTML;
+  var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+  var textNodes = [];
+  var n;
+  while((n = walker.nextNode())) textNodes.push(n);
+  if(textNodes.length === 0) return null;
+
+  var chars = [];
+  textNodes.forEach(function(node){
+    var text = node.nodeValue;
+    for(var i=0;i<text.length;i++){
+      var r = document.createRange();
+      r.setStart(node, i);
+      r.setEnd(node, i+1);
+      var rect = r.getBoundingClientRect();
+      chars.push({ ch: text[i], top: Math.round(rect.top) });
+    }
+  });
+  if(chars.length === 0) return null;
+
+  var lines = [];
+  var curLine = [chars[0]];
+  for(var i=1;i<chars.length;i++){
+    if(Math.abs(chars[i].top - curLine[curLine.length-1].top) > 2){
+      lines.push(curLine);
+      curLine = [chars[i]];
+    } else {
+      curLine.push(chars[i]);
+    }
+  }
+  lines.push(curLine);
+  if(lines.length < 2) return null; /* una sola riga: non c'è niente da ricostruire */
+
+  function isWs(c){ return /\s/.test(c); }
+  function isHyphenChar(c){ return c === '-' || c === '‐' || c === '‑'; }
+
+  var htmlParts = [];
+  for(var li=0; li<lines.length; li++){
+    var rawText = lines[li].map(function(c){ return c.ch; }).join('');
+    var isLast = (li === lines.length-1);
+    var needsHyphen = false;
+    if(!isLast){
+      var nextRaw = lines[li+1].map(function(c){ return c.ch; }).join('');
+      var endsWithWs = rawText.length>0 && isWs(rawText[rawText.length-1]);
+      var startsWithWs = nextRaw.length>0 && isWs(nextRaw[0]);
+      var lastNonWsChar = rawText.replace(/\s+$/,'').slice(-1);
+      if(!endsWithWs && !startsWithWs && rawText.trim().length>0 && !isHyphenChar(lastNonWsChar)){
+        needsHyphen = true; /* interruzione avvenuta in mezzo a una parola: era una sillabazione */
+      }
+    }
+    var displayText = rawText.replace(/\s+$/,'');
+    var escaped = displayText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    htmlParts.push(escaped + (needsHyphen ? '-' : ''));
+  }
+  el.innerHTML = htmlParts.join('<br>');
+  var origHyphens = el.style.hyphens, origWebkitHyphens = el.style.webkitHyphens, origWhiteSpace = el.style.whiteSpace;
+  el.style.hyphens = 'none';
+  el.style.webkitHyphens = 'none';
+  /* Senza "nowrap" il motore di html2canvas ri-va a capo per conto suo ANCHE dentro ciascuna
+     riga già pronta separata da <br> (basta che il trattino appena aggiunto la renda di un pelo
+     più larga), spingendo il trattino da solo su una riga a parte. "nowrap" impedisce questo
+     ulteriore ri-avvolgimento, mentre i tag <br> espliciti continuano comunque a forzare le righe. */
+  el.style.whiteSpace = 'nowrap';
+
+  return function(){
+    el.innerHTML = originalHTML;
+    el.style.hyphens = origHyphens;
+    el.style.webkitHyphens = origWebkitHyphens;
+    el.style.whiteSpace = origWhiteSpace;
+  };
+}
+function bakeJustifiedHyphensForCapture(root){
+  if(!root || !root.querySelectorAll) return null;
+  var restores = [];
+  var els = root.querySelectorAll('.text-content');
+  for(var idx=0; idx<els.length; idx++){
+    var el = els[idx];
+    var cs = window.getComputedStyle(el);
+    if(cs.hyphens !== 'auto' && cs.webkitHyphens !== 'auto') continue;
+    var r = bakeOneJustifiedElementForCapture(el);
+    if(r) restores.push(r);
+  }
+  if(restores.length===0) return null;
+  return function(){ restores.forEach(function(fn){ fn(); }); };
+}
+async function generatePdfBlob(sourceElement, filenameBase, preserveTheme, forceOrientation){
   await ensureShareLibsLoaded();
-  var canvas = await window.html2canvas(sourceElement, {scale:2, useCORS:true, backgroundColor: preserveTheme ? null : '#ffffff'});
+  var restoreHyphenation = bakeJustifiedHyphensForCapture(sourceElement);
+  var canvas;
+  try{
+    canvas = await window.html2canvas(sourceElement, {scale:2, useCORS:true, backgroundColor: preserveTheme ? null : '#ffffff'});
+  } finally {
+    if(restoreHyphenation) restoreHyphenation();
+  }
   var imgData = canvas.toDataURL('image/jpeg', 0.92);
-  var landscape = canvas.width > canvas.height;
+  /* Per le pagine del blocco note e dei giorni del calendario l'orientamento del foglio A4 del
+     PDF deve rispettare quello scelto dall'utente (verticale/orizzontale), non essere dedotto
+     dalle proporzioni dell'immagine catturata: una pagina orizzontale con molto contenuto può
+     crescere in altezza più di quanto sia larga, e in quel caso "larghezza > altezza" darebbe
+     (erroneamente) un PDF verticale anche se il foglio è impostato come orizzontale. Per gli
+     altri PDF (registro, bilancio, lista della spesa, ecc.), che non hanno un vero e proprio
+     "orientamento del foglio", si continua a dedurlo dalle proporzioni dell'immagine, come prima. */
+  var landscape = forceOrientation ? (forceOrientation==='orizzontale') : (canvas.width > canvas.height);
   var pdf = new window.jspdf.jsPDF({orientation: landscape?'landscape':'portrait', unit:'pt', format:'a4'});
   var pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
   var imgRatio = canvas.width/canvas.height, pdfRatio = pageW/pageH;
@@ -4857,13 +4971,13 @@ async function generatePdfBlob(sourceElement, filenameBase, preserveTheme){
 /* preserveTheme: true = "screenshot" fedele (blocco note/calendario, con i colori della modalità
    attuale, chiara o scura); false/omesso = forza sempre i colori della modalità chiara (lezioni
    private, lista della spesa, schede link, registro, bilancio, libreria, contatti). */
-async function sharePageAsPDF(sourceElement, filenameBase, shareTitle, preserveTheme){
+async function sharePageAsPDF(sourceElement, filenameBase, shareTitle, preserveTheme, forceOrientation){
   if(!sourceElement){ showToast('Niente da condividere.', 'error'); return; }
   showToast('Preparazione del PDF da condividere...', 'info');
   var wasDark = !preserveTheme && document.body.classList.contains('dark');
   if(wasDark) document.body.classList.remove('dark'); /* il PDF condiviso deve avere sempre i colori della modalità chiara, tranne quando si preserva il tema */
   try{
-    var result = await generatePdfBlob(sourceElement, filenameBase, preserveTheme);
+    var result = await generatePdfBlob(sourceElement, filenameBase, preserveTheme, forceOrientation);
     var file = new File([result.blob], result.filename, {type:'application/pdf'});
     if(navigator.canShare && navigator.canShare({files:[file]})){
       await navigator.share({files:[file], title: shareTitle||result.filename});
@@ -4882,13 +4996,13 @@ async function sharePageAsPDF(sourceElement, filenameBase, shareTitle, preserveT
     if(wasDark) document.body.classList.add('dark');
   }
 }
-async function downloadPagePDF(sourceElement, filenameBase, preserveTheme){
+async function downloadPagePDF(sourceElement, filenameBase, preserveTheme, forceOrientation){
   if(!sourceElement){ showToast('Niente da scaricare.', 'error'); return; }
   showToast('Preparazione del PDF...', 'info');
   var wasDark = !preserveTheme && document.body.classList.contains('dark');
   if(wasDark) document.body.classList.remove('dark');
   try{
-    var result = await generatePdfBlob(sourceElement, filenameBase, preserveTheme);
+    var result = await generatePdfBlob(sourceElement, filenameBase, preserveTheme, forceOrientation);
     downloadBlob(result.blob, result.filename);
   }catch(err){
     console.error(err);
@@ -6292,6 +6406,16 @@ function applyCanvasResponsiveScale(){
   var outerCs = window.getComputedStyle(outer);
   var outerVPad = (parseFloat(outerCs.paddingTop)||0) + (parseFloat(outerCs.paddingBottom)||0);
   outer.style.height = (Math.ceil(naturalHeight*canvasFitScale) + outerVPad)+'px';
+  /* Anche calcolando l'altezza con precisione, un paio di pixel di "resto" possono comunque
+     comparire (arrotondamenti del rendering, bordo/ombra della pagina, scala non intera...):
+     bastano per far comparire comunque un secondo, piccolissimo ascensore interno oltre a
+     quello della pagina. Quando non si è davvero ingranditi oltre alla scala "adatta alla
+     larghezza" (canvasZoom<=1) disattiviamo del tutto lo scorrimento interno di questo
+     contenitore: l'unico scorrimento resta quello della pagina. Torna scorribile
+     internamente solo quando l'utente ha effettivamente ingrandito con il pizzico (serve per
+     potersi spostare sulla pagina ingrandita, come richiesto), e in quel caso l'overflow
+     reale è di decine/centinaia di pixel, non di qualche pixel di arrotondamento. */
+  outer.style.overflow = (canvasZoom > 1.001) ? 'auto' : 'hidden';
 }
 window.addEventListener('resize', function(){ applyCanvasResponsiveScale(); });
 window.addEventListener('orientationchange', function(){ setTimeout(applyCanvasResponsiveScale, 250); });
@@ -6338,7 +6462,13 @@ function touchDistance(touches){
   if(!outer) return;
   outer.addEventListener('wheel', function(e){
     if(e.ctrlKey) return; /* Ctrl+rotellina (o pizzico sul trackpad) è lo zoom della pagina del browser: non lo tocchiamo */
-    var canScrollInner = outer.scrollHeight > outer.clientHeight + 1;
+    /* Usiamo canvasZoom (lo stato vero e proprio dell'ingrandimento) invece di confrontare
+       scrollHeight/clientHeight: quel confronto può restare "vero" per un pugno di pixel
+       anche quando NON si è ingranditi (arrotondamenti del rendering), facendo scattare lo
+       scorrimento interno per pochissimi pixel e poi bloccare del tutto lo scorrimento della
+       pagina (perché il preventDefault() qui sotto scatta comunque). Con canvasZoom sappiamo
+       con certezza se l'utente ha davvero ingrandito la pagina col pizzico. */
+    var canScrollInner = canvasZoom > 1.001 && outer.scrollHeight > outer.clientHeight + 1;
     if(canScrollInner) outer.scrollTop += e.deltaY;
     else window.scrollBy(0, e.deltaY);
     e.preventDefault();
@@ -6380,10 +6510,16 @@ var pendingPlacement = null;
 var activeDeleteWrapper = null;
 var activeEditingText = null;
 var PAGE_MARGIN = 19; /* ~0.5cm a 96dpi */
-var PAGE_WIDTH = 760; /* larghezza "verticale" (portrait), usata come riferimento di base */
-var PAGE_WIDTH_LANDSCAPE = 1074;
-var PAGE_MINHEIGHT_PORTRAIT = 1000;
-var PAGE_MINHEIGHT_LANDSCAPE = 760;
+/* Le dimensioni di base della pagina rispettano le proporzioni reali di un foglio A4 (210x297mm,
+   rapporto 1:√2 ≈ 1:1,4142), sia in verticale che in orizzontale, così che la pagina che si vede
+   nell'app corrisponda davvero a un foglio A4 e l'esportazione in PDF (un foglio A4 per pagina)
+   non debba deformare o ritagliare nulla. Il lato corto resta 760px (il riferimento di base già
+   usato altrove per la larghezza "verticale" e per l'adattamento allo schermo), il lato lungo è
+   calcolato da quello con il rapporto A4. */
+var PAGE_WIDTH = 760; /* larghezza "verticale" (portrait) = lato corto A4, usata come riferimento di base */
+var PAGE_WIDTH_LANDSCAPE = 1075; /* larghezza "orizzontale" (landscape) = lato lungo A4 */
+var PAGE_MINHEIGHT_PORTRAIT = 1075; /* altezza minima "verticale" = lato lungo A4 */
+var PAGE_MINHEIGHT_LANDSCAPE = 760; /* altezza minima "orizzontale" = lato corto A4 */
 var currentPageOrientation = 'verticale'; /* 'verticale' | 'orizzontale', per la pagina attualmente aperta */
 function getPageWidth(){ return currentPageOrientation==='orizzontale' ? PAGE_WIDTH_LANDSCAPE : PAGE_WIDTH; }
 function getPageMinHeight(){ return currentPageOrientation==='orizzontale' ? PAGE_MINHEIGHT_LANDSCAPE : PAGE_MINHEIGHT_PORTRAIT; }
@@ -6702,7 +6838,7 @@ $('#btnExportPdf').addEventListener('click', async function(){
   var canvas = $('#dayCanvas');
   var prevTransform = canvas.style.transform;
   canvas.style.transform = ''; /* cattura sempre a piena grandezza, indipendentemente dallo zoom su schermo */
-  await downloadPagePDF(canvas, name, true);
+  await downloadPagePDF(canvas, name, true, currentPageOrientation);
   canvas.style.transform = prevTransform;
 });
 $('#btnSharePage').addEventListener('click', async function(){
@@ -6710,7 +6846,7 @@ $('#btnSharePage').addEventListener('click', async function(){
   var canvas = $('#dayCanvas');
   var prevTransform = canvas.style.transform;
   canvas.style.transform = ''; /* cattura sempre a piena grandezza, indipendentemente dallo zoom su schermo */
-  await sharePageAsPDF(canvas, name, name, true);
+  await sharePageAsPDF(canvas, name, name, true, currentPageOrientation);
   canvas.style.transform = prevTransform;
 });
 
