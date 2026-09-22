@@ -412,6 +412,7 @@ body.dark .theme-toggle .icon-moon{display:block;}
 #btnAddLink{--tool-color:#4C5FBF;}
 #btnAddPhone{--tool-color:#3E9C5C;}
 #btnAddEmail{--tool-color:#C25A8A;}
+#btnPaste{--tool-color:#3E8A8C;}
 #btnTrashPage{--tool-color:#A23A2C;}
 #btnExportPdf{--tool-color:#5A6B7A;}
 #btnSharePage{--tool-color:#4C9C6B;}
@@ -1329,6 +1330,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" class="icon-btn tool" id="btnAddLink" data-icon="link" title="Inserisci link"></button>
     <button type="button" class="icon-btn tool" id="btnAddPhone" data-icon="phone" title="Numero di telefono"></button>
     <button type="button" class="icon-btn tool" id="btnAddEmail" data-icon="email" title="Email"></button>
+    <button type="button" class="icon-btn tool" id="btnPaste" data-icon="clipboard" title="Incolla (testo, link o immagine copiati)"></button>
     <button type="button" class="icon-btn tool" id="btnTrashPage" data-icon="trash" title="Cancella tutta la pagina"></button>
     <button type="button" class="icon-btn tool" id="btnExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
     <button type="button" class="icon-btn tool" id="btnSharePage" data-icon="share" title="Condividi"></button>
@@ -1655,7 +1657,8 @@ var ICONS = {
   background:'<rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="14" x2="21" y2="14"></line>',
   orientation:'<rect x="7" y="3" width="10" height="14" rx="2"></rect><path d="M19 8 A6 6 0 0 1 19 16"></path><polyline points="17 14 19 16 21 14"></polyline>',
   bgColor:'<path d="M5 12 L13 4 L20 11 L12 19 Z"></path><path d="M9 15 C9 15 5 18 5 20.5 A3 3 0 0 0 11 20.5 C11 18 9 15 9 15 Z" fill="currentColor" stroke="none"></path>',
-  textColor:'<path d="M6 19 L11 5 L13 5 L18 19"></path><line x1="8.3" y1="14" x2="15.7" y2="14"></line><rect x="4" y="20.3" width="16" height="2.2" rx="0.5" fill="currentColor" stroke="none"></rect>'
+  textColor:'<path d="M6 19 L11 5 L13 5 L18 19"></path><line x1="8.3" y1="14" x2="15.7" y2="14"></line><rect x="4" y="20.3" width="16" height="2.2" rx="0.5" fill="currentColor" stroke="none"></rect>',
+  clipboard:'<rect x="5" y="4" width="14" height="18" rx="2"></rect><rect x="9" y="2" width="6" height="4" rx="1"></rect><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="16" y2="15"></line><line x1="8" y1="19" x2="13" y2="19"></line>'
 };
 function iconSvg(name){
   return ICONS[name] ? ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS[name]+'</svg>') : '';
@@ -6495,6 +6498,117 @@ $('#btnAddAudio').addEventListener('click', function(){ armPlacement('audio'); }
 $('#btnAddLink').addEventListener('click', function(){ armPlacement('link'); });
 $('#btnAddPhone').addEventListener('click', function(){ armPlacement('phone'); });
 $('#btnAddEmail').addEventListener('click', function(){ armPlacement('email'); });
+
+/* ---- incolla (testo, link o immagini copiati da internet, dal dispositivo, ecc.) ---- */
+function isLikelyUrl(text){
+  var t = (text||'').trim();
+  if(!t || /\s/.test(t) || t.length>2000) return false;
+  if(/^https?:\/\//i.test(t)) return true;
+  if(/^www\.[^\s]+\.[a-z]{2,}([\/?#][^\s]*)?$/i.test(t)) return true;
+  if(/^[a-z0-9-]+(\.[a-z0-9-]+)+(\/[^\s]*)?$/i.test(t)) return true;
+  return false;
+}
+function normalizeUrl(t){
+  var s = (t||'').trim();
+  return /^https?:\/\//i.test(s) ? s : ('https://'+s);
+}
+async function pasteImageBlobAt(blob, pos){
+  try{
+    var durl = await resizeImageFile(blob, 700, 0.7);
+    if(dataUrlTooBig(durl)){ showToast("Immagine troppo complessa anche dopo la compressione. Prova un'altra immagine.", 'error'); return false; }
+    var dims = await getImageNaturalSize(durl);
+    var w = Math.min(280, dims.w || 220);
+    var h = dims.w ? (dims.h * (w/dims.w)) : 160;
+    addCanvasElement({id:uid(), type:'image', x:pos.x, y:pos.y, w:w, h:h, dataURL:durl});
+    return true;
+  }catch(err){ console.error(err); showToast('Errore nel caricamento immagine.', 'error'); return false; }
+}
+function pasteTextAt(text, pos){
+  var t = text || '';
+  if(!t.trim()) return false;
+  if(isLikelyUrl(t)){
+    addCanvasElement({id:uid(), type:'link', x:pos.x, y:pos.y, url:normalizeUrl(t), label:t.trim()});
+    return true;
+  }
+  var html = escapeHtml(t).replace(/\r\n|\r|\n/g, '<br>');
+  addCanvasElement({id:uid(), type:'text', x:pos.x, y:pos.y, w:textLineWidth(pos.x), html:html,
+    font:pendingTextStyle.font, size:pendingTextStyle.size, bold:pendingTextStyle.bold,
+    italic:pendingTextStyle.italic, underline:pendingTextStyle.underline,
+    color:pendingTextStyle.colorCustom?pendingTextStyle.color:defaultTextColor(),
+    colorCustom:pendingTextStyle.colorCustom, align:pendingTextStyle.align});
+  return true;
+}
+/* Incolla da tastiera (Ctrl+V / Cmd+V, o menu "Incolla" del sistema) mentre si è su una
+   pagina del blocco note o del giorno: se non si sta scrivendo dentro un campo o dentro un
+   testo già in modifica (in quel caso lasciamo fare il normale incolla del browser dentro
+   quel testo), l'elemento copiato viene aggiunto come nuovo elemento della pagina. */
+document.addEventListener('paste', function(e){
+  var screen = $('#screen-day');
+  if(!screen || !screen.classList.contains('active')) return;
+  var overlay = $('#modalOverlay');
+  if(overlay && overlay.classList.contains('active')) return;
+  var activeEl = document.activeElement;
+  if(activeEl && (activeEl.tagName==='INPUT' || activeEl.tagName==='TEXTAREA' || activeEl.isContentEditable ||
+     (activeEl.closest && activeEl.closest('[contenteditable="true"]')))) return;
+  var cd = e.clipboardData;
+  if(!cd) return;
+  var pos = nextDropPosition();
+  var imgFile = null;
+  if(cd.items){
+    for(var i=0;i<cd.items.length;i++){
+      if(cd.items[i].kind==='file' && cd.items[i].type.indexOf('image/')===0){ imgFile = cd.items[i].getAsFile(); break; }
+    }
+  }
+  if(imgFile){
+    e.preventDefault();
+    pasteImageBlobAt(imgFile, pos);
+    return;
+  }
+  var text = cd.getData('text/plain');
+  if(text){
+    e.preventDefault();
+    pasteTextAt(text, pos);
+  }
+});
+/* Pulsante "Incolla" in barra: indispensabile su smartphone/tablet (dove non c'è Ctrl+V);
+   usa l'API Clipboard del browser, che permette di leggere anche le immagini copiate. */
+async function pasteFromClipboardButton(){
+  var screen = $('#screen-day');
+  if(!screen || !screen.classList.contains('active')) return;
+  var pos = nextDropPosition();
+  try{
+    if(navigator.clipboard && navigator.clipboard.read){
+      var items = await navigator.clipboard.read();
+      for(var i=0;i<items.length;i++){
+        var imgType = items[i].types.filter(function(t){ return t.indexOf('image/')===0; })[0];
+        if(imgType){
+          var blob = await items[i].getType(imgType);
+          await pasteImageBlobAt(blob, pos);
+          return;
+        }
+      }
+      for(var j=0;j<items.length;j++){
+        if(items[j].types.indexOf('text/plain')>-1){
+          var textBlob = await items[j].getType('text/plain');
+          var text2 = await textBlob.text();
+          if(pasteTextAt(text2, pos)) return;
+        }
+      }
+      showToast('Non ho trovato nulla di utilizzabile negli appunti.', 'info');
+      return;
+    }
+    if(navigator.clipboard && navigator.clipboard.readText){
+      var text3 = await navigator.clipboard.readText();
+      if(!pasteTextAt(text3, pos)) showToast('Non ho trovato nulla di utilizzabile negli appunti.', 'info');
+      return;
+    }
+    showToast('Il tuo browser non supporta questo pulsante. Prova a incollare con Ctrl+V (o Cmd+V) direttamente sulla pagina.', 'error');
+  }catch(err){
+    console.error(err);
+    showToast("Impossibile leggere gli appunti: assicurati di aver copiato qualcosa e di aver concesso il permesso, poi riprova (oppure usa Ctrl+V).", 'error');
+  }
+}
+$('#btnPaste').addEventListener('click', function(){ pasteFromClipboardButton(); });
 
 /* ---- gomma: cancella ciò che attraversa mentre è selezionata ---- */
 var eraserActive = false, erasing = false;
