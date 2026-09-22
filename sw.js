@@ -5,16 +5,21 @@
    2) Tenere in cache le versioni dei file, aggiornandole in automatico quando
       l'app viene aperta di nuovo online.
 
+   La pagina dell'app (index.html) viene sempre richiesta prima alla rete, e la
+   cache viene usata solo come riserva per quando manca la connessione: così,
+   ogni volta che c'è internet, si vede sempre l'ultima versione caricata su
+   GitHub, sia da computer sia da smartphone, senza dover fare nulla di
+   speciale (era proprio questo il problema: prima veniva sempre mostrata la
+   versione già salvata in cache, anche quando ce n'era una più recente).
+
    IMPORTANTE per chi aggiorna l'app in futuro:
    Ogni volta che si carica su GitHub una nuova versione di index.html con
    modifiche importanti, conviene cambiare la stringa CACHE_VERSION qui sotto
-   (basta aumentare il numero, es. da 'v1' a 'v2'). Questo fa sì che il
-   browser scarichi la nuova versione invece di continuare a mostrare quella
-   vecchia salvata in cache. Se non si cambia, l'aggiornamento arriva comunque
-   dopo un po' (il service worker si aggiorna da solo in background), ma
-   cambiare il numero lo rende immediato al successivo avvio dell'app. */
+   (basta aumentare il numero, es. da 'v2' a 'v3'). Questo forza subito la
+   sostituzione dei file salvati in cache, così anche chi era offline durante
+   l'aggiornamento parte comunque dalla versione più recente scaricata. */
 
-var CACHE_VERSION = 'super-organizer-v1';
+var CACHE_VERSION = 'super-organizer-v2';
 
 var PRECACHE_URLS = [
   './',
@@ -67,6 +72,29 @@ self.addEventListener('fetch', function(event){
      worker interferisca — a quello pensa già la cache offline di Firestore. */
   if(!isSameOrigin && !isFirebaseSdk) return;
 
+  if(isSameOrigin){
+    /* "Network-first": la pagina dell'app viene richiesta subito alla rete, così quando
+       c'è connessione si vede sempre l'ultima versione pubblicata. La cache scatta solo
+       come riserva se in quel momento manca la connessione. */
+    event.respondWith(
+      fetch(event.request).then(function(networkResponse){
+        if(networkResponse && networkResponse.ok){
+          var copy = networkResponse.clone();
+          caches.open(CACHE_VERSION).then(function(cache){ cache.put(event.request, copy); });
+        }
+        return networkResponse;
+      }).catch(function(){
+        return caches.match(event.request).then(function(cached){
+          return cached || caches.match('./index.html');
+        });
+      })
+    );
+    return;
+  }
+
+  /* Le librerie Firebase (SDK) cambiano raramente e sono numerate per versione
+     nell'URL stesso: per queste va bene "stale-while-revalidate" (si mostra subito
+     quella già in cache, aggiornandola in background per la prossima apertura). */
   event.respondWith(
     caches.match(event.request).then(function(cached){
       var networkFetch = fetch(event.request).then(function(networkResponse){
@@ -78,9 +106,6 @@ self.addEventListener('fetch', function(event){
       }).catch(function(){
         return cached;
       });
-      /* "Stale-while-revalidate": se c'è già una versione in cache la usiamo
-         subito (avvio istantaneo, funziona anche offline), e nel frattempo
-         aggiorniamo la cache in background per la prossima apertura. */
       return cached || networkFetch;
     })
   );

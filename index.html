@@ -1485,10 +1485,30 @@ try{
    questo file su GitHub) così l'app si può aprire anche senza connessione.
    Se sw.js non è presente (es. il file non è stato ancora caricato), la
    registrazione fallisce silenziosamente e l'app continua a funzionare
-   normalmente online. */
+   normalmente online.
+
+   In più: quando è disponibile una versione più recente dell'app, la pagina
+   si ricarica da sola per mostrarla subito, invece di continuare a mostrare
+   quella vecchia finché non si chiude e riapre manualmente l'app (il problema
+   per cui da smartphone l'app sembrava "non aggiornarsi mai"). */
 if('serviceWorker' in navigator){
+  var swReloadingForUpdate = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if(swReloadingForUpdate) return;
+    swReloadingForUpdate = true;
+    window.location.reload();
+  });
   window.addEventListener('load', function(){
-    navigator.serviceWorker.register('./sw.js').catch(function(err){
+    navigator.serviceWorker.register('./sw.js').then(function(reg){
+      /* Controlla subito se c'è un aggiornamento, e poi periodicamente: utile per chi
+         tiene l'app aperta a lungo o la riapre da un'icona in home screen sullo smartphone
+         senza mai chiuderla davvero. */
+      reg.update().catch(function(){});
+      setInterval(function(){ reg.update().catch(function(){}); }, 30*60*1000);
+      document.addEventListener('visibilitychange', function(){
+        if(document.visibilityState==='visible') reg.update().catch(function(){});
+      });
+    }).catch(function(err){
       console.warn('Service worker non registrato (probabilmente sw.js non è ancora stato caricato su GitHub insieme a questo file).', err);
     });
   });
@@ -2316,7 +2336,8 @@ var SECTION_TILES = {
   balance: 'menuBtnBalance',
   shopping: 'menuBtnShopping',
   library: 'menuBtnLibrary',
-  lessons: 'menuBtnLessons'
+  lessons: 'menuBtnLessons',
+  calculator: 'menuBtnCalculator'
 };
 var DEFAULT_TILE_ORDER = ['cover','calendar','schoolCalendar','notebook','contacts','links','register','balance','shopping','library','lessons','calculator'];
 function applyMenuTileOrder(){
@@ -2442,7 +2463,7 @@ initMenuTilesDragReorder();
 var SECTION_LABELS = {
   calendar:'Calendario', schoolCalendar:'Calendario scolastico', notebook:'Blocco note', contacts:'Rubrica',
   links:'Schede link', register:'Registro personale', balance:'Bilancio', shopping:'Lista della spesa', library:'Libreria',
-  lessons:'Lezioni private'
+  lessons:'Lezioni private', calculator:'Calcolatrice'
 };
 function openAddSectionsModal(){
   var enabled = state.currentAgenda.enabledSections;
@@ -2450,8 +2471,9 @@ function openAddSectionsModal(){
   var options = [
     ['calendar','Calendario'], ['schoolCalendar','Calendario scolastico'], ['notebook','Blocco note'], ['contacts','Rubrica'],
     ['links','Schede link'], ['register','Registro personale'], ['balance','Bilancio'], ['shopping','Lista della spesa'],
-    ['library','Libreria'], ['lessons','Lezioni private']
+    ['library','Libreria'], ['lessons','Lezioni private'], ['calculator','Calcolatrice']
   ];
+  options.sort(function(a,b){ return a[1].localeCompare(b[1], 'it', {sensitivity:'base'}); });
   var rows = options.map(function(o){
     var checked = enabled.indexOf(o[0])>-1 ? ' checked' : '';
     return '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:.92rem;color:var(--ink);">'+
