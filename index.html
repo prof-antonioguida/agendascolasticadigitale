@@ -235,14 +235,44 @@ body.dark .theme-toggle .icon-moon{display:block;}
   padding:28px 22px;text-align:left;cursor:pointer;box-shadow:0 6px 16px rgba(46,32,20,.1);color:var(--ink);
 }
 .menu-tile:hover{box-shadow:0 10px 22px rgba(46,32,20,.16);}
-.menu-tile[data-tile-key]{touch-action:none;user-select:none;-webkit-user-select:none;}
-.menu-tile.dragging{opacity:.55;box-shadow:0 10px 26px rgba(0,0,0,.3);cursor:grabbing;position:relative;z-index:5;}
+.menu-tile[data-tile-key]{user-select:none;-webkit-user-select:none;}
+.menu-tile.dragging{opacity:.55;box-shadow:0 10px 26px rgba(0,0,0,.3);cursor:grabbing;position:relative;z-index:5;touch-action:none;}
+.menu-tile.long-press-ready{box-shadow:0 0 0 3px var(--accent) inset,0 10px 22px rgba(46,32,20,.16);}
 .menu-tile-add{border-style:dashed;border-width:2px;background:transparent;box-shadow:none;}
 .menu-tile-add:hover{background:var(--surface);}
 .menu-tile-add .tile-icon{color:var(--ink-soft);}
 .menu-tile .tile-icon{width:34px;height:34px;color:var(--accent);margin-bottom:14px;}
 .menu-tile h3{font-size:1.15rem;margin-bottom:4px;}
 .menu-tile p{margin:0;color:var(--ink-soft);font-size:.85rem;}
+
+/* ---------- Calcolatrice ---------- */
+.calc-wrap{max-width:360px;margin:24px auto 0;}
+.calc-display-box{
+  background:var(--surface-alt);border:1px solid var(--paper-line);border-radius:14px;
+  padding:18px 18px 14px;margin-bottom:16px;box-shadow:inset 0 2px 6px rgba(0,0,0,.06);
+  text-align:right;
+}
+.calc-sub-display{font-size:.9rem;color:var(--ink-soft);min-height:1.2em;letter-spacing:.02em;}
+.calc-display{
+  font-size:2.4rem;font-weight:700;color:var(--ink);word-break:break-all;line-height:1.2;
+  font-variant-numeric:tabular-nums;
+}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.calc-btn{
+  height:60px;border-radius:12px;border:1px solid var(--paper-line);background:var(--surface);
+  color:var(--ink);font-size:1.25rem;font-weight:600;cursor:pointer;user-select:none;-webkit-user-select:none;
+  box-shadow:0 2px 5px rgba(0,0,0,.06);
+}
+.calc-btn:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(0,0,0,.08);}
+.calc-btn.calc-op{background:var(--surface-alt);color:var(--accent);font-weight:700;}
+.calc-btn.calc-fn{background:var(--surface-alt);color:var(--ink-soft);font-size:1.05rem;}
+.calc-btn.calc-eq{background:var(--accent);color:#fff;border-color:var(--accent);}
+.calc-btn.calc-sign{font-size:1.05rem;color:var(--ink-soft);}
+@media(max-width:480px){
+  .calc-wrap{max-width:100%;}
+  .calc-btn{height:54px;font-size:1.1rem;}
+  .calc-display{font-size:2rem;}
+}
 
 /* ---------- Cover editor ---------- */
 .cover-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:20px;align-items:start;}
@@ -438,8 +468,8 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .day-canvas.placing{cursor:crosshair;outline:2px dashed var(--accent);outline-offset:-2px;}
 .day-canvas.erasing{cursor:crosshair;outline:2px dashed #8A7F68;outline-offset:-2px;}
 
-.canvas-el{position:absolute;touch-action:none;}
-.canvas-el.move-active{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px;}
+.canvas-el{position:absolute;}
+.canvas-el.move-active{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px;touch-action:none;}
 .el-action-bubble{
   position:fixed;display:none;align-items:center;gap:10px;background:#2E2A22;border-radius:16px;padding:9px;
   box-shadow:0 10px 28px rgba(0,0,0,.45);z-index:500;
@@ -955,6 +985,11 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <h3>Lezioni private</h3>
         <p>Alunni, orari e pagamenti</p>
       </button>
+      <button type="button" class="menu-tile" id="menuBtnCalculator" data-tile-key="calculator">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><circle cx="8" cy="11" r="1"></circle><circle cx="12" cy="11" r="1"></circle><circle cx="16" cy="11" r="1"></circle><circle cx="8" cy="15" r="1"></circle><circle cx="12" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle><circle cx="8" cy="19" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="16" cy="19" r="1"></circle></svg>
+        <h3>Calcolatrice</h3>
+        <p>Calcoli veloci col mouse, il dito o la tastiera</p>
+      </button>
       <button type="button" class="menu-tile menu-tile-add" id="menuBtnAddSections">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         <h3>Aggiungi/rimuovi sezioni</h3>
@@ -1141,6 +1176,51 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
   </div>
 </div>
 
+<!-- ============ CALCOLATRICE ============ -->
+<div id="screen-calculator" class="screen paper">
+  <div class="page-rings">__RINGS__</div>
+  <div class="page-wrap">
+    <div class="top-header">
+      <div class="header-back">
+        <button type="button" class="icon-btn" id="calcBack" data-icon="arrowLeft" title="Indietro"></button>
+        <h1>Calcolatrice</h1>
+      </div>
+    </div>
+    <div class="calc-wrap">
+      <div class="calc-display-box">
+        <div class="calc-sub-display" id="calcSubDisplay">&nbsp;</div>
+        <div class="calc-display" id="calcDisplay">0</div>
+      </div>
+      <div class="calc-grid">
+        <button type="button" class="calc-btn calc-fn" data-calc="clear">C</button>
+        <button type="button" class="calc-btn calc-fn" data-calc="backspace" title="Cancella l'ultima cifra">⌫</button>
+        <button type="button" class="calc-btn calc-fn" data-calc="percent">%</button>
+        <button type="button" class="calc-btn calc-op" data-calc="/">÷</button>
+
+        <button type="button" class="calc-btn" data-calc="7">7</button>
+        <button type="button" class="calc-btn" data-calc="8">8</button>
+        <button type="button" class="calc-btn" data-calc="9">9</button>
+        <button type="button" class="calc-btn calc-op" data-calc="*">×</button>
+
+        <button type="button" class="calc-btn" data-calc="4">4</button>
+        <button type="button" class="calc-btn" data-calc="5">5</button>
+        <button type="button" class="calc-btn" data-calc="6">6</button>
+        <button type="button" class="calc-btn calc-op" data-calc="-">−</button>
+
+        <button type="button" class="calc-btn" data-calc="1">1</button>
+        <button type="button" class="calc-btn" data-calc="2">2</button>
+        <button type="button" class="calc-btn" data-calc="3">3</button>
+        <button type="button" class="calc-btn calc-op" data-calc="+">+</button>
+
+        <button type="button" class="calc-btn calc-sign" data-calc="sign">±</button>
+        <button type="button" class="calc-btn" data-calc="0">0</button>
+        <button type="button" class="calc-btn" data-calc="decimal">,</button>
+        <button type="button" class="calc-btn calc-eq" data-calc="=">=</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ COVER EDITOR ============ -->
 <div id="screen-cover" class="screen paper">
   <div class="page-rings">__RINGS__</div>
@@ -1273,6 +1353,12 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <button type="button" id="ptBold" title="Grassetto">G</button>
     <button type="button" id="ptItalic" title="Corsivo" style="font-style:italic;">C</button>
     <button type="button" id="ptUnderline" title="Sottolineato" style="text-decoration:underline;">S</button>
+    <select id="ptAlign" title="Allineamento">
+      <option value="left">Sinistra</option>
+      <option value="center">Centro</option>
+      <option value="right">Destra</option>
+      <option value="justify">Giustificato</option>
+    </select>
   </div>
   <div class="day-canvas-outer" id="dayCanvasOuter">
     <div class="day-canvas-spacer" id="dayCanvasSpacer">
@@ -2088,6 +2174,137 @@ async function deleteAgendaCascade(agendaId){
   await deleteDoc(agendaRef(agendaId));
 }
 
+/* ---- duplicazione di un'intera agenda (con tutti i suoi dati) ---- */
+async function duplicateAgendaCascade(sourceId, newId, newName){
+  var srcSnap = await getDoc(agendaRef(sourceId));
+  var srcData = srcSnap.exists() ? srcSnap.data() : {};
+  var newData = JSON.parse(JSON.stringify(srcData));
+  newData.nome = newName;
+  newData.createdAt = Date.now();
+  await setDoc(agendaRef(newId), newData);
+
+  var daysSnap = await getDocs(daysColl(sourceId));
+  for(var i=0;i<daysSnap.docs.length;i++){
+    var dayDoc = daysSnap.docs[i];
+    var elSnap = await getDocs(collection(db,'users',state.uid,'agendas',sourceId,'days',dayDoc.id,'elements'));
+    var batch = writeBatch(db);
+    batch.set(doc(db,'users',state.uid,'agendas',newId,'days',dayDoc.id), dayDoc.data());
+    elSnap.docs.forEach(function(e){
+      batch.set(doc(db,'users',state.uid,'agendas',newId,'days',dayDoc.id,'elements',e.id), e.data());
+    });
+    await batch.commit();
+  }
+
+  var nbSnap = await getDocs(notebooksColl(sourceId));
+  for(var j=0;j<nbSnap.docs.length;j++){
+    var nbDoc = nbSnap.docs[j];
+    await setDoc(notebookDocRef(newId, nbDoc.id), nbDoc.data());
+    var npSnap = await getDocs(notebookPagesColl(sourceId, nbDoc.id));
+    for(var k=0;k<npSnap.docs.length;k++){
+      var npDoc = npSnap.docs[k];
+      var npElSnap = await getDocs(collection(db,'users',state.uid,'agendas',sourceId,'notebooks',nbDoc.id,'pages',npDoc.id,'elements'));
+      var npBatch = writeBatch(db);
+      npBatch.set(doc(db,'users',state.uid,'agendas',newId,'notebooks',nbDoc.id,'pages',npDoc.id), npDoc.data());
+      npElSnap.docs.forEach(function(e){
+        npBatch.set(doc(db,'users',state.uid,'agendas',newId,'notebooks',nbDoc.id,'pages',npDoc.id,'elements',e.id), e.data());
+      });
+      await npBatch.commit();
+    }
+  }
+
+  async function copyFlatColl(srcColl, docRefFn){
+    var snap = await getDocs(srcColl(sourceId));
+    if(snap.docs.length===0) return;
+    var batch = writeBatch(db);
+    snap.docs.forEach(function(d){ batch.set(docRefFn(newId, d.id), d.data()); });
+    await batch.commit();
+  }
+  await copyFlatColl(contactsColl, contactDocRef);
+  await copyFlatColl(scheduleLinksColl, scheduleLinkDocRef);
+  await copyFlatColl(registerSheetsColl, registerSheetDocRef);
+  await copyFlatColl(balanceSheetsColl, balanceSheetDocRef);
+  await copyFlatColl(shoppingListsColl, shoppingListDocRef);
+  await copyFlatColl(librariesColl, libraryDocRef);
+  await copyFlatColl(privateLessonsColl, privateLessonDocRef);
+
+  return newData;
+}
+function openDuplicateAgendaModal(agendaId){
+  var a = state.agende.find(function(x){ return x.id===agendaId; });
+  if(!a) return;
+  openModal(
+    '<h3>Duplica agenda</h3>'+
+    '<p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:10px;">Vuoi creare una copia di "'+escapeHtml(a.nome||'')+'"? '+
+    'La copia avrà tutti i dati dell\'originale (calendario, blocco note, registro, ecc.) e potrai modificarla liberamente senza toccare l\'originale.</p>'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="dupAgendaCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="dupAgendaConfirm">Duplica</button>'+
+    '</div>'
+  );
+  $('#dupAgendaCancel').onclick = closeModal;
+  $('#dupAgendaConfirm').onclick = async function(){
+    closeModal();
+    showToast('Duplicazione in corso...', 'info');
+    try{
+      var newId = uid();
+      var newName = (a.nome||'') + ' (copia)';
+      var newData = await duplicateAgendaCascade(agendaId, newId, newName);
+      var listEntry = Object.assign({id:newId}, newData);
+      state.agende.push(listEntry);
+      renderHomeList();
+      showToast('Agenda duplicata.', 'success');
+    }catch(err){
+      console.error(err);
+      showToast('Errore durante la duplicazione'+(err.message?(': '+err.message):'')+'.', 'error');
+    }
+  };
+}
+var agendaCardLongPress = null;
+var agendaCardJustLongPressed = false;
+function initAgendaCardLongPress(){
+  var wrap = $('#agendaGrid');
+  if(!wrap) return;
+  var LONG_PRESS_MS = 550;
+  var MOVE_THRESH = 8;
+  wrap.addEventListener('pointerdown', function(e){
+    if(e.button !== undefined && e.button !== 0) return;
+    var card = e.target.closest('.agenda-card');
+    if(!card || e.target.closest('.agenda-delete')) return;
+    var pointerId = e.pointerId;
+    agendaCardLongPress = { card: card, startX: e.clientX, startY: e.clientY, pointerId: pointerId, fired:false, timer:null };
+    agendaCardLongPress.timer = setTimeout(function(){
+      if(!agendaCardLongPress || agendaCardLongPress.pointerId !== pointerId) return;
+      agendaCardLongPress.fired = true;
+      openDuplicateAgendaModal(card.dataset.id);
+    }, LONG_PRESS_MS);
+  });
+  wrap.addEventListener('pointermove', function(e){
+    if(!agendaCardLongPress || agendaCardLongPress.pointerId !== e.pointerId || agendaCardLongPress.fired) return;
+    var dx = e.clientX-agendaCardLongPress.startX, dy = e.clientY-agendaCardLongPress.startY;
+    if(Math.abs(dx)>MOVE_THRESH || Math.abs(dy)>MOVE_THRESH){
+      /* il dito/mouse si è mosso prima che scattasse la pressione prolungata: niente
+         duplicazione, e non blocchiamo nulla, così lo scorrimento della pagina resta libero. */
+      clearTimeout(agendaCardLongPress.timer);
+      agendaCardLongPress = null;
+    }
+  });
+  function endPress(e){
+    if(!agendaCardLongPress || agendaCardLongPress.pointerId !== e.pointerId) return;
+    clearTimeout(agendaCardLongPress.timer);
+    if(agendaCardLongPress.fired){
+      agendaCardJustLongPressed = true;
+      setTimeout(function(){ agendaCardJustLongPressed = false; }, 0);
+    }
+    agendaCardLongPress = null;
+  }
+  wrap.addEventListener('pointerup', endPress);
+  wrap.addEventListener('pointercancel', endPress);
+  wrap.addEventListener('click', function(e){
+    if(agendaCardJustLongPressed){ e.stopPropagation(); e.preventDefault(); agendaCardJustLongPressed = false; }
+  }, true);
+}
+initAgendaCardLongPress();
+
 /* ================= MENU ================= */
 var SECTION_TILES = {
   calendar: 'menuBtnCalendar',
@@ -2101,7 +2318,7 @@ var SECTION_TILES = {
   library: 'menuBtnLibrary',
   lessons: 'menuBtnLessons'
 };
-var DEFAULT_TILE_ORDER = ['cover','calendar','schoolCalendar','notebook','contacts','links','register','balance','shopping','library','lessons'];
+var DEFAULT_TILE_ORDER = ['cover','calendar','schoolCalendar','notebook','contacts','links','register','balance','shopping','library','lessons','calculator'];
 function applyMenuTileOrder(){
   var order = (state.currentAgenda && Array.isArray(state.currentAgenda.tileOrder)) ? state.currentAgenda.tileOrder : DEFAULT_TILE_ORDER;
   var full = order.slice();
@@ -2127,6 +2344,8 @@ function showMenuScreen(){
 $('#menuBtnCover').addEventListener('click', function(){ showCoverEditor(); });
 $('#menuBtnCalendar').addEventListener('click', function(){ showCalendarScreen('solar'); });
 $('#menuBtnSchoolCalendar').addEventListener('click', function(){ showCalendarScreen('school'); });
+$('#menuBtnCalculator').addEventListener('click', function(){ showCalculatorScreen(); });
+$('#calcBack').addEventListener('click', function(){ showMenuScreen(); });
 $('#menuBackHome').addEventListener('click', function(){ showHomeScreen(); });
 $('#menuBtnAddSections').addEventListener('click', function(){ openAddSectionsModal(); });
 var menuTileDragState = null;
@@ -2145,18 +2364,47 @@ function persistMenuTileOrder(){
 function initMenuTilesDragReorder(){
   var wrap = $('.menu-tiles');
   if(!wrap) return;
+  var LONG_PRESS_MS = 500;
+  var MOVE_THRESH = 8;
   wrap.addEventListener('pointerdown', function(e){
     if(e.button !== undefined && e.button !== 0) return;
     var tile = e.target.closest('.menu-tile[data-tile-key]');
     if(!tile) return;
-    menuTileDragState = { tile: tile, startX: e.clientX, startY: e.clientY, dragging: false, pointerId: e.pointerId };
+    var isTouch = (e.pointerType==='touch' || e.pointerType==='pen');
+    var pointerId = e.pointerId;
+    menuTileDragState = {
+      tile: tile, startX: e.clientX, startY: e.clientY, dragging: false, pointerId: pointerId,
+      isTouch: isTouch, longPressReady: !isTouch, longPressTimer: null
+    };
+    if(isTouch){
+      /* Su touchscreen NON blocchiamo subito lo scorrimento della pagina: un semplice
+         tocco-e-scorri deve restare uno scorrimento normale. Il trascinamento per
+         riordinare si attiva solo dopo una pressione prolungata (senza muovere il dito),
+         seguita da un vero movimento tenendo premuto. */
+      menuTileDragState.longPressTimer = setTimeout(function(){
+        if(!menuTileDragState || menuTileDragState.pointerId !== pointerId) return;
+        menuTileDragState.longPressReady = true;
+        menuTileDragState.tile.classList.add('long-press-ready');
+      }, LONG_PRESS_MS);
+    }
   });
   wrap.addEventListener('pointermove', function(e){
     if(!menuTileDragState || menuTileDragState.pointerId !== e.pointerId) return;
+    var dx = e.clientX - menuTileDragState.startX, dy = e.clientY - menuTileDragState.startY;
     if(!menuTileDragState.dragging){
-      var dx = e.clientX - menuTileDragState.startX, dy = e.clientY - menuTileDragState.startY;
-      if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if(menuTileDragState.isTouch && !menuTileDragState.longPressReady){
+        /* Il dito si è mosso prima che scattasse la pressione prolungata: è uno scorrimento
+           della pagina, non un trascinamento. Annulliamo l'attesa e lasciamo fare al browser
+           (niente preventDefault, quindi lo scorrimento continua senza interruzioni). */
+        if(Math.abs(dx) > MOVE_THRESH || Math.abs(dy) > MOVE_THRESH){
+          clearTimeout(menuTileDragState.longPressTimer);
+          menuTileDragState = null;
+        }
+        return;
+      }
+      if(Math.abs(dx) < MOVE_THRESH && Math.abs(dy) < MOVE_THRESH) return;
       menuTileDragState.dragging = true;
+      menuTileDragState.tile.classList.remove('long-press-ready');
       menuTileDragState.tile.classList.add('dragging');
       try{ menuTileDragState.tile.setPointerCapture(e.pointerId); }catch(err){}
     }
@@ -2174,6 +2422,8 @@ function initMenuTilesDragReorder(){
   });
   function endDrag(e){
     if(!menuTileDragState || menuTileDragState.pointerId !== e.pointerId) return;
+    clearTimeout(menuTileDragState.longPressTimer);
+    menuTileDragState.tile.classList.remove('long-press-ready');
     if(menuTileDragState.dragging){
       menuTileDragState.tile.classList.remove('dragging');
       menuTileJustDragged = true;
@@ -2330,6 +2580,148 @@ function showHomeScreen(){
   renderHomeList();
   showScreen('screen-home');
 }
+
+/* ================= CALCOLATRICE ================= */
+var calcState = { display:'0', operand:null, operator:null, waitingForOperand:false };
+var CALC_OP_SYMBOLS = {'+':'+', '-':'−', '*':'×', '/':'÷'};
+function showCalculatorScreen(){
+  calcClearAll();
+  showScreen('screen-calculator');
+}
+function calcFormatNumber(n){
+  if(!isFinite(n)) return 'Errore';
+  var rounded = Math.round((n + Number.EPSILON) * 1e10) / 1e10; /* evita i residui tipici della virgola mobile */
+  var s = String(rounded);
+  if(s.indexOf('e')>-1) s = rounded.toFixed(10).replace(/0+$/,'').replace(/\.$/,''); /* niente notazione scientifica */
+  return s.replace('.', ',');
+}
+function calcParseDisplay(){
+  var n = parseFloat(String(calcState.display).replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+}
+function calcUpdateDisplay(){
+  var d = $('#calcDisplay');
+  if(d) d.textContent = calcState.display;
+  var sub = $('#calcSubDisplay');
+  if(sub){
+    var txt = '';
+    if(calcState.operand!==null) txt += calcFormatNumber(calcState.operand) + ' ';
+    if(calcState.operator) txt += CALC_OP_SYMBOLS[calcState.operator];
+    sub.textContent = txt || ' ';
+  }
+}
+function calcClearAll(){
+  calcState = { display:'0', operand:null, operator:null, waitingForOperand:false };
+  calcUpdateDisplay();
+}
+function calcInputDigit(d){
+  if(calcState.display==='Errore' || calcState.waitingForOperand){
+    calcState.display = d;
+    calcState.waitingForOperand = false;
+  } else {
+    calcState.display = (calcState.display==='0') ? d : calcState.display + d;
+  }
+  calcUpdateDisplay();
+}
+function calcInputDecimal(){
+  if(calcState.display==='Errore' || calcState.waitingForOperand){
+    calcState.display = '0,';
+    calcState.waitingForOperand = false;
+    calcUpdateDisplay();
+    return;
+  }
+  if(calcState.display.indexOf(',')===-1) calcState.display += ',';
+  calcUpdateDisplay();
+}
+function calcBackspace(){
+  if(calcState.display==='Errore' || calcState.waitingForOperand){ calcClearAll(); return; }
+  if(calcState.display.length<=1 || (calcState.display.length===2 && calcState.display.charAt(0)==='-')){
+    calcState.display = '0';
+  } else {
+    calcState.display = calcState.display.slice(0,-1);
+  }
+  calcUpdateDisplay();
+}
+function calcToggleSign(){
+  if(calcState.display==='Errore') return;
+  if(calcState.display!=='0'){
+    calcState.display = (calcState.display.charAt(0)==='-') ? calcState.display.slice(1) : ('-'+calcState.display);
+  }
+  calcUpdateDisplay();
+}
+function calcPercent(){
+  if(calcState.display==='Errore') return;
+  calcState.display = calcFormatNumber(calcParseDisplay()/100);
+  calcUpdateDisplay();
+}
+function calcCompute(a,b,op){
+  if(op==='+') return a+b;
+  if(op==='-') return a-b;
+  if(op==='*') return a*b;
+  if(op==='/') return (b===0) ? NaN : a/b;
+  return b;
+}
+function calcSetOperator(op){
+  if(calcState.display==='Errore'){ calcClearAll(); }
+  var inputValue = calcParseDisplay();
+  if(calcState.operator && calcState.waitingForOperand){
+    /* l'utente ha cambiato idea sull'operatore prima di digitare il secondo numero */
+    calcState.operator = op;
+    calcUpdateDisplay();
+    return;
+  }
+  if(calcState.operand===null){
+    calcState.operand = inputValue;
+  } else if(calcState.operator){
+    var result = calcCompute(calcState.operand, inputValue, calcState.operator);
+    calcState.operand = result;
+    calcState.display = calcFormatNumber(result);
+  }
+  calcState.operator = op;
+  calcState.waitingForOperand = true;
+  calcUpdateDisplay();
+}
+function calcEquals(){
+  if(calcState.display==='Errore'){ calcClearAll(); return; }
+  if(calcState.operator===null || calcState.operand===null) return;
+  var inputValue = calcParseDisplay();
+  var result = calcCompute(calcState.operand, inputValue, calcState.operator);
+  calcState.display = calcFormatNumber(result);
+  calcState.operand = null;
+  calcState.operator = null;
+  calcState.waitingForOperand = true;
+  calcUpdateDisplay();
+}
+function handleCalcKey(key){
+  if(/^[0-9]$/.test(key)){ calcInputDigit(key); return; }
+  if(key==='decimal'){ calcInputDecimal(); return; }
+  if(key==='clear'){ calcClearAll(); return; }
+  if(key==='backspace'){ calcBackspace(); return; }
+  if(key==='sign'){ calcToggleSign(); return; }
+  if(key==='percent'){ calcPercent(); return; }
+  if(key==='='){ calcEquals(); return; }
+  if(key==='+'||key==='-'||key==='*'||key==='/'){ calcSetOperator(key); return; }
+}
+var calcGridEl = $('.calc-grid');
+if(calcGridEl){
+  calcGridEl.addEventListener('click', function(e){
+    var btn = e.target.closest('.calc-btn');
+    if(!btn) return;
+    handleCalcKey(btn.dataset.calc);
+  });
+}
+document.addEventListener('keydown', function(e){
+  var scr = $('#screen-calculator');
+  if(!scr || !scr.classList.contains('active')) return;
+  var k = e.key;
+  if(k>='0' && k<='9'){ e.preventDefault(); handleCalcKey(k); return; }
+  if(k==='.' || k===','){ e.preventDefault(); handleCalcKey('decimal'); return; }
+  if(k==='+' || k==='-' || k==='*' || k==='/'){ e.preventDefault(); handleCalcKey(k); return; }
+  if(k==='Enter' || k==='='){ e.preventDefault(); handleCalcKey('='); return; }
+  if(k==='Backspace'){ e.preventDefault(); handleCalcKey('backspace'); return; }
+  if(k==='%'){ e.preventDefault(); handleCalcKey('percent'); return; }
+  if(k==='Escape'){ e.preventDefault(); handleCalcKey('clear'); return; }
+});
 
 /* ================= COVER ================= */
 function renderCoverHTML(cover, mini){
@@ -5880,6 +6272,26 @@ function touchDistance(touches){
   outer.addEventListener('touchcancel', function(){ pinchState = null; });
 })();
 
+/* ---- rotellina del mouse: scorrimento immediato, senza dover prima muovere il mouse ----
+   Il contenitore della pagina è dimensionato via JS esattamente all'altezza del contenuto
+   (per farlo scorrere insieme al resto della schermata anziché in un riquadro interno), quindi
+   di norma è la pagina intera a scorrere. Subito dopo un cambio di pagina, però, il browser può
+   non aver ancora ricalcolato su quale elemento "punta" la rotellina, e la prima rotellata non
+   produce alcuno scorrimento finché il mouse non si sposta anche di poco (il che aggiorna quel
+   calcolo). Scorrendo qui esplicitamente ad ogni evento "wheel", il risultato è immediato fin
+   dalla primissima rotellata, indipendentemente da quell'ambiguità del browser. */
+(function initWheelScrollFix(){
+  var outer = $('#dayCanvasOuter');
+  if(!outer) return;
+  outer.addEventListener('wheel', function(e){
+    if(e.ctrlKey) return; /* Ctrl+rotellina (o pizzico sul trackpad) è lo zoom della pagina del browser: non lo tocchiamo */
+    var canScrollInner = outer.scrollHeight > outer.clientHeight + 1;
+    if(canScrollInner) outer.scrollTop += e.deltaY;
+    else window.scrollBy(0, e.deltaY);
+    e.preventDefault();
+  }, {passive:false});
+})();
+
 function nextDropPosition(){
   var maxBottom = 40;
   $$('#dayCanvas .canvas-el').forEach(function(el){ maxBottom = Math.max(maxBottom, el.offsetTop+el.offsetHeight); });
@@ -5931,7 +6343,21 @@ function applyPageOrientation(o){
   canvas.style.minHeight = getPageMinHeight()+'px';
 }
 
-var pendingTextStyle = { font:"'Work Sans',sans-serif", size:16, color:'#2E2A22', colorCustom:false, bold:false, italic:false, underline:false };
+var pendingTextStyle = { font:"'Work Sans',sans-serif", size:16, color:'#2E2A22', colorCustom:false, bold:false, italic:false, underline:false, align:'left' };
+/* Applica l'allineamento (e, in giustificato, la sillabazione automatica) a un elemento
+   .text-content, sia in fase di creazione della stringa HTML sia per un aggiornamento live. */
+function textAlignCss(align){
+  var a = align || 'left';
+  var hy = (a==='justify') ? 'auto' : 'manual';
+  return 'text-align:'+a+';hyphens:'+hy+';-webkit-hyphens:'+hy+';-ms-hyphens:'+hy+';';
+}
+function applyTextAlignLive(contentEl, align){
+  var a = align || 'left';
+  contentEl.style.textAlign = a;
+  var hy = (a==='justify') ? 'auto' : 'manual';
+  contentEl.style.hyphens = hy;
+  contentEl.style.webkitHyphens = hy;
+}
 
 var TOOL_HINTS = {
   text:"Clicca sulla pagina dove vuoi scrivere.",
@@ -6034,6 +6460,7 @@ $('#elBubbleDuplicate').addEventListener('click', function(evt){
   $('#ptBold').addEventListener('click', function(){ pendingTextStyle.bold=!pendingTextStyle.bold; $('#ptBold').classList.toggle('active', pendingTextStyle.bold); });
   $('#ptItalic').addEventListener('click', function(){ pendingTextStyle.italic=!pendingTextStyle.italic; $('#ptItalic').classList.toggle('active', pendingTextStyle.italic); });
   $('#ptUnderline').addEventListener('click', function(){ pendingTextStyle.underline=!pendingTextStyle.underline; $('#ptUnderline').classList.toggle('active', pendingTextStyle.underline); });
+  $('#ptAlign').addEventListener('change', function(e){ pendingTextStyle.align = e.target.value; });
 })();
 
 $('#btnAddText').addEventListener('click', function(){ armPlacement('text'); });
@@ -6143,7 +6570,7 @@ function placeElementAt(type, x, y){
     var data = {id:uid(), type:'text', x:x, y:y, w:textLineWidth(x), html:'',
       font:pendingTextStyle.font, size:pendingTextStyle.size, bold:pendingTextStyle.bold,
       italic:pendingTextStyle.italic, underline:pendingTextStyle.underline,
-      color:pendingTextStyle.color, colorCustom:pendingTextStyle.colorCustom};
+      color:pendingTextStyle.color, colorCustom:pendingTextStyle.colorCustom, align:pendingTextStyle.align};
     addCanvasElement(data);
     var wrapper = document.querySelector('#dayCanvas [data-id="'+data.id+'"]');
     if(wrapper) enterTextEditMode(wrapper, data, true);
@@ -6310,7 +6737,7 @@ function performLocalDelete(wrapper, data, skipDeletedTracking){
 /* ---- interazioni generiche: trascina, tieni premuto per eliminare, click breve per modificare ---- */
 function attachElementInteractions(wrapper, data){
   var target = wrapper;
-  var longPressActive=false, moved=false, abortedByEarlyMove=false;
+  var longPressActive=false, moved=false, abortedByEarlyMove=false, isTouchInteraction=false;
   var pressTimer=null, startX=0,startY=0,startLeft=0,startTop=0, preMoveSnapshot=null;
   var THRESH=6;
   function ignoreTarget(evt){
@@ -6322,7 +6749,8 @@ function attachElementInteractions(wrapper, data){
   function down(evt){
     if(ignoreTarget(evt)) return;
     if(data.type==='text' && wrapper.classList.contains('editing') && evt.target.closest('.text-content')) return;
-    if(!evt.touches) evt.preventDefault();
+    isTouchInteraction = !!evt.touches;
+    if(!isTouchInteraction) evt.preventDefault();
     /* su touch NON blocchiamo subito lo scorrimento: se l'utente vuole solo spostare la pagina
        (zoomata) con un dito appoggiato su un elemento, il browser deve poterlo ancora scorrere.
        Il blocco scatta più avanti, dentro move(), solo quando si conferma un vero trascinamento
@@ -6370,10 +6798,19 @@ function attachElementInteractions(wrapper, data){
     document.removeEventListener('touchend', up);
     if(longPressActive){
       wrapper.classList.remove('move-active');
-      if(moved){ if(preMoveSnapshot) commitDaySnapshot(preMoveSnapshot); markDirty(); growCanvasIfNeeded(); }
+      if(moved){
+        if(preMoveSnapshot) commitDaySnapshot(preMoveSnapshot); markDirty(); growCanvasIfNeeded();
+      } else if(isTouchInteraction){
+        /* Su touch, la pressione prolungata senza trascinamento è ciò che ora autorizza la
+           modifica dell'elemento (ridimensionare, eliminare, cambiare il testo): un tocco breve
+           non deve più bastare, altrimenti si perde la possibilità di scorrere la pagina
+           ingrandita quando il dito si appoggia su un elemento. */
+        handleShortClick(data, wrapper);
+      }
       return;
     }
     if(abortedByEarlyMove) return;
+    if(isTouchInteraction) return; /* tocco breve su touch: nessuna modifica, per non bloccare lo scorrimento della pagina */
     handleShortClick(data, wrapper);
   }
   target.addEventListener('mousedown', down);
@@ -6472,6 +6909,7 @@ function renderTextEl(data){
   wrapper.style.top = data.y+'px';
   wrapper.style.width = (data.w||240)+'px';
   if(!data.font) data.font = "'Work Sans',sans-serif";
+  if(!data.align) data.align = 'left';
   var displayColor = data.colorCustom ? data.color : defaultTextColor();
   var sizes=[12,14,16,18,20,24,28,32,36];
   var opts = sizes.map(function(s){ return '<option value="'+s+'"'+(s===data.size?' selected':'')+'>'+s+'px</option>'; }).join('');
@@ -6480,6 +6918,8 @@ function renderTextEl(data){
     ["Georgia,serif","Georgia"], ["'Courier New',monospace","Courier New"]
   ];
   var fontOpts = fontOptions.map(function(f){ return '<option value="'+escapeAttr(f[0])+'"'+(f[0]===data.font?' selected':'')+' style="font-family:'+f[0]+';">Aa</option>'; }).join('');
+  var alignOptions = [['left','Sinistra'],['center','Centro'],['right','Destra'],['justify','Giustificato']];
+  var alignOpts = alignOptions.map(function(a){ return '<option value="'+a[0]+'"'+(a[0]===data.align?' selected':'')+'>'+a[1]+'</option>'; }).join('');
   wrapper.innerHTML =
     '<div class="text-mini-toolbar">'+
       '<select class="t-font" title="Carattere">'+fontOpts+'</select>'+
@@ -6487,19 +6927,31 @@ function renderTextEl(data){
       '<button type="button" class="t-bold'+(data.bold?' active':'')+'">G</button>'+
       '<button type="button" class="t-italic'+(data.italic?' active':'')+'" style="font-style:italic">C</button>'+
       '<button type="button" class="t-underline'+(data.underline?' active':'')+'" style="text-decoration:underline">S</button>'+
+      '<select class="t-align" title="Allineamento">'+alignOpts+'</select>'+
       '<input type="color" class="t-color" value="'+displayColor+'">'+
     '</div>'+
-    '<div class="text-content" contenteditable="false" style="font-family:'+data.font+'; font-size:'+data.size+'px; font-weight:'+(data.bold?'700':'400')+'; font-style:'+(data.italic?'italic':'normal')+'; text-decoration:'+(data.underline?'underline':'none')+'; color:'+displayColor+';">'+(data.html||'')+'</div>'+
+    '<div class="text-content" contenteditable="false" style="font-family:'+data.font+'; font-size:'+data.size+'px; font-weight:'+(data.bold?'700':'400')+'; font-style:'+(data.italic?'italic':'normal')+'; text-decoration:'+(data.underline?'underline':'none')+'; color:'+displayColor+'; '+textAlignCss(data.align)+'">'+(data.html||'')+'</div>'+
     '<div class="resize-handle-text" title="Ridimensiona larghezza"></div>';
   var contentEl = wrapper.querySelector('.text-content');
   contentEl.addEventListener('input', function(){ data.html = contentEl.innerHTML; markDirty(); });
-  contentEl.addEventListener('blur', function(){ exitTextEditMode(wrapper); });
+  /* Non usciamo dalla modalità modifica al semplice "blur" del testo: cliccare su un controllo
+     della barra stile (carattere, dimensione, grassetto, colore...) sposta il focus fuori dal
+     testo e farebbe scattare subito l'uscita, nascondendo la barra proprio mentre si sta per
+     usarla. Usciamo solo se, dopo lo spostamento del focus, non si è rimasti dentro il riquadro
+     di testo (barra stile inclusa) — così i controlli restano utilizzabili. */
+  wrapper.addEventListener('focusout', function(){
+    setTimeout(function(){
+      if(wrapper.contains(document.activeElement)) return;
+      exitTextEditMode(wrapper);
+    }, 0);
+  });
   wrapper.querySelector('.t-font').addEventListener('change', function(e){ data.font=e.target.value; contentEl.style.fontFamily=data.font; markDirty(); });
   wrapper.querySelector('.t-size').addEventListener('change', function(e){ data.size=+e.target.value; contentEl.style.fontSize=data.size+'px'; markDirty(); });
   var boldBtn=wrapper.querySelector('.t-bold'), italBtn=wrapper.querySelector('.t-italic'), undBtn=wrapper.querySelector('.t-underline');
   boldBtn.addEventListener('click', function(evt){ evt.stopPropagation(); data.bold=!data.bold; boldBtn.classList.toggle('active',data.bold); contentEl.style.fontWeight=data.bold?'700':'400'; markDirty(); });
   italBtn.addEventListener('click', function(evt){ evt.stopPropagation(); data.italic=!data.italic; italBtn.classList.toggle('active',data.italic); contentEl.style.fontStyle=data.italic?'italic':'normal'; markDirty(); });
   undBtn.addEventListener('click', function(evt){ evt.stopPropagation(); data.underline=!data.underline; undBtn.classList.toggle('active',data.underline); contentEl.style.textDecoration=data.underline?'underline':'none'; markDirty(); });
+  wrapper.querySelector('.t-align').addEventListener('change', function(e){ data.align=e.target.value; applyTextAlignLive(contentEl, data.align); markDirty(); });
   wrapper.querySelector('.t-color').addEventListener('input', function(e){ data.colorCustom=true; data.color=e.target.value; contentEl.style.color=data.color; markDirty(); });
   attachTextResizeHandle(wrapper.querySelector('.resize-handle-text'), wrapper, data);
   return wrapper;
@@ -6996,7 +7448,7 @@ $('#btnDictation').addEventListener('click', function(){
 function startDictationAt(x, y){
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR){ showToast('Il tuo browser non supporta la dettatura vocale. Prova Chrome o Edge.', 'error'); return; }
-  var data = {id:uid(), type:'text', x:x, y:y, w:textLineWidth(x), html:'', size:16, bold:false, italic:false, underline:false, color:defaultTextColor()};
+  var data = {id:uid(), type:'text', x:x, y:y, w:textLineWidth(x), html:'', size:16, bold:false, italic:false, underline:false, color:defaultTextColor(), align:'left'};
   addCanvasElement(data);
   var wrapper = document.querySelector('#dayCanvas [data-id="'+data.id+'"]');
   wrapper.classList.add('dictating');
