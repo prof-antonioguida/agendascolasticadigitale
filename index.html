@@ -4870,7 +4870,7 @@ function bakeOneJustifiedElementForCapture(el){
       r.setStart(node, i);
       r.setEnd(node, i+1);
       var rect = r.getBoundingClientRect();
-      chars.push({ ch: text[i], top: Math.round(rect.top) });
+      chars.push({ ch: text[i], top: Math.round(rect.top), node: node, off: i });
     }
   });
   if(chars.length === 0) return null;
@@ -4891,32 +4891,60 @@ function bakeOneJustifiedElementForCapture(el){
   function isWs(c){ return /\s/.test(c); }
   function isHyphenChar(c){ return c === '-' || c === '‐' || c === '‑'; }
 
+  /* true se tra l'ultimo carattere di una riga e il primo della successiva c'è un "a capo" vero
+     (tasto Invio: un tag br oppure un nuovo blocco div/p), cioè una fine di paragrafo: quella riga,
+     come l'ultima in assoluto, NON va giustificata (così fa anche il browser a schermo). */
+  function isHardBreakBetween(a, b){
+    if(a.node === b.node) return false;
+    try{
+      var r = document.createRange();
+      r.setStart(a.node, a.off+1);
+      r.setEnd(b.node, b.off);
+      var frag = r.cloneContents();
+      return !!(frag.querySelector && frag.querySelector('br,div,p,li'));
+    }catch(e){ return false; }
+  }
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  /* Ogni riga diventa un blocco a sé, con le parole in <span> separati distribuiti su tutta la
+     larghezza (flex + space-between): in questo modo la spaziatura del giustificato viene calcolata
+     dal browser stesso e html2canvas la ricopia fedelmente. Non si può usare un semplice <br> tra
+     le righe: una riga che termina con un a capo forzato NON viene mai giustificata (né dal browser
+     né da html2canvas), e infatti così nel PDF il testo perdeva il giustificato. */
   var htmlParts = [];
   for(var li=0; li<lines.length; li++){
     var rawText = lines[li].map(function(c){ return c.ch; }).join('');
     var isLast = (li === lines.length-1);
     var needsHyphen = false;
+    var paragraphEnd = isLast;
     if(!isLast){
       var nextRaw = lines[li+1].map(function(c){ return c.ch; }).join('');
       var endsWithWs = rawText.length>0 && isWs(rawText[rawText.length-1]);
       var startsWithWs = nextRaw.length>0 && isWs(nextRaw[0]);
       var lastNonWsChar = rawText.replace(/\s+$/,'').slice(-1);
-      if(!endsWithWs && !startsWithWs && rawText.trim().length>0 && !isHyphenChar(lastNonWsChar)){
+      paragraphEnd = isHardBreakBetween(lines[li][lines[li].length-1], lines[li+1][0]);
+      if(!paragraphEnd && !endsWithWs && !startsWithWs && rawText.trim().length>0 && !isHyphenChar(lastNonWsChar)){
         needsHyphen = true; /* interruzione avvenuta in mezzo a una parola: era una sillabazione */
       }
     }
-    var displayText = rawText.replace(/\s+$/,'');
-    var escaped = displayText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    htmlParts.push(escaped + (needsHyphen ? '-' : ''));
+    var words = rawText.trim().split(/\s+/).filter(function(w){ return w.length>0; });
+    if(needsHyphen && words.length) words[words.length-1] += '-';
+    var justifyLine = !paragraphEnd && words.length > 1;
+    /* ogni parola tranne l'ultima porta con sé uno spazio vero: garantisce almeno uno spazio
+       normale tra le parole anche quando la riga è completamente piena (es. con il trattino). */
+    var spans = words.map(function(w, wi){
+      return '<span style="white-space:pre;">'+esc(w)+((justifyLine && wi<words.length-1)?' ':'')+'</span>';
+    });
+    htmlParts.push(
+      justifyLine
+        ? '<div style="display:flex;justify-content:space-between;white-space:nowrap;">'+spans.join('')+'</div>'
+        : '<div style="white-space:nowrap;text-align:left;">'+(spans.join(' ')||'&nbsp;')+'</div>'
+    );
   }
-  el.innerHTML = htmlParts.join('<br>');
+  el.innerHTML = htmlParts.join('');
   var origHyphens = el.style.hyphens, origWebkitHyphens = el.style.webkitHyphens, origWhiteSpace = el.style.whiteSpace;
   el.style.hyphens = 'none';
   el.style.webkitHyphens = 'none';
-  /* Senza "nowrap" il motore di html2canvas ri-va a capo per conto suo ANCHE dentro ciascuna
-     riga già pronta separata da <br> (basta che il trattino appena aggiunto la renda di un pelo
-     più larga), spingendo il trattino da solo su una riga a parte. "nowrap" impedisce questo
-     ulteriore ri-avvolgimento, mentre i tag <br> espliciti continuano comunque a forzare le righe. */
   el.style.whiteSpace = 'nowrap';
 
   return function(){
