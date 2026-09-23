@@ -337,9 +337,25 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .notebook-bar-actions{position:absolute;right:16px;top:50%;transform:translateY(-50%);display:flex;gap:8px;}
 .notebook-page-name{font-family:var(--font-display);font-weight:600;font-size:1.4rem;text-align:center;}
 .notebook-footer{
-  display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
-  padding:16px;max-width:1080px;margin:0 auto 30px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  padding:16px;max-width:1080px;margin:0 auto 30px;width:100%;
 }
+.notebook-footer-nav{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
+/* Striscia di "paginette" numerate: permette di saltare direttamente a una pagina del blocco
+   note cliccandone il numero, oltre a poterlo fare con le frecce sinistra/destra. Scorre in
+   orizzontale quando le pagine sono troppe per stare tutte in vista. */
+.notebook-page-strip{
+  display:flex;align-items:center;gap:8px;max-width:100%;overflow-x:auto;padding:4px 2px 8px;
+  scrollbar-width:thin;
+}
+.notebook-page-strip:empty{display:none;}
+.np-page-chip{
+  flex:0 0 auto;width:34px;height:34px;border-radius:7px;border:1px solid var(--paper-line);
+  background:var(--surface);color:var(--ink);font-size:.82rem;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;
+}
+.np-page-chip:hover{background:var(--surface-alt);}
+.np-page-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 .np-search{
   width:100%;max-width:420px;padding:10px 14px;border-radius:22px;border:1px solid var(--paper-line);
   background:var(--surface);font-size:.9rem;margin:16px 0 20px;color:var(--ink);
@@ -520,10 +536,17 @@ body.dark .theme-toggle .icon-moon{display:block;}
 .canvas-text .text-mini-toolbar button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 .canvas-text .text-mini-toolbar input[type=color]{width:26px;height:26px;padding:0;border-radius:5px;border:1px solid var(--paper-line);cursor:pointer;}
 /* In modalità scura i controlli nativi (select, pulsanti G/C/S) restano scuri di default:
-   li rendiamo bianchi perché risaltino sullo sfondo scuro della barra stile del testo. */
+   li rendiamo bianchi perché risaltino sullo sfondo scuro della barra stile del testo.
+   "color-scheme:dark" sul <select> dice al browser di disegnare anche il popup nativo delle
+   opzioni (la "tendina" che si apre al click) con lo schema scuro, invece di lasciarlo scuro solo
+   di sfondo o solo nel testo: senza indicarlo esplicitamente, alcuni browser aprono il popup con
+   uno sfondo scuro (dettato dal tema di sistema) ma testo scuro (ereditato dalla regola qui sotto),
+   rendendolo illeggibile. Impostando anche sfondo e colore delle singole <option> si resta coerenti
+   su tutti i browser, anche quelli che ignorano color-scheme per il popup nativo. */
 body.dark .canvas-text .text-mini-toolbar select,
 body.dark .canvas-text .text-mini-toolbar button{color:#fff;}
-body.dark .canvas-text .text-mini-toolbar select option{color:#2E2A22;}
+body.dark .canvas-text .text-mini-toolbar select{color-scheme:dark;}
+body.dark .canvas-text .text-mini-toolbar select option{color:#fff;background:#332C22;}
 .canvas-text .text-content{min-width:60px;outline:none;line-height:1.45;padding:2px 3px;cursor:text;}
 .canvas-text:not(.editing) .text-content:empty:before{content:'(vuoto)';color:#B4A98C;}
 .canvas-text.dictating .text-content:empty:before{content:'Parla...';color:var(--accent);font-style:italic;}
@@ -1375,9 +1398,12 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     </div>
   </div>
   <div class="notebook-footer" id="notebookFooter" style="display:none;">
-    <button type="button" class="icon-btn" id="npPrevBtn" data-icon="arrowLeft" title="Pagina precedente"></button>
-    <button type="button" class="topbar-btn" id="npAddBtn" data-icon="plus" data-label="Nuova pagina"></button>
-    <button type="button" class="icon-btn" id="npNextBtn" data-icon="arrowRight" title="Pagina successiva"></button>
+    <div class="notebook-page-strip" id="notebookPageStrip"></div>
+    <div class="notebook-footer-nav">
+      <button type="button" class="icon-btn" id="npPrevBtn" data-icon="arrowLeft" title="Pagina precedente"></button>
+      <button type="button" class="topbar-btn" id="npAddBtn" data-icon="plus" data-label="Nuova pagina"></button>
+      <button type="button" class="icon-btn" id="npNextBtn" data-icon="arrowRight" title="Pagina successiva"></button>
+    </div>
   </div>
 </div>
 
@@ -3415,7 +3441,26 @@ function updateNotebookBarName(){
   var pages = sortedCurrentNotebookPages();
   var idx = pages.findIndex(function(p){ return p.id===currentPageKey; });
   $('#npNameDisplay').textContent = (nb?nb.name:'') + (pages.length>1 ? ' — Pagina '+(idx+1)+' di '+pages.length : '');
+  renderNotebookPageStrip(pages, idx);
 }
+/* Striscia di "paginette" numerate in fondo alla pagina del blocco note: un click su un numero
+   apre direttamente quella pagina, in aggiunta alle frecce sinistra/destra già presenti. */
+function renderNotebookPageStrip(pages, activeIdx){
+  var strip = $('#notebookPageStrip');
+  if(!strip) return;
+  if(!pages || pages.length<2){ strip.innerHTML=''; return; } /* con una sola pagina non serve */
+  strip.innerHTML = pages.map(function(p, i){
+    return '<button type="button" class="np-page-chip'+(i===activeIdx?' active':'')+'" data-page-id="'+p.id+'" title="Pagina '+(i+1)+'">'+(i+1)+'</button>';
+  }).join('');
+  var activeChip = strip.querySelector('.np-page-chip.active');
+  if(activeChip && activeChip.scrollIntoView) activeChip.scrollIntoView({block:'nearest', inline:'center'});
+}
+$('#notebookPageStrip').addEventListener('click', function(evt){
+  var chip = evt.target.closest('.np-page-chip');
+  if(!chip || chip.classList.contains('active')) return;
+  var pageId = chip.dataset.pageId;
+  if(pageId && currentNotebookId) openNotebookPageScreen(currentNotebookId, pageId);
+});
 async function openNotebook(notebookId, pageId){
   try{
     var snap = await getDocs(notebookPagesColl(state.currentAgendaId, notebookId));
@@ -4865,12 +4910,23 @@ function bakeOneJustifiedElementForCapture(el){
   var chars = [];
   textNodes.forEach(function(node){
     var text = node.nodeValue;
+    /* Il grassetto/corsivo/sottolineato possono ora riguardare solo una parte del testo (non più
+       per forza tutto il riquadro): leggiamo lo stile EFFETTIVO in quel punto (che tiene conto sia
+       del vecchio stile "di tutto il riquadro" sia di eventuali <b>/<i>/<u> annidati da una
+       formattazione parziale) così da poterlo riprodurre fedelmente riga per riga. */
+    var cs = window.getComputedStyle(node.parentElement);
+    var fw = parseInt(cs.fontWeight, 10);
+    var fmt = {
+      bold: cs.fontWeight==='bold' || cs.fontWeight==='bolder' || (!isNaN(fw) && fw>=600),
+      italic: cs.fontStyle==='italic' || cs.fontStyle==='oblique',
+      underline: (cs.textDecorationLine||cs.textDecoration||'').indexOf('underline')!==-1
+    };
     for(var i=0;i<text.length;i++){
       var r = document.createRange();
       r.setStart(node, i);
       r.setEnd(node, i+1);
       var rect = r.getBoundingClientRect();
-      chars.push({ ch: text[i], top: Math.round(rect.top), node: node, off: i });
+      chars.push({ ch: text[i], top: Math.round(rect.top), node: node, off: i, fmt: fmt });
     }
   });
   if(chars.length === 0) return null;
@@ -4911,9 +4967,32 @@ function bakeOneJustifiedElementForCapture(el){
      dal browser stesso e html2canvas la ricopia fedelmente. Non si può usare un semplice <br> tra
      le righe: una riga che termina con un a capo forzato NON viene mai giustificata (né dal browser
      né da html2canvas), e infatti così nel PDF il testo perdeva il giustificato. */
+  /* raggruppa i caratteri consecutivi di una "parola" che condividono la stessa formattazione
+     (grassetto/corsivo/sottolineato) e li riavvolge in <b>/<i>/<u>, così una formattazione
+     applicata solo a una parte del testo (non più per forza a tutto il riquadro) si vede anche
+     nel PDF esattamente dov'è a schermo, non solo sull'intero riquadro. */
+  function runsHtml(wordChars){
+    var runs = [];
+    wordChars.forEach(function(c){
+      var last = runs[runs.length-1];
+      if(last && last.fmt.bold===c.fmt.bold && last.fmt.italic===c.fmt.italic && last.fmt.underline===c.fmt.underline){
+        last.text += c.ch;
+      } else {
+        runs.push({ fmt: c.fmt, text: c.ch });
+      }
+    });
+    return runs.map(function(run){
+      var html = esc(run.text);
+      if(run.fmt.bold) html = '<b>'+html+'</b>';
+      if(run.fmt.italic) html = '<i>'+html+'</i>';
+      if(run.fmt.underline) html = '<u>'+html+'</u>';
+      return html;
+    }).join('');
+  }
   var htmlParts = [];
   for(var li=0; li<lines.length; li++){
-    var rawText = lines[li].map(function(c){ return c.ch; }).join('');
+    var lineChars = lines[li];
+    var rawText = lineChars.map(function(c){ return c.ch; }).join('');
     var isLast = (li === lines.length-1);
     var needsHyphen = false;
     var paragraphEnd = isLast;
@@ -4922,18 +5001,30 @@ function bakeOneJustifiedElementForCapture(el){
       var endsWithWs = rawText.length>0 && isWs(rawText[rawText.length-1]);
       var startsWithWs = nextRaw.length>0 && isWs(nextRaw[0]);
       var lastNonWsChar = rawText.replace(/\s+$/,'').slice(-1);
-      paragraphEnd = isHardBreakBetween(lines[li][lines[li].length-1], lines[li+1][0]);
+      paragraphEnd = isHardBreakBetween(lineChars[lineChars.length-1], lines[li+1][0]);
       if(!paragraphEnd && !endsWithWs && !startsWithWs && rawText.trim().length>0 && !isHyphenChar(lastNonWsChar)){
         needsHyphen = true; /* interruzione avvenuta in mezzo a una parola: era una sillabazione */
       }
     }
-    var words = rawText.trim().split(/\s+/).filter(function(w){ return w.length>0; });
-    if(needsHyphen && words.length) words[words.length-1] += '-';
+    /* riorganizza i caratteri della riga in "parole" (array di oggetti carattere, non stringhe),
+       per poter preservare la formattazione di ciascuno anche dopo aver ricostruito la riga */
+    var words = [];
+    var curWord = [];
+    lineChars.forEach(function(c){
+      if(isWs(c.ch)){ if(curWord.length){ words.push(curWord); curWord=[]; } }
+      else curWord.push(c);
+    });
+    if(curWord.length) words.push(curWord);
+    if(needsHyphen && words.length){
+      var lastWord = words[words.length-1];
+      var hyphenFmt = lastWord.length ? lastWord[lastWord.length-1].fmt : {bold:false,italic:false,underline:false};
+      lastWord.push({ ch:'-', fmt: hyphenFmt });
+    }
     var justifyLine = !paragraphEnd && words.length > 1;
     /* ogni parola tranne l'ultima porta con sé uno spazio vero: garantisce almeno uno spazio
        normale tra le parole anche quando la riga è completamente piena (es. con il trattino). */
     var spans = words.map(function(w, wi){
-      return '<span style="white-space:pre;">'+esc(w)+((justifyLine && wi<words.length-1)?' ':'')+'</span>';
+      return '<span style="white-space:pre;">'+runsHtml(w)+((justifyLine && wi<words.length-1)?' ':'')+'</span>';
     });
     htmlParts.push(
       justifyLine
@@ -7276,14 +7367,60 @@ function renderTextEl(data){
   wrapper.querySelector('.t-font').addEventListener('change', function(e){ data.font=e.target.value; contentEl.style.fontFamily=data.font; markDirty(); });
   wrapper.querySelector('.t-size').addEventListener('change', function(e){ data.size=+e.target.value; contentEl.style.fontSize=data.size+'px'; markDirty(); });
   var boldBtn=wrapper.querySelector('.t-bold'), italBtn=wrapper.querySelector('.t-italic'), undBtn=wrapper.querySelector('.t-underline');
-  boldBtn.addEventListener('click', function(evt){ evt.stopPropagation(); data.bold=!data.bold; boldBtn.classList.toggle('active',data.bold); contentEl.style.fontWeight=data.bold?'700':'400'; markDirty(); });
-  italBtn.addEventListener('click', function(evt){ evt.stopPropagation(); data.italic=!data.italic; italBtn.classList.toggle('active',data.italic); contentEl.style.fontStyle=data.italic?'italic':'normal'; markDirty(); });
-  undBtn.addEventListener('click', function(evt){ evt.stopPropagation(); data.underline=!data.underline; undBtn.classList.toggle('active',data.underline); contentEl.style.textDecoration=data.underline?'underline':'none'; markDirty(); });
+  /* Se l'utente ha evidenziato solo una parola/frase, grassetto-corsivo-sottolineato devono
+     cambiare SOLO quella parte, non tutto il testo del riquadro. Il click su questi pulsanti
+     sposterebbe normalmente il focus (e quindi la selezione evidenziata) fuori dal testo prima
+     che si possa leggerla: preventDefault() sul mousedown mantiene il focus sul testo. */
+  function keepSelectionOnMousedown(evt){ evt.preventDefault(); }
+  boldBtn.addEventListener('mousedown', keepSelectionOnMousedown);
+  italBtn.addEventListener('mousedown', keepSelectionOnMousedown);
+  undBtn.addEventListener('mousedown', keepSelectionOnMousedown);
+  function hasLiveSelectionInside(){
+    var sel = window.getSelection();
+    if(!sel || sel.rangeCount===0 || sel.isCollapsed) return false;
+    var range = sel.getRangeAt(0);
+    return contentEl.contains(range.commonAncestorContainer) && contentEl.contains(sel.anchorNode) && contentEl.contains(sel.focusNode);
+  }
+  /* Con una selezione attiva applichiamo il comando nativo del contenteditable, che formatta solo
+     il testo evidenziato (avvolgendolo in <b>/<i>/<u>); senza selezione (nessun testo evidenziato)
+     manteniamo il comportamento precedente, comodo per formattare in un colpo tutto il riquadro. */
+  boldBtn.addEventListener('click', function(evt){
+    evt.stopPropagation();
+    if(hasLiveSelectionInside()){ document.execCommand('bold', false, null); data.html=contentEl.innerHTML; boldBtn.classList.toggle('active', document.queryCommandState('bold')); markDirty(); }
+    else { data.bold=!data.bold; boldBtn.classList.toggle('active',data.bold); contentEl.style.fontWeight=data.bold?'700':'400'; markDirty(); }
+  });
+  italBtn.addEventListener('click', function(evt){
+    evt.stopPropagation();
+    if(hasLiveSelectionInside()){ document.execCommand('italic', false, null); data.html=contentEl.innerHTML; italBtn.classList.toggle('active', document.queryCommandState('italic')); markDirty(); }
+    else { data.italic=!data.italic; italBtn.classList.toggle('active',data.italic); contentEl.style.fontStyle=data.italic?'italic':'normal'; markDirty(); }
+  });
+  undBtn.addEventListener('click', function(evt){
+    evt.stopPropagation();
+    if(hasLiveSelectionInside()){ document.execCommand('underline', false, null); data.html=contentEl.innerHTML; undBtn.classList.toggle('active', document.queryCommandState('underline')); markDirty(); }
+    else { data.underline=!data.underline; undBtn.classList.toggle('active',data.underline); contentEl.style.textDecoration=data.underline?'underline':'none'; markDirty(); }
+  });
   wrapper.querySelector('.t-align').addEventListener('change', function(e){ data.align=e.target.value; applyTextAlignLive(contentEl, data.align); markDirty(); });
   wrapper.querySelector('.t-color').addEventListener('input', function(e){ data.colorCustom=true; data.color=e.target.value; contentEl.style.color=data.color; markDirty(); });
   attachTextResizeHandle(wrapper.querySelector('.resize-handle-text'), wrapper, data);
   return wrapper;
 }
+/* Un solo listener globale (non uno per ogni riquadro di testo) che, mentre si scrive o si
+   sposta la selezione dentro il testo attualmente in modifica, aggiorna i pulsanti G/C/S della
+   barra stile per riflettere la formattazione nel punto esatto del cursore o della selezione
+   (così, selezionando una parola già in grassetto in mezzo a testo normale, il pulsante "G"
+   risulta correttamente attivo solo per quella selezione). */
+document.addEventListener('selectionchange', function(){
+  var wrapper = activeEditingText;
+  if(!wrapper) return;
+  var contentEl = wrapper.querySelector('.text-content');
+  if(!contentEl || document.activeElement !== contentEl) return;
+  var boldBtn = wrapper.querySelector('.t-bold'), italBtn = wrapper.querySelector('.t-italic'), undBtn = wrapper.querySelector('.t-underline');
+  try{
+    if(boldBtn) boldBtn.classList.toggle('active', document.queryCommandState('bold'));
+    if(italBtn) italBtn.classList.toggle('active', document.queryCommandState('italic'));
+    if(undBtn) undBtn.classList.toggle('active', document.queryCommandState('underline'));
+  }catch(e){}
+});
 function attachTextResizeHandle(handle, wrapper, data){
   var resizing=false, startX=0, startW=0, preSnapshot=null;
   function down(evt){
