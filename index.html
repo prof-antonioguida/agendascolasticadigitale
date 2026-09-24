@@ -822,6 +822,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .acc-table[data-table="assem"] th.acc-title,.acc-table[data-table="perm"] th.acc-title{height:42px;box-sizing:border-box;}
 .acc-table td.acc-cell{padding:2px 4px;height:24px;}
 .acc-table input.acc-input{text-align:center;}
+.reg-table input{-webkit-touch-callout:none;}
 .acc-table td.acc-cell.acc-left input.acc-input{text-align:left;}
 .acc-table .acc-print-text{display:block;min-height:1.1em;}
 .acc-table td.acc-cell.acc-left{text-align:left;}
@@ -5225,12 +5226,71 @@ function regSelectionOrActiveKeys(){
   if(regSelectedCells && regSelectedCells.length>1) return regSelectedCells.slice();
   return regActiveCellKey ? [regActiveCellKey] : [];
 }
+/* Tocco sulle tabelle dei registri (telefono/tablet): per non confondere lo scorrimento della
+   pagina con la selezione delle celle:
+   - trascinare il dito = scorre la schermata (le celle non vengono selezionate);
+   - tocco breve su una cella = si apre la cella per scrivere (come sempre);
+   - pressione prolungata (circa mezzo secondo, senza muovere il dito) = parte la selezione, con una
+     breve vibrazione dove disponibile; continuando a tenere premuto e trascinando si selezionano
+     più celle (solo in questa fase lo scorrimento è bloccato). Non si apre la tastiera, così si
+     possono usare subito grassetto, colori, cancella, ecc.
+   Col mouse non cambia nulla: clic e trascinamento selezionano come prima. */
+function attachTouchCellSelection(container, attr, handlers){
+  var LONG_PRESS_MS = 450, MOVE_TOL = 10;
+  var st = null;
+  var api = { lastTouch: 0, touchSelection: false };
+  function cellOf(el){ return (el && el.closest) ? el.closest('['+attr+']') : null; }
+  container.addEventListener('touchstart', function(e){
+    api.lastTouch = Date.now();
+    if(st){ clearTimeout(st.timer); st = null; }
+    if(e.touches.length!==1) return;
+    var t = e.touches[0];
+    var target = cellOf(e.target);
+    if(!target) return;
+    st = { x:t.clientX, y:t.clientY, key:target.getAttribute(attr), selecting:false, timer:null };
+    st.timer = setTimeout(function(){
+      if(!st) return;
+      st.selecting = true;
+      api.touchSelection = true;
+      var ae = document.activeElement;
+      if(ae && container.contains(ae) && ae.blur) ae.blur(); /* chiude la tastiera se era aperta */
+      handlers.start(st.key);
+      if(navigator.vibrate){ try{ navigator.vibrate(15); }catch(err){} }
+    }, LONG_PRESS_MS);
+  }, {passive:true});
+  container.addEventListener('touchmove', function(e){
+    if(!st) return;
+    var t = e.touches[0]; if(!t) return;
+    if(!st.selecting){
+      /* il dito si muove prima della pressione prolungata: è uno scorrimento, lo lascia fare al browser */
+      if(Math.abs(t.clientX-st.x)>MOVE_TOL || Math.abs(t.clientY-st.y)>MOVE_TOL){ clearTimeout(st.timer); st = null; }
+      return;
+    }
+    if(e.cancelable) e.preventDefault(); /* in selezione: la pagina resta ferma */
+    var target = cellOf(document.elementFromPoint(t.clientX, t.clientY));
+    if(target) handlers.extend(target.getAttribute(attr));
+  }, {passive:false});
+  container.addEventListener('touchend', function(e){
+    api.lastTouch = Date.now();
+    if(!st) return;
+    clearTimeout(st.timer);
+    if(st.selecting && e.cancelable) e.preventDefault(); /* niente "tocco" finale: la cella non si apre */
+    st = null;
+  });
+  container.addEventListener('touchcancel', function(){ if(st){ clearTimeout(st.timer); st = null; } });
+  /* la pressione prolungata non deve aprire il menu del browser (copia/incolla, ecc.) */
+  container.addEventListener('contextmenu', function(e){ if(cellOf(e.target) && Date.now()-api.lastTouch<1500) e.preventDefault(); });
+  container.addEventListener('focusin', function(){ api.touchSelection = false; });
+  return api;
+}
+var regTouch = { lastTouch: 0, touchSelection: false };
 function initRegCellSelection(){
   var container = $('#regTableContainer');
   if(!container) return;
   container.addEventListener('mousedown', function(e){
     var target = e.target.closest('[data-cellkey]');
     if(!target) return;
+    if(Date.now()-regTouch.lastTouch<800) return; /* mousedown "finto" generato dopo un tocco */
     var key = target.dataset.cellkey;
     if(e.shiftKey && regSelectionAnchorKey){
       extendRegSelectionTo(key);
@@ -5248,23 +5308,10 @@ function initRegCellSelection(){
     if(window.getSelection) window.getSelection().removeAllRanges();
   });
   window.addEventListener('mouseup', function(){ regDragSelectActive = false; });
-  container.addEventListener('touchstart', function(e){
-    var touch = e.touches[0]; if(!touch) return;
-    var el = document.elementFromPoint(touch.clientX, touch.clientY);
-    var target = el && el.closest('[data-cellkey]');
-    if(!target) return;
-    startRegSelection(target.dataset.cellkey);
-    regDragSelectActive = true;
-  }, {passive:true});
-  container.addEventListener('touchmove', function(e){
-    if(!regDragSelectActive) return;
-    var touch = e.touches[0]; if(!touch) return;
-    var el = document.elementFromPoint(touch.clientX, touch.clientY);
-    var target = el && el.closest('[data-cellkey]');
-    if(!target) return;
-    extendRegSelectionTo(target.dataset.cellkey);
-  }, {passive:true});
-  container.addEventListener('touchend', function(){ regDragSelectActive = false; });
+  regTouch = attachTouchCellSelection(container, 'data-cellkey', {
+    start: function(key){ startRegSelection(key); regActiveCellKey = key; var sh = getCurrentSheet(); if(sh) updateRegFmtButtonsState(sh); },
+    extend: function(key){ extendRegSelectionTo(key); }
+  });
   document.addEventListener('keydown', function(e){
     if(e.key!=='Escape') return;
     var scr = document.getElementById('screen-registro');
@@ -5311,7 +5358,7 @@ function toggleRegCellFormat(prop){
     }
   });
   markRegisterDirty();
-  if(keys.length===1 && regActiveCellKey){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
+  if(keys.length===1 && regActiveCellKey && !regTouch.touchSelection){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
   updateRegFmtButtonsState(sheet);
 }
 $('#regFmtBold').addEventListener('click', function(){ toggleRegCellFormat('bold'); });
@@ -5337,7 +5384,7 @@ function applyCellColor(prop, value){
     }
   });
   markRegisterDirty();
-  if(keys.length===1 && regActiveCellKey){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
+  if(keys.length===1 && regActiveCellKey && !regTouch.touchSelection){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
 }
 $('#regFmtBgColor').addEventListener('click', function(){
   var sheet = getCurrentSheet(); var keys = regSelectionOrActiveKeys();
@@ -6472,6 +6519,7 @@ function createTableRegister(cfg){
   container.addEventListener('mousedown', function(e){
     var target = e.target.closest('[data-acckey]');
     if(!target) return;
+    if(Date.now()-touchApi.lastTouch<800) return; /* mousedown "finto" generato dopo un tocco */
     if(e.shiftKey && selectionAnchor) extendSelectionTo(target.dataset.acckey);
     else startSelection(target.dataset.acckey);
     dragSelecting = true;
@@ -6485,22 +6533,10 @@ function createTableRegister(cfg){
     if(window.getSelection) window.getSelection().removeAllRanges();
   });
   window.addEventListener('mouseup', function(){ dragSelecting = false; });
-  container.addEventListener('touchstart', function(e){
-    var touch = e.touches[0]; if(!touch) return;
-    var el = document.elementFromPoint(touch.clientX, touch.clientY);
-    var target = el && el.closest('[data-acckey]');
-    if(!target) return;
-    startSelection(target.dataset.acckey);
-    dragSelecting = true;
-  }, {passive:true});
-  container.addEventListener('touchmove', function(e){
-    if(!dragSelecting) return;
-    var touch = e.touches[0]; if(!touch) return;
-    var el = document.elementFromPoint(touch.clientX, touch.clientY);
-    var target = el && el.closest('[data-acckey]');
-    if(target) extendSelectionTo(target.dataset.acckey);
-  }, {passive:true});
-  container.addEventListener('touchend', function(){ dragSelecting = false; });
+  var touchApi = attachTouchCellSelection(container, 'data-acckey', {
+    start: function(key){ startSelection(key); activeKey = key; updateFmtButtonsState(); },
+    extend: function(key){ extendSelectionTo(key); }
+  });
   document.addEventListener('keydown', function(e){
     if(e.key!=='Escape') return;
     var scr = document.getElementById(cfg.screenId);
@@ -6533,7 +6569,7 @@ function createTableRegister(cfg){
     return st;
   }
   function refocusActive(keys){
-    if(keys.length===1 && activeKey){ var af = findInput(activeKey); if(af){ silentFocus = true; af.focus(); silentFocus = false; } }
+    if(keys.length===1 && activeKey && !touchApi.touchSelection){ var af = findInput(activeKey); if(af){ silentFocus = true; af.focus(); silentFocus = false; } }
   }
   function toggleCellFormat(prop){
     var sheet = current(); var keys = selectionOrActiveKeys();
