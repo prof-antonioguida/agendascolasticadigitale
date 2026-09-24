@@ -698,6 +698,32 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 #regFmtClear{--tool-color:#A23A2C;}
 #regUndo{--tool-color:#7A8A99;}
 #regRedo{--tool-color:#7A8A99;}
+#accAddSheet{--tool-color:#3E9C5C;}
+#accDupSheet{--tool-color:#8B5FBF;}
+#accDelSheet{--tool-color:#A23A2C;}
+#accExportPdf{--tool-color:#5A6B7A;}
+#accSharePage{--tool-color:#4C9C6B;}
+#accFmtBold{--tool-color:#4E7FBD;}
+#accFmtItalic{--tool-color:#8B5FBF;}
+#accFmtStrike{--tool-color:#C0524B;}
+#accFmtBgColor{--tool-color:#D19A3D;}
+#accFmtTextColor{--tool-color:#3D7FD1;}
+#accFmtClear{--tool-color:#A23A2C;}
+#accUndo{--tool-color:#7A8A99;}
+#accRedo{--tool-color:#7A8A99;}
+#dlAddSheet{--tool-color:#3E9C5C;}
+#dlDupSheet{--tool-color:#8B5FBF;}
+#dlDelSheet{--tool-color:#A23A2C;}
+#dlExportPdf{--tool-color:#5A6B7A;}
+#dlSharePage{--tool-color:#4C9C6B;}
+#dlFmtBold{--tool-color:#4E7FBD;}
+#dlFmtItalic{--tool-color:#8B5FBF;}
+#dlFmtStrike{--tool-color:#C0524B;}
+#dlFmtBgColor{--tool-color:#D19A3D;}
+#dlFmtTextColor{--tool-color:#3D7FD1;}
+#dlFmtClear{--tool-color:#A23A2C;}
+#dlUndo{--tool-color:#7A8A99;}
+#dlRedo{--tool-color:#7A8A99;}
 #balTrashPage{--tool-color:#A23A2C;}
 #balExportPdf{--tool-color:#5A6B7A;}
 #balSharePage{--tool-color:#4C9C6B;}
@@ -740,26 +766,107 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .reg-table .reg-desc-text{text-align:left;}
 .reg-table td.reg-cell-selected,.reg-table th.reg-cell-selected{outline:2px solid #3D7FD1;outline-offset:-2px;box-shadow:inset 0 0 0 9999px rgba(61,127,209,.22);}
 .reg-tabs{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px 30px;align-items:center;}
-.reg-tab{
+/* Le schede dei "Registri accessori" (.acc-tab) hanno lo stesso aspetto di quelle del Registro
+   personale, ma una classe propria: il codice del Registro personale cerca le sue schede con
+   $$('.reg-tab') in tutta la pagina, e non deve "vedere" (e agganciare) anche quelle degli accessori. */
+.reg-tab,.acc-tab{
   display:flex;align-items:center;gap:2px;padding:8px 6px 8px 12px;border-radius:8px 8px 0 0;border:1px solid var(--paper-line);
   border-bottom:3px solid var(--tab-color,#999);background:var(--surface);cursor:pointer;font-size:.8rem;white-space:nowrap;color:var(--ink);
   min-height:40px;touch-action:none;user-select:none;-webkit-user-select:none;
 }
-.reg-tab.dragging{opacity:.55;box-shadow:0 4px 12px rgba(0,0,0,.3);cursor:grabbing;position:relative;z-index:5;}
-.reg-tab.active{
+.reg-tab.dragging,.acc-tab.dragging{opacity:.55;box-shadow:0 4px 12px rgba(0,0,0,.3);cursor:grabbing;position:relative;z-index:5;}
+.reg-tab.active,.acc-tab.active{
   background:var(--surface-alt);font-weight:700;color:var(--accent);
   border-color:var(--accent);border-bottom-width:4px;
   box-shadow:0 -2px 8px rgba(0,0,0,.15);
 }
-.reg-tab-name{padding:4px 6px 4px 2px;}
-.reg-tab-color{width:14px;height:14px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;cursor:pointer;border:1px solid rgba(0,0,0,.25);padding:0;flex-shrink:0;}
-.reg-tab-rename{
+.reg-tab-name,.acc-tab-name{padding:4px 6px 4px 2px;}
+.reg-tab-color,.acc-tab-color{width:14px;height:14px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;cursor:pointer;border:1px solid rgba(0,0,0,.25);padding:0;flex-shrink:0;}
+.reg-tab-rename,.acc-tab-rename{
   background:none;border:none;border-left:1px solid var(--paper-line);color:var(--ink-soft);cursor:pointer;
   display:flex;align-items:center;justify-content:center;padding:0 4px 0 10px;margin-left:4px;
   width:34px;height:34px;flex-shrink:0;
 }
-.reg-tab-rename:hover{color:var(--accent);}
-.reg-tab-rename svg{width:15px;height:15px;}
+.reg-tab-rename:hover,.acc-tab-rename:hover{color:var(--accent);}
+.reg-tab-rename svg,.acc-tab-rename svg{width:15px;height:15px;}
+
+/* ---------- Registri accessori ---------- */
+.acc-board{
+  display:flex;flex-wrap:wrap;gap:14px;align-items:stretch;justify-content:center;
+  background:#454545;padding:14px;border-radius:6px;margin:0 auto;width:fit-content;box-sizing:border-box;
+}
+.acc-board.for-print{flex-wrap:nowrap;width:max-content;border-radius:0;}
+.acc-table{table-layout:fixed;}
+.acc-table td,.acc-table th{overflow-wrap:anywhere;}
+/* Colonne a griglia: a sinistra due colonne (Assemblee | Permessi) che decidono la larghezza,
+   con Sostituzioni e 40+40 che le attraversano entrambe; a destra una colonna sola, decisa dalla
+   tabella di fine anno. Le tabelle "fill" (width:100%) riempiono esattamente lo spazio così
+   calcolato, quindi i bordi destri combaciano al pixel con qualunque zoom. */
+.acc-col{display:grid;gap:14px;align-items:start;justify-items:start;}
+.acc-col-left{grid-template-columns:auto auto;align-content:start;}
+.acc-col-right{grid-template-columns:auto;grid-template-rows:1fr;}
+/* tabella di fine anno: il contenitore occupa tutto lo spazio rimasto in basso nella colonna di
+   destra (che è alta quanto quella di sinistra), e la tabella lo riempie, così il suo bordo
+   inferiore coincide con quello della tabella 40+40 */
+.acc-col > .acc-fill-h{align-self:stretch;}
+/* il contenitore delle tabelle "fill" non contribuisce alla larghezza della griglia (width:0) ma
+   la riempie tutta (min-width:100%): così la larghezza la decidono solo le altre tabelle */
+.acc-col > .acc-span{grid-column:1 / -1;width:0;min-width:100%;}
+.acc-table{margin:0;}
+.acc-table th{font-weight:700;}
+.acc-table th.acc-title{color:#fff;font-size:.84rem;letter-spacing:.2px;padding:5px 8px;}
+.acc-table th.acc-head{font-size:.8rem;}
+/* Assemblee e Permessi stanno affiancate: i titoli hanno la stessa altezza (due righe) anche
+   quando uno dei due, come nel PDF, entrerebbe in una riga sola, così le tabelle finiscono alla
+   stessa altezza */
+.acc-table[data-table="assem"] th.acc-title,.acc-table[data-table="perm"] th.acc-title{height:42px;box-sizing:border-box;}
+.acc-table td.acc-cell{padding:2px 4px;height:24px;}
+.acc-table input.acc-input{text-align:center;}
+.acc-table td.acc-cell.acc-left input.acc-input{text-align:left;}
+.acc-table .acc-print-text{display:block;min-height:1.1em;}
+.acc-table td.acc-cell.acc-left{text-align:left;}
+.acc-theme-brown th.acc-title{background:#7A4A12;border-color:#5c360b;}
+.acc-theme-brown th.acc-head{background:#FCE4CE;color:#4a2c0a;}
+.acc-theme-brown td.acc-cell{background:#FCE4CE;}
+.acc-theme-green th.acc-title{background:#3C7A22;border-color:#2b5a18;}
+.acc-theme-green th.acc-head{background:#E4F0DC;color:#23461a;}
+.acc-theme-green td.acc-cell{background:#E4F0DC;}
+.acc-theme-blue th.acc-title{background:#0B5394;border-color:#083d6d;}
+.acc-theme-blue th.acc-head{background:#CFE2F3;color:#0b2f52;}
+.acc-theme-blue td.acc-cell{background:#CFE2F3;}
+.acc-table th.acc-actions-hdr,.acc-table td.acc-row-actions{background:#f1f1f1;border-color:#cfcfcf;min-width:0;padding:1px 3px;}
+.acc-row-btns{display:flex;gap:1px;align-items:center;justify-content:center;}
+.acc-row-btns button{background:none;border:none;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;color:#5a6b7a;}
+.acc-row-btns button svg{width:12px;height:12px;}
+.acc-row-btns button:disabled{opacity:.25;cursor:default;}
+.acc-row-btns .acc-row-del{color:#a23a2c;}
+.acc-row-btns .acc-row-add{color:#3E9C5C;}
+.acc-table td.acc-total-cell{background:#F3C9A2;font-weight:700;color:#4a2c0a;padding:2px 8px;height:24px;text-align:right;}
+/* Assemblee: tonalità vinaccia; 40+40: tonalità verde acqua (titolo scuro, celle chiare, riga del
+   totale una via di mezzo), per distinguerle dalle altre tabelle */
+.acc-theme-wine th.acc-title{background:#8A2346;border-color:#661833;}
+.acc-theme-wine th.acc-head{background:#F8DDE6;color:#5a1430;}
+.acc-theme-wine td.acc-cell{background:#F8DDE6;}
+.acc-table.acc-theme-wine td.acc-total-cell{background:#EDB9CA;color:#5a1430;}
+.acc-theme-teal th.acc-title{background:#0E6E6A;border-color:#0a504d;}
+.acc-theme-teal th.acc-head{background:#D6EFED;color:#0a3f3c;}
+.acc-theme-teal td.acc-cell{background:#D6EFED;}
+.acc-table.acc-theme-teal td.acc-total-cell{background:#A9DCD8;color:#0a3f3c;}
+/* Scadenze nei Registri accessori: rosso amaranto (titolo scuro, celle chiare) */
+.acc-theme-amaranth th.acc-title{background:#A3172F;border-color:#7c0f22;}
+.acc-theme-amaranth th.acc-head{background:#FBDCE0;color:#6a0d1d;}
+.acc-theme-amaranth td.acc-cell{background:#FBDCE0;}
+.acc-col-single{grid-template-columns:auto;}
+.acc-table input.acc-date{color-scheme:light;text-align:center;cursor:text;height:19px;padding:0;margin:0;line-height:19px;box-sizing:border-box;}
+.acc-table input.acc-date::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.6;}
+/* righe ancora senza data: non si mostra "gg/mm/aaaa" finché non si entra nella cella */
+.acc-table input.acc-date.acc-date-empty:not(:focus)::-webkit-datetime-edit{color:transparent;}
+/* separatore bianco e netto fra due gruppi di colonne (40 collegi | 40 c.d.c.), per tutta l'altezza */
+.acc-table th.acc-group-start,.acc-table td.acc-group-start{border-left:3px solid #fff;}
+.acc-table td.acc-total-labelcell{white-space:nowrap;padding:2px 6px;}
+.acc-table td.acc-total-num{text-align:center;padding:2px 4px;}
+.acc-table .acc-total-label{font-weight:600;}
+.acc-table td.acc-cell-selected{outline:2px solid #3D7FD1;outline-offset:-2px;box-shadow:inset 0 0 0 9999px rgba(61,127,209,.22);}
 #regPrintArea{position:fixed;left:-99999px;top:0;}
 
 /* ---------- Bilancio ---------- */
@@ -995,6 +1102,16 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
         <h3>Registro personale</h3>
         <p>Voti, medie e schede per classe</p>
       </button>
+      <button type="button" class="menu-tile" id="menuBtnAccessori" data-tile-key="accessory">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="15" height="14" rx="2"></rect><path d="M3 7 V19 A2 2 0 0 0 5 21 H17"></path><line x1="6" y1="7.5" x2="21" y2="7.5"></line><line x1="11" y1="7.5" x2="11" y2="17"></line><line x1="6" y1="12.2" x2="21" y2="12.2"></line></svg>
+        <h3>Registri accessori</h3>
+        <p>Sostituzioni, assemblee, permessi e adempimenti</p>
+      </button>
+      <button type="button" class="menu-tile" id="menuBtnScadenze" data-tile-key="deadlines">
+        <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><circle cx="12" cy="15" r="3.2"></circle><polyline points="12 13.4 12 15 13.2 15.8"></polyline></svg>
+        <h3>Registro scadenze</h3>
+        <p>Scadenze ordinate dalla più vicina</p>
+      </button>
       <button type="button" class="menu-tile" id="menuBtnBalance" data-tile-key="balance">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
         <h3>Bilancio</h3>
@@ -1062,6 +1179,76 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
     <div id="regTableContainer"></div>
   </div>
   <div class="reg-tabs" id="regTabs"></div>
+</div>
+
+<!-- ============ REGISTRI ACCESSORI ============ -->
+<div id="screen-accessori" class="screen paper">
+  <div class="day-topbar">
+    <div class="nav-group">
+      <button type="button" class="icon-btn" id="accBack" data-icon="arrowLeft" title="Indietro"></button>
+      <span class="day-agenda-tag" id="accAgendaName"></span>
+    </div>
+    <button type="button" class="topbar-btn primary" id="accSaveBtn" data-icon="save" data-label="Salva"></button>
+  </div>
+  <div class="reg-toolbar">
+    <button type="button" class="icon-btn tool" id="accAddSheet" data-icon="plus" title="Nuova scheda"></button>
+    <button type="button" class="icon-btn tool" id="accDupSheet" data-icon="duplicate" title="Duplica scheda"></button>
+    <button type="button" class="icon-btn tool" id="accDelSheet" data-icon="trash" title="Elimina scheda"></button>
+    <span class="reg-sep"></span>
+    <button type="button" class="icon-btn tool" id="accExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
+    <button type="button" class="icon-btn tool" id="accSharePage" data-icon="share" title="Condividi"></button>
+    <span class="reg-sep"></span>
+    <button type="button" class="icon-btn tool" id="accFmtBold" data-icon="fmtBold" title="Grassetto"></button>
+    <button type="button" class="icon-btn tool" id="accFmtItalic" data-icon="fmtItalic" title="Corsivo"></button>
+    <button type="button" class="icon-btn tool" id="accFmtStrike" data-icon="fmtStrike" title="Barrato"></button>
+    <button type="button" class="icon-btn tool" id="accFmtBgColor" data-icon="bgColor" title="Colore sfondo cella"></button>
+    <button type="button" class="icon-btn tool" id="accFmtTextColor" data-icon="textColor" title="Colore testo"></button>
+    <input type="color" id="accBgColorInput" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;">
+    <input type="color" id="accTextColorInput" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;">
+    <button type="button" class="icon-btn tool" id="accFmtClear" data-icon="eraser" title="Cancella contenuto celle selezionate"></button>
+    <span class="reg-sep"></span>
+    <button type="button" class="icon-btn tool" id="accUndo" data-icon="undo" title="Annulla ultima modifica"></button>
+    <button type="button" class="icon-btn tool" id="accRedo" data-icon="redo" title="Ripristina ultima modifica"></button>
+  </div>
+  <div class="reg-table-outer">
+    <div id="accTableContainer"></div>
+  </div>
+  <div class="reg-tabs" id="accTabs"></div>
+</div>
+
+<!-- ============ REGISTRO SCADENZE ============ -->
+<div id="screen-scadenze" class="screen paper">
+  <div class="day-topbar">
+    <div class="nav-group">
+      <button type="button" class="icon-btn" id="dlBack" data-icon="arrowLeft" title="Indietro"></button>
+      <span class="day-agenda-tag" id="dlAgendaName"></span>
+    </div>
+    <button type="button" class="topbar-btn primary" id="dlSaveBtn" data-icon="save" data-label="Salva"></button>
+  </div>
+  <div class="reg-toolbar">
+    <button type="button" class="icon-btn tool" id="dlAddSheet" data-icon="plus" title="Nuova scheda"></button>
+    <button type="button" class="icon-btn tool" id="dlDupSheet" data-icon="duplicate" title="Duplica scheda"></button>
+    <button type="button" class="icon-btn tool" id="dlDelSheet" data-icon="trash" title="Elimina scheda"></button>
+    <span class="reg-sep"></span>
+    <button type="button" class="icon-btn tool" id="dlExportPdf" data-icon="pdf" title="Esporta in PDF"></button>
+    <button type="button" class="icon-btn tool" id="dlSharePage" data-icon="share" title="Condividi"></button>
+    <span class="reg-sep"></span>
+    <button type="button" class="icon-btn tool" id="dlFmtBold" data-icon="fmtBold" title="Grassetto"></button>
+    <button type="button" class="icon-btn tool" id="dlFmtItalic" data-icon="fmtItalic" title="Corsivo"></button>
+    <button type="button" class="icon-btn tool" id="dlFmtStrike" data-icon="fmtStrike" title="Barrato"></button>
+    <button type="button" class="icon-btn tool" id="dlFmtBgColor" data-icon="bgColor" title="Colore sfondo cella"></button>
+    <button type="button" class="icon-btn tool" id="dlFmtTextColor" data-icon="textColor" title="Colore testo"></button>
+    <input type="color" id="dlBgColorInput" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;">
+    <input type="color" id="dlTextColorInput" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;">
+    <button type="button" class="icon-btn tool" id="dlFmtClear" data-icon="eraser" title="Cancella contenuto celle selezionate"></button>
+    <span class="reg-sep"></span>
+    <button type="button" class="icon-btn tool" id="dlUndo" data-icon="undo" title="Annulla ultima modifica"></button>
+    <button type="button" class="icon-btn tool" id="dlRedo" data-icon="redo" title="Ripristina ultima modifica"></button>
+  </div>
+  <div class="reg-table-outer">
+    <div id="dlTableContainer"></div>
+  </div>
+  <div class="reg-tabs" id="dlTabs"></div>
 </div>
 
 <!-- ============ BILANCIO - elenco ============ -->
@@ -2057,6 +2244,10 @@ function notebookPagesColl(agendaId, notebookId){ return collection(db, 'users',
 function notebookPageDocRef(agendaId, notebookId, pageId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'notebooks', notebookId, 'pages', pageId); }
 function registerSheetsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'registerSheets'); }
 function registerSheetDocRef(agendaId, sheetId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'registerSheets', sheetId); }
+function accessorySheetsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'accessorySheets'); }
+function accessorySheetDocRef(agendaId, sheetId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'accessorySheets', sheetId); }
+function deadlineSheetsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'deadlineSheets'); }
+function deadlineSheetDocRef(agendaId, sheetId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'deadlineSheets', sheetId); }
 function balanceSheetsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'balanceSheets'); }
 function balanceSheetDocRef(agendaId, sheetId){ return doc(db, 'users', state.uid, 'agendas', agendaId, 'balanceSheets', sheetId); }
 function shoppingListsColl(agendaId){ return collection(db, 'users', state.uid, 'agendas', agendaId, 'shoppingLists'); }
@@ -2629,6 +2820,18 @@ async function deleteAgendaCascade(agendaId){
     regSnap.docs.forEach(function(d){ regBatch.delete(d.ref); });
     await regBatch.commit();
   }
+  var accSnap = await getDocs(accessorySheetsColl(agendaId));
+  if(accSnap.docs.length>0){
+    var accBatch = writeBatch(db);
+    accSnap.docs.forEach(function(d){ accBatch.delete(d.ref); });
+    await accBatch.commit();
+  }
+  var dlSnap = await getDocs(deadlineSheetsColl(agendaId));
+  if(dlSnap.docs.length>0){
+    var dlBatch = writeBatch(db);
+    dlSnap.docs.forEach(function(d){ dlBatch.delete(d.ref); });
+    await dlBatch.commit();
+  }
   var balSnap = await getDocs(balanceSheetsColl(agendaId));
   if(balSnap.docs.length>0){
     var balBatch = writeBatch(db);
@@ -2704,6 +2907,8 @@ async function duplicateAgendaCascade(sourceId, newId, newName){
   await copyFlatColl(contactsColl, contactDocRef);
   await copyFlatColl(scheduleLinksColl, scheduleLinkDocRef);
   await copyFlatColl(registerSheetsColl, registerSheetDocRef);
+  await copyFlatColl(accessorySheetsColl, accessorySheetDocRef);
+  await copyFlatColl(deadlineSheetsColl, deadlineSheetDocRef);
   await copyFlatColl(balanceSheetsColl, balanceSheetDocRef);
   await copyFlatColl(shoppingListsColl, shoppingListDocRef);
   await copyFlatColl(librariesColl, libraryDocRef);
@@ -2795,13 +3000,15 @@ var SECTION_TILES = {
   contacts: 'menuBtnContacts',
   links: 'menuBtnScheduleLink',
   register: 'menuBtnRegistro',
+  accessory: 'menuBtnAccessori',
+  deadlines: 'menuBtnScadenze',
   balance: 'menuBtnBalance',
   shopping: 'menuBtnShopping',
   library: 'menuBtnLibrary',
   lessons: 'menuBtnLessons',
   calculator: 'menuBtnCalculator'
 };
-var DEFAULT_TILE_ORDER = ['cover','calendar','schoolCalendar','notebook','contacts','links','register','balance','shopping','library','lessons','calculator'];
+var DEFAULT_TILE_ORDER = ['cover','calendar','schoolCalendar','notebook','contacts','links','register','accessory','deadlines','balance','shopping','library','lessons','calculator'];
 function applyMenuTileOrder(){
   var order = (state.currentAgenda && Array.isArray(state.currentAgenda.tileOrder)) ? state.currentAgenda.tileOrder : DEFAULT_TILE_ORDER;
   var full = order.slice();
@@ -2924,7 +3131,7 @@ function initMenuTilesDragReorder(){
 initMenuTilesDragReorder();
 var SECTION_LABELS = {
   calendar:'Calendario', schoolCalendar:'Calendario scolastico', notebook:'Blocco note', contacts:'Rubrica',
-  links:'Schede link', register:'Registro personale', balance:'Bilancio', shopping:'Lista della spesa', library:'Libreria',
+  links:'Schede link', register:'Registro personale', accessory:'Registri accessori', deadlines:'Registro scadenze', balance:'Bilancio', shopping:'Lista della spesa', library:'Libreria',
   lessons:'Lezioni private', calculator:'Calcolatrice'
 };
 function openAddSectionsModal(){
@@ -2932,7 +3139,7 @@ function openAddSectionsModal(){
   if(!Array.isArray(enabled)) enabled = Object.keys(SECTION_TILES);
   var options = [
     ['calendar','Calendario'], ['schoolCalendar','Calendario scolastico'], ['notebook','Blocco note'], ['contacts','Rubrica'],
-    ['links','Schede link'], ['register','Registro personale'], ['balance','Bilancio'], ['shopping','Lista della spesa'],
+    ['links','Schede link'], ['register','Registro personale'], ['accessory','Registri accessori'], ['deadlines','Registro scadenze'], ['balance','Bilancio'], ['shopping','Lista della spesa'],
     ['library','Libreria'], ['lessons','Lezioni private'], ['calculator','Calcolatrice']
   ];
   options.sort(function(a,b){ return a[1].localeCompare(b[1], 'it', {sensitivity:'base'}); });
@@ -3023,6 +3230,22 @@ async function deleteSectionData(agendaId, key){
         await regBatch.commit();
       }
       state.registerSheets = [];
+    } else if(key==='accessory'){
+      var accSnap = await getDocs(accessorySheetsColl(agendaId));
+      if(accSnap.docs.length>0){
+        var accBatch = writeBatch(db);
+        accSnap.docs.forEach(function(d){ accBatch.delete(d.ref); });
+        await accBatch.commit();
+      }
+      state.accessorySheets = [];
+    } else if(key==='deadlines'){
+      var dlSnap = await getDocs(deadlineSheetsColl(agendaId));
+      if(dlSnap.docs.length>0){
+        var dlBatch = writeBatch(db);
+        dlSnap.docs.forEach(function(d){ dlBatch.delete(d.ref); });
+        await dlBatch.commit();
+      }
+      state.deadlineSheets = [];
     } else if(key==='balance'){
       var balSnap = await getDocs(balanceSheetsColl(agendaId));
       if(balSnap.docs.length>0){
@@ -5611,6 +5834,919 @@ $('#regSharePage').addEventListener('click', function(){
   var sheet = getCurrentSheet(); if(!sheet) return;
   sharePageAsPDF($('#regTableContainer'), 'Registro - '+(sheet.name||'scheda'), sheet.name||'Registro personale');
 });
+
+/* ================= REGISTRI A TABELLE (motore comune) =================
+   "Registri accessori" e "Registro scadenze" funzionano allo stesso modo: schede con linguette in
+   basso (come nel Registro personale), tabelle con righe da aggiungere/eliminare, selezione di più
+   celle, grassetto/corsivo/barrato/colori, annulla/ripristina, PDF e condivisione. Il motore qui
+   sotto (createTableRegister) contiene tutto questo una volta sola; ogni sezione gli passa solo ciò
+   che la distingue: le sue tabelle, come disporle, dove salvarle e le sue scritte.
+   Ogni riga è salvata come {v:[testi delle celle], s:[stile di ogni cella o null]}:
+   tenendo lo stile DENTRO la riga, grassetto/colori restano sulla riga giusta quando se ne
+   inseriscono o eliminano altre sopra, o quando le righe vengono riordinate.
+   Firestore non ammette array direttamente dentro array, ma un array di oggetti che contengono
+   array è permesso, quindi la struttura si salva così com'è senza conversioni.
+   Opzioni delle tabelle:
+   - "fill": la tabella si allarga fino al bordo esatto di ciò che le sta accanto (vedi .acc-span);
+   - "fillHeight": la tabella si allunga fino al fondo della colonna;
+   - "totalCols": colonne con la riga del totale automatico in fondo; la scritta "Totale ore:"
+     occupa le colonne senza totale subito a sinistra di ciascuna colonna col totale;
+   - "titleCells": più celle di titolo affiancate, ognuna larga "span" colonne;
+   - "groupStarts": colonne da cui inizia un nuovo gruppo: lì la linea verticale è bianca e spessa;
+   - "sortByCol": colonna data (type:'date') secondo cui le righe si riordinano da sole, dalla data
+     più vicina alla più lontana; le righe senza data restano in fondo.
+   Opzioni delle colonne: h (intestazione), w (larghezza), left (testo a sinistra),
+   type:'date' (casella data con calendario; nel PDF appare come gg/mm/aaaa). */
+var ACC_ACTIONS_W = 48;
+function accEmptyRow(nCols){ return {v:new Array(nCols).fill(''), s:new Array(nCols).fill(null)}; }
+function accCurrentSchoolYearLabel(){
+  var d = new Date(), y = d.getFullYear();
+  var start = d.getMonth()>=8 ? y : y-1; /* da settembre inizia il nuovo anno scolastico */
+  return start+'/'+String(start+1).slice(-2);
+}
+/* Somma delle ore di una colonna: accetta anche la virgola come separatore decimale ("1,5") e
+   ignora le celle vuote o non numeriche. */
+function accColumnTotal(rows, c){
+  var sum = 0;
+  (rows||[]).forEach(function(row){
+    var n = parseFloat(String((row && row.v && row.v[c]) || '').replace(',', '.'));
+    if(!isNaN(n)) sum += n;
+  });
+  return Math.round(sum*100)/100;
+}
+function fmtAccTotal(n){ return String(n).replace('.', ','); }
+function fmtAccDateIt(iso){
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||'');
+  return m ? (m[3]+'/'+m[2]+'/'+m[1]) : (iso||'');
+}
+function accFmtStyleAttr(st){
+  if(!st) return '';
+  var parts = [];
+  if(st.bold) parts.push('font-weight:700');
+  if(st.italic) parts.push('font-style:italic');
+  if(st.strike) parts.push('text-decoration:line-through');
+  if(st.color) parts.push('color:'+st.color);
+  return parts.length ? ' style="'+parts.join(';')+'"' : '';
+}
+function parseAccKey(key){
+  var m = /^([a-z]+)-(\d+)-(\d+)$/.exec(key||'');
+  return m ? {t:m[1], r:+m[2], c:+m[3]} : null;
+}
+/* Normalizzazione generica: ogni tabella esiste sempre e ogni riga ha una cella per colonna. */
+function accNormalizeTables(data, tables){
+  if(!data.tables || typeof data.tables!=='object') data.tables = {};
+  tables.forEach(function(t){
+    var rows = Array.isArray(data.tables[t.id]) ? data.tables[t.id] : null;
+    if(!rows || rows.length===0) rows = Array.from({length:t.rows}, function(){ return accEmptyRow(t.cols.length); });
+    data.tables[t.id] = rows.map(function(row){
+      var v = (row && Array.isArray(row.v)) ? row.v.slice(0, t.cols.length) : [];
+      var s = (row && Array.isArray(row.s)) ? row.s.slice(0, t.cols.length) : [];
+      while(v.length<t.cols.length) v.push('');
+      while(s.length<t.cols.length) s.push(null);
+      return {v:v.map(function(x){ return (x===null||x===undefined)?'':String(x); }), s:s.map(function(x){ return (x && typeof x==='object') ? x : null; })};
+    });
+  });
+  return data;
+}
+/* Ordine delle righe per data (aaaa-mm-gg, quindi confrontabile come testo): prima le date più
+   vicine, poi le righe senza data nello stesso ordine di prima. Restituisce null se l'ordine è
+   già giusto. */
+function accSortedRowsByDate(rows, c){
+  var withIdx = rows.map(function(row, i){ return {row:row, i:i}; });
+  withIdx.sort(function(a, b){
+    var da = a.row.v[c]||'', db = b.row.v[c]||'';
+    if(da && db){ if(da<db) return -1; if(da>db) return 1; return a.i-b.i; }
+    if(da) return -1;
+    if(db) return 1;
+    return a.i-b.i;
+  });
+  var changed = withIdx.some(function(x, idx){ return x.i!==idx; });
+  return changed ? withIdx.map(function(x){ return x.row; }) : null;
+}
+function buildAccTableHTML(sheet, def, forPrint){
+  var rows = sheet.tables[def.id] || [];
+  var nCols = def.cols.length;
+  var hasHeadRow = def.cols.some(function(c){ return !!c.h; });
+  function gs(ci){ return (def.groupStarts && def.groupStarts.indexOf(ci)>-1) ? ' acc-group-start' : ''; }
+  /* larghezza fissa: su schermi stretti le colonne non vengono schiacciate (il testo resterebbe
+     tagliato), si scorre invece orizzontalmente come nel Registro personale */
+  var ACTIONS_W = ACC_ACTIONS_W;
+  /* stessa larghezza totale anche nel PDF (dove la colonna dei pulsanti non c'è): lo spazio in più
+     viene distribuito dal browser fra le colonne, così gli allineamenti restano identici */
+  var tableW = def.cols.reduce(function(sum, c){ return sum + c.w; }, 0) + ACTIONS_W;
+  var widthCss = def.fill ? ('width:100%;min-width:'+tableW+'px;') : ('width:'+tableW+'px;');
+  if(def.fillHeight) widthCss += 'height:100%;';
+  var wrapClass = def.fill ? 'acc-span' : (def.fillHeight ? 'acc-fill-h' : '');
+  var html = (wrapClass?'<div class="'+wrapClass+'">':'')+'<table class="reg-table acc-table acc-theme-'+def.theme+'" data-table="'+def.id+'" style="'+widthCss+'">';
+  html += '<colgroup>'+def.cols.map(function(c){ return '<col style="width:'+c.w+'px;">'; }).join('')+(forPrint?'':'<col style="width:'+ACTIONS_W+'px;">')+'</colgroup>';
+  html += '<thead><tr>';
+  if(def.titleCells){
+    var titleCol = 0;
+    def.titleCells.forEach(function(t){
+      html += '<th class="acc-title'+gs(titleCol)+'"'+(t.span>1?' colspan="'+t.span+'"':'')+'>'+escapeHtml(t.t).replace(/\n/g, '<br>')+'</th>';
+      titleCol += (t.span||1);
+    });
+  } else {
+    html += '<th class="acc-title" colspan="'+nCols+'">'+escapeHtml(def.title).replace(/\n/g, '<br>')+'</th>';
+  }
+  if(!forPrint) html += '<th class="acc-actions-hdr"'+(hasHeadRow?' rowspan="2"':'')+'></th>';
+  html += '</tr>';
+  if(hasHeadRow){
+    html += '<tr>'+def.cols.map(function(c, ci){ return '<th class="acc-head'+gs(ci)+'">'+escapeHtml(c.h||'')+'</th>'; }).join('')+'</tr>';
+  }
+  html += '</thead><tbody>';
+  rows.forEach(function(row, r){
+    html += '<tr data-row="'+r+'">';
+    def.cols.forEach(function(col, c){
+      var st = row.s[c];
+      var key = def.id+'-'+r+'-'+c;
+      var bg = (st && st.bg) ? ' style="background-color:'+st.bg+'"' : '';
+      var val = row.v[c]||'';
+      var isDate = col.type==='date';
+      html += '<td class="acc-cell'+(col.left?' acc-left':'')+gs(c)+'"'+bg+'>'+
+        (forPrint
+          ? '<span class="acc-print-text"'+accFmtStyleAttr(st)+'>'+escapeHtml(isDate ? fmtAccDateIt(val) : val)+'</span>'
+          : '<input type="'+(isDate?'date':'text')+'" size="1" class="reg-input acc-input'+(isDate?' acc-date'+(val?'':' acc-date-empty'):'')+'" data-acckey="'+key+'"'+accFmtStyleAttr(st)+' value="'+escapeAttr(val)+'">')+
+      '</td>';
+    });
+    if(!forPrint){
+      html += '<td class="acc-row-actions"><div class="acc-row-btns">'+
+        '<button type="button" tabindex="-1" class="acc-row-del" data-table="'+def.id+'" data-row="'+r+'" title="Elimina questa riga">'+iconSvg('close')+'</button>'+
+        '<button type="button" tabindex="-1" class="acc-row-add" data-table="'+def.id+'" data-row="'+r+'" title="Inserisci riga sotto">'+iconSvg('plus')+'</button>'+
+      '</div></td>';
+    }
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  if(def.totalCols){
+    var totalCell = function(c){ return '<span class="acc-total-value" data-total="'+def.id+'-'+c+'">'+fmtAccTotal(accColumnTotal(rows, c))+'</span>'; };
+    html += '<tfoot><tr class="acc-total-row">';
+    /* le colonne senza totale che precedono una colonna col totale si uniscono in un'unica cella
+       con la scritta "Totale ore:" (es. Sostituzioni: Data..Motivo unite; 40+40: ogni "Data") */
+    var run = 0;
+    for(var tc=0; tc<nCols; tc++){
+      if(def.totalCols.indexOf(tc)>-1){
+        if(run>0) html += '<td class="acc-total-cell acc-total-labelcell'+gs(tc-run)+'"'+(run>1?' colspan="'+run+'"':'')+'>Totale ore:</td>';
+        html += '<td class="acc-total-cell acc-total-num'+gs(tc)+'">'+totalCell(tc)+'</td>';
+        run = 0;
+      } else run++;
+    }
+    for(var tr=0; tr<run; tr++) html += '<td class="acc-total-cell"></td>';
+    html += (forPrint?'':'<td class="acc-row-actions"></td>')+'</tr></tfoot>';
+  }
+  html += '</table>'+(wrapClass?'</div>':'');
+  return html;
+}
+
+/* cfg: p (prefisso degli id HTML, es. 'acc'), screenId, tileId, stateKey (dove stanno le schede in
+   "state"), currentKey, tables, coll(agendaId), docRef(agendaId, id), label (nome della sezione,
+   usato nel PDF), loadError, layoutVersion, normalize(data) (migrazioni specifiche, facoltativo),
+   layout(tableHTML) -> HTML delle colonne dentro .acc-board */
+function createTableRegister(cfg){
+  var P = cfg.p;
+  function byId(suffix){ return document.getElementById(P+suffix); }
+  var container = byId('TableContainer');
+  var tabsWrap = byId('Tabs');
+  var dirty = false, histUndo = [], histRedo = [];
+  var activeKey = null, selectedKeys = [], selectionAnchor = null, dragSelecting = false;
+  var tabJustDragged = false, silentFocus = false;
+
+  function sheets(){ return state[cfg.stateKey] || []; }
+  function tableDef(tid){ return cfg.tables.find(function(t){ return t.id===tid; }); }
+  function current(){ return sheets().find(function(s){ return s.id===state[cfg.currentKey]; }); }
+  function findInput(key){ return container.querySelector('[data-acckey="'+key+'"]'); }
+  function styleOf(sheet, tid, r, c){
+    var row = sheet.tables[tid] && sheet.tables[tid][r];
+    return (row && row.s && row.s[c]) || null;
+  }
+  function forFirestore(sheet){ var payload = JSON.parse(JSON.stringify(sheet)); delete payload.id; return payload; }
+  function sortAllTables(sheet){
+    cfg.tables.forEach(function(def){
+      if(typeof def.sortByCol!=='number' || !sheet.tables[def.id]) return;
+      var sorted = accSortedRowsByDate(sheet.tables[def.id], def.sortByCol);
+      if(sorted) sheet.tables[def.id] = sorted;
+    });
+  }
+  function normalize(data){
+    if(cfg.normalize) cfg.normalize(data);
+    accNormalizeTables(data, cfg.tables);
+    if(cfg.afterNormalize) cfg.afterNormalize(data);
+    data.layoutVersion = cfg.layoutVersion;
+    sortAllTables(data);
+    return data;
+  }
+  function defaultData(name, color){
+    var tables = {};
+    cfg.tables.forEach(function(t){ tables[t.id] = Array.from({length:t.rows}, function(){ return accEmptyRow(t.cols.length); }); });
+    return { name:name, color:color, tables:tables, createdAt:Date.now(), layoutVersion:cfg.layoutVersion };
+  }
+  function markDirty(){ dirty = true; var b=byId('SaveBtn'); if(b) b.classList.add('needs-save'); }
+  function clearDirty(){ dirty = false; var b=byId('SaveBtn'); if(b) b.classList.remove('needs-save'); }
+  function resetHistory(){ histUndo = []; histRedo = []; }
+  function pushHistory(){
+    var sheet = current(); if(!sheet) return;
+    histUndo.push(JSON.parse(JSON.stringify(sheet)));
+    if(histUndo.length>REG_HISTORY_LIMIT) histUndo.shift();
+    histRedo = [];
+  }
+  function undo(){
+    var sheet = current(); if(!sheet) return;
+    if(histUndo.length===0){ showToast('Nessuna modifica da annullare.', 'info'); return; }
+    histRedo.push(JSON.parse(JSON.stringify(sheet)));
+    Object.assign(sheet, histUndo.pop());
+    markDirty(); render(sheet); renderTabs();
+  }
+  function redo(){
+    var sheet = current(); if(!sheet) return;
+    if(histRedo.length===0){ showToast('Nessuna modifica da ripristinare.', 'info'); return; }
+    histUndo.push(JSON.parse(JSON.stringify(sheet)));
+    Object.assign(sheet, histRedo.pop());
+    markDirty(); render(sheet); renderTabs();
+  }
+  byId('Undo').addEventListener('click', undo);
+  byId('Redo').addEventListener('click', redo);
+
+  function resetSelection(){
+    activeKey = null; selectedKeys = []; selectionAnchor = null;
+    clearFmtButtonsState();
+  }
+
+  /* ---- ingresso nella sezione, creazione e salvataggio delle schede ---- */
+  async function enter(){
+    try{
+      var snap = await getDocs(cfg.coll(state.currentAgendaId));
+      state[cfg.stateKey] = snap.docs.map(function(d){ var data=d.data(); data.id=d.id; return normalize(data); });
+      state[cfg.stateKey].sort(function(a,b){
+        var oa = (typeof a.order==='number') ? a.order : 999999;
+        var ob = (typeof b.order==='number') ? b.order : 999999;
+        return oa-ob;
+      });
+    }catch(err){ console.error(err); showToast(cfg.loadError, 'error'); state[cfg.stateKey]=[]; }
+    if(sheets().length===0){
+      await createSheet(accCurrentSchoolYearLabel(), REG_COLORS[0]);
+    } else {
+      state[cfg.currentKey] = sheets()[0].id;
+    }
+    clearDirty(); resetHistory(); resetSelection();
+    byId('AgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
+    renderTabs();
+    render(current());
+    showScreen(cfg.screenId);
+  }
+  async function createSheet(name, color){
+    var newId = uid();
+    var data = defaultData(name, color || REG_COLORS[sheets().length % REG_COLORS.length]);
+    data.order = sheets().length;
+    try{
+      await setDoc(cfg.docRef(state.currentAgendaId, newId), forFirestore(data));
+      var entry = Object.assign({id:newId}, data);
+      state[cfg.stateKey] = sheets();
+      state[cfg.stateKey].push(entry);
+      state[cfg.currentKey] = newId;
+      return entry;
+    }catch(err){ console.error(err); showToast('Errore nella creazione della scheda'+(err.message?(': '+err.message):'')+'.', 'error'); }
+  }
+  async function save(silent){
+    var sheet = current();
+    if(!sheet) return false;
+    try{
+      await setDoc(cfg.docRef(state.currentAgendaId, sheet.id), forFirestore(sheet));
+      clearDirty();
+      if(!silent) showToast('Modifiche salvate.', 'success');
+      return true;
+    }catch(err){ console.error(err); if(!silent) showToast('Errore durante il salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); return false; }
+  }
+  byId('SaveBtn').addEventListener('click', function(){ save(false); });
+  byId('Back').addEventListener('click', async function(){
+    if(dirty){
+      var doSave = confirm('Ci sono modifiche non salvate. Vuoi salvarle prima di uscire?');
+      if(doSave) await save(true);
+    }
+    showMenuScreen();
+  });
+  if(cfg.tileId) document.getElementById(cfg.tileId).addEventListener('click', function(){ enter(); });
+
+  /* ---- linguette delle schede ---- */
+  function renderTabs(){
+    tabsWrap.innerHTML = sheets().map(function(s){
+      return '<div class="acc-tab'+(s.id===state[cfg.currentKey]?' active':'')+'" data-id="'+s.id+'" style="--tab-color:'+s.color+';">'+
+        '<span class="acc-tab-color" style="background:'+s.color+';"></span>'+
+        '<span class="acc-tab-name">'+escapeHtml(s.name)+'</span>'+
+        '<button type="button" class="acc-tab-rename" data-id="'+s.id+'" title="Rinomina scheda e cambia colore">'+iconSvg('pencil')+'</button>'+
+      '</div>';
+    }).join('');
+  }
+  tabsWrap.addEventListener('click', function(e){
+    var renameBtn = e.target.closest('.acc-tab-rename');
+    if(renameBtn){ e.stopPropagation(); renameSheet(renameBtn.dataset.id); return; }
+    var tab = e.target.closest('.acc-tab');
+    if(!tab) return;
+    if(tabJustDragged){ tabJustDragged = false; return; }
+    if(tab.dataset.id!==state[cfg.currentKey]) switchSheet(tab.dataset.id);
+  });
+  (function initTabsDragReorder(){
+    var drag = null;
+    tabsWrap.addEventListener('pointerdown', function(e){
+      if(e.button !== undefined && e.button !== 0) return;
+      var tab = e.target.closest('.acc-tab');
+      if(!tab || e.target.closest('.acc-tab-rename')) return;
+      drag = { tab: tab, startX: e.clientX, startY: e.clientY, dragging: false, pointerId: e.pointerId };
+    });
+    tabsWrap.addEventListener('pointermove', function(e){
+      if(!drag || drag.pointerId !== e.pointerId) return;
+      if(!drag.dragging){
+        if(Math.abs(e.clientX-drag.startX) < 6 && Math.abs(e.clientY-drag.startY) < 6) return;
+        drag.dragging = true;
+        drag.tab.classList.add('dragging');
+        try{ drag.tab.setPointerCapture(e.pointerId); }catch(err){}
+      }
+      e.preventDefault();
+      var tabs = Array.prototype.slice.call(tabsWrap.querySelectorAll('.acc-tab'));
+      var draggedIndex = tabs.indexOf(drag.tab);
+      for(var i=0;i<tabs.length;i++){
+        if(tabs[i]===drag.tab) continue;
+        var r = tabs[i].getBoundingClientRect();
+        var midX = r.left + r.width/2;
+        if(e.clientX < midX && i < draggedIndex){ tabsWrap.insertBefore(drag.tab, tabs[i]); break; }
+        else if(e.clientX > midX && i > draggedIndex){ tabsWrap.insertBefore(drag.tab, tabs[i].nextSibling); break; }
+      }
+    });
+    function finish(e){
+      if(!drag || drag.pointerId !== e.pointerId) return;
+      if(drag.dragging){
+        drag.tab.classList.remove('dragging');
+        tabJustDragged = true;
+        setTimeout(function(){ tabJustDragged = false; }, 0);
+        persistTabsOrder();
+      }
+      drag = null;
+    }
+    tabsWrap.addEventListener('pointerup', finish);
+    tabsWrap.addEventListener('pointercancel', finish);
+  })();
+  function persistTabsOrder(){
+    var ids = Array.prototype.map.call(tabsWrap.querySelectorAll('.acc-tab'), function(t){ return t.dataset.id; });
+    var reordered = ids.map(function(id){ return sheets().find(function(s){ return s.id===id; }); }).filter(Boolean);
+    if(reordered.length !== sheets().length) return;
+    state[cfg.stateKey] = reordered;
+    reordered.forEach(function(s, idx){
+      if(s.order !== idx){
+        s.order = idx;
+        updateDoc(cfg.docRef(state.currentAgendaId, s.id), {order: idx}).catch(function(err){ console.error(err); });
+      }
+    });
+  }
+  async function switchSheet(id){
+    if(dirty) await save(true);
+    state[cfg.currentKey] = id;
+    clearDirty(); resetHistory(); resetSelection();
+    renderTabs();
+    render(current());
+  }
+  function renameSheet(id){
+    var sheet = sheets().find(function(s){ return s.id===id; });
+    if(!sheet) return;
+    openModal(
+      '<h3>Modifica scheda</h3>'+
+      '<label for="'+P+'RenameInput">Nome scheda</label>'+
+      '<input type="text" id="'+P+'RenameInput" value="'+escapeAttr(sheet.name)+'" maxlength="30">'+
+      '<label for="'+P+'ColorInput">Colore scheda</label>'+
+      '<input type="color" id="'+P+'ColorInput" value="'+sheet.color+'" style="width:100%;height:44px;border:none;cursor:pointer;">'+
+      '<div class="modal-actions">'+
+        '<button type="button" class="btn-secondary" id="'+P+'RenameCancel">Annulla</button>'+
+        '<button type="button" class="btn-primary" id="'+P+'RenameConfirm">Salva</button>'+
+      '</div>'
+    );
+    var input = byId('RenameInput');
+    setTimeout(function(){ input.focus(); input.select(); }, 60);
+    byId('RenameCancel').onclick = closeModal;
+    byId('RenameConfirm').onclick = async function(){
+      var nuovoNome = input.value.trim();
+      if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
+      var nuovoColore = byId('ColorInput').value;
+      sheet.name = nuovoNome;
+      sheet.color = nuovoColore;
+      try{
+        await updateDoc(cfg.docRef(state.currentAgendaId, id), {name: nuovoNome, color: nuovoColore});
+        closeModal();
+        renderTabs();
+        showToast('Scheda aggiornata.', 'success');
+      }catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
+    };
+  }
+  byId('AddSheet').addEventListener('click', function(){
+    openModal(
+      '<h3>Nuova scheda</h3>'+
+      '<label for="'+P+'NewSheetName">Nome della scheda</label>'+
+      '<input type="text" id="'+P+'NewSheetName" placeholder="Es. '+escapeAttr(accCurrentSchoolYearLabel())+'" maxlength="30">'+
+      '<div class="modal-actions">'+
+        '<button type="button" class="btn-secondary" id="'+P+'NewSheetCancel">Annulla</button>'+
+        '<button type="button" class="btn-primary" id="'+P+'NewSheetConfirm">Crea</button>'+
+      '</div>'
+    );
+    var input = byId('NewSheetName');
+    setTimeout(function(){ input.focus(); }, 60);
+    byId('NewSheetCancel').onclick = closeModal;
+    byId('NewSheetConfirm').onclick = async function(){
+      var name = input.value.trim();
+      if(!name){ showToast('Inserisci un nome.', 'error'); return; }
+      closeModal();
+      if(dirty) await save(true);
+      var entry = await createSheet(name);
+      if(entry){
+        clearDirty(); resetHistory(); resetSelection();
+        renderTabs();
+        render(entry);
+      }
+    };
+  });
+  byId('DupSheet').addEventListener('click', async function(){
+    var sheet = current(); if(!sheet) return;
+    if(dirty) await save(true);
+    var newId = uid();
+    var copy = JSON.parse(JSON.stringify(sheet));
+    delete copy.id;
+    copy.name = sheet.name + ' (copia)';
+    copy.createdAt = Date.now();
+    copy.order = sheets().length;
+    try{
+      await setDoc(cfg.docRef(state.currentAgendaId, newId), forFirestore(copy));
+      var entry = Object.assign({id:newId}, copy);
+      sheets().push(entry);
+      state[cfg.currentKey] = newId;
+      clearDirty(); resetHistory(); resetSelection();
+      renderTabs();
+      render(entry);
+      showToast('Scheda duplicata.', 'success');
+    }catch(err){ console.error(err); showToast('Errore nella duplicazione'+(err.message?(': '+err.message):'')+'.', 'error'); }
+  });
+  byId('DelSheet').addEventListener('click', async function(){
+    var sheet = current(); if(!sheet) return;
+    if(sheets().length<=1){ showToast('Deve restare almeno una scheda.', 'info'); return; }
+    if(!confirm('Eliminare definitivamente la scheda "'+sheet.name+'"?')) return;
+    try{
+      await deleteDoc(cfg.docRef(state.currentAgendaId, sheet.id));
+      state[cfg.stateKey] = sheets().filter(function(s){ return s.id!==sheet.id; });
+      state[cfg.currentKey] = sheets()[0].id;
+      clearDirty(); resetHistory(); resetSelection();
+      renderTabs();
+      render(current());
+      showToast('Scheda eliminata.', 'info');
+    }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione.', 'error'); }
+  });
+
+  /* ---- disegno ---- */
+  function boardHTML(sheet, forPrint){
+    function t(id){ return buildAccTableHTML(sheet, tableDef(id), forPrint); }
+    var board = '<div class="acc-board'+(forPrint?' for-print':'')+'">'+cfg.layout(t)+'</div>';
+    if(forPrint){
+      return '<div class="reg-print-sheet"><h2 style="font-family:inherit;margin:0 0 8px;">'+escapeHtml(cfg.label)+' - '+escapeHtml(sheet.name||'')+'</h2>'+board+'</div>';
+    }
+    return board;
+  }
+  function render(sheet){
+    if(!sheet) return;
+    container.innerHTML = boardHTML(sheet, false);
+    applySelectionHighlight();
+  }
+  function updateTotals(sheet, tid){
+    var def = tableDef(tid);
+    if(!def || !def.totalCols) return;
+    def.totalCols.forEach(function(c){
+      var cell = container.querySelector('[data-total="'+tid+'-'+c+'"]');
+      if(cell) cell.textContent = fmtAccTotal(accColumnTotal(sheet.tables[tid], c));
+    });
+  }
+
+  /* ---- riordino automatico per data ----
+     Si riordina quando si ESCE da una casella data (non mentre la si sta scrivendo, altrimenti la
+     riga "scapperebbe" a metà digitazione). Dopo il riordino il cursore torna nella casella in cui
+     si stava andando, anche se nel frattempo la sua riga si è spostata. */
+  function sortTableNow(tid){
+    var sheet = current(); var def = tableDef(tid);
+    if(!sheet || !def || typeof def.sortByCol!=='number') return;
+    var sorted = accSortedRowsByDate(sheet.tables[tid], def.sortByCol);
+    if(!sorted) return;
+    var focusRow = null, focusTable = null, focusCol = null, selS = null, selE = null;
+    var active = document.activeElement;
+    if(active && container.contains(active) && active.dataset && active.dataset.acckey){
+      var q = parseAccKey(active.dataset.acckey);
+      if(q && sheet.tables[q.t]){ focusTable = q.t; focusRow = sheet.tables[q.t][q.r]; focusCol = q.c; }
+      if(active.type==='text'){ selS = active.selectionStart; selE = active.selectionEnd; }
+    }
+    sheet.tables[tid] = sorted;
+    markDirty();
+    resetSelection();
+    render(sheet);
+    if(focusRow){
+      var newR = sheet.tables[focusTable].indexOf(focusRow);
+      var target = newR>-1 ? findInput(focusTable+'-'+newR+'-'+focusCol) : null;
+      if(target){
+        silentFocus = true; target.focus(); silentFocus = false;
+        /* il cursore resta dove era (es. se si stava già scrivendo nella cella di destinazione) */
+        if(selS!==null && target.type==='text'){ try{ target.setSelectionRange(selS, selE); }catch(err){} }
+      }
+    }
+  }
+  container.addEventListener('focusout', function(e){
+    var inp = e.target && e.target.closest ? e.target.closest('[data-acckey]') : null;
+    if(!inp) return;
+    var p = parseAccKey(inp.dataset.acckey); if(!p) return;
+    var def = tableDef(p.t);
+    if(!def || def.sortByCol!==p.c) return;
+    setTimeout(function(){ sortTableNow(p.t); }, 0);
+  });
+
+  /* ---- modifica delle celle e delle righe ---- */
+  container.addEventListener('focusin', function(e){
+    var inp = e.target.closest('[data-acckey]');
+    if(!inp) return;
+    if(!silentFocus) pushHistory();
+    activeKey = inp.dataset.acckey;
+    if(!dragSelecting){
+      selectedKeys = [activeKey];
+      selectionAnchor = activeKey;
+      applySelectionHighlight();
+    }
+    updateFmtButtonsState();
+  });
+  container.addEventListener('input', function(e){
+    var inp = e.target.closest('[data-acckey]');
+    if(!inp) return;
+    var sheet = current(); var p = parseAccKey(inp.dataset.acckey);
+    if(!sheet || !p || !sheet.tables[p.t] || !sheet.tables[p.t][p.r]) return;
+    sheet.tables[p.t][p.r].v[p.c] = inp.value;
+    if(inp.type==='date') inp.classList.toggle('acc-date-empty', !inp.value);
+    updateTotals(sheet, p.t);
+    markDirty();
+  });
+  /* Spostamento fra le celle con le frecce della tastiera.
+     - Su/giù: cella sopra/sotto nella stessa colonna.
+     - Sinistra/destra: dentro un testo le frecce spostano normalmente il cursore; si passa alla
+       cella accanto solo quando il cursore è già all'inizio (sinistra) o alla fine (destra) del
+       testo, oppure quando tutto il testo è selezionato (come succede appena si arriva in una
+       cella con le frecce). Nelle caselle data si passa subito alla cella accanto (mentre si
+       scrive una data il cursore avanza da solo da giorno a mese ad anno). Arrivati al bordo di
+       una tabella si passa alla tabella accanto, sulla stessa riga.
+     - Con Maiusc premuto le frecce restano alla selezione del testo. */
+  function findInputBeside(inp, dir){
+    var r0 = inp.getBoundingClientRect();
+    var best = null, bestDist = Infinity;
+    Array.prototype.forEach.call(container.querySelectorAll('[data-acckey]'), function(cand){
+      if(cand===inp) return;
+      var rc = cand.getBoundingClientRect();
+      var cy = rc.top + rc.height/2;
+      if(cy < r0.top || cy > r0.bottom) return;
+      var dist = dir>0 ? (rc.left - r0.right) : (r0.left - rc.right);
+      if(dist < -1) return;
+      if(dist < bestDist){ bestDist = dist; best = cand; }
+    });
+    return best;
+  }
+  container.addEventListener('keydown', function(e){
+    var key = e.key;
+    if(key!=='ArrowUp' && key!=='ArrowDown' && key!=='ArrowLeft' && key!=='ArrowRight') return;
+    if(e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return;
+    var inp = e.target.closest('[data-acckey]');
+    if(!inp) return;
+    var p = parseAccKey(inp.dataset.acckey); if(!p) return;
+    var target = null;
+    if(key==='ArrowUp' || key==='ArrowDown'){
+      target = findInput(p.t+'-'+(key==='ArrowUp'?p.r-1:p.r+1)+'-'+p.c);
+    } else {
+      if(inp.type!=='date'){
+        var len = inp.value.length, s = inp.selectionStart, en = inp.selectionEnd;
+        var allSelected = (s===0 && en===len);
+        var atEdge = (key==='ArrowLeft') ? ((s===0 && en===0) || allSelected) : ((s===len && en===len) || allSelected);
+        if(!atEdge) return;
+      }
+      var dir = key==='ArrowLeft' ? -1 : 1;
+      target = findInput(p.t+'-'+p.r+'-'+(p.c+dir)) || findInputBeside(inp, dir);
+    }
+    if(target){ e.preventDefault(); target.focus(); try{ target.select(); }catch(err){} }
+    else if(inp.type==='date') e.preventDefault(); /* nessuna cella accanto: la data non cambia */
+  });
+  container.addEventListener('click', function(e){
+    var btn = e.target.closest('.acc-row-btns button');
+    if(!btn || btn.disabled) return;
+    var sheet = current(); if(!sheet) return;
+    var tid = btn.dataset.table, r = +btn.dataset.row;
+    if(btn.classList.contains('acc-row-del')) deleteRow(sheet, tid, r);
+    else if(btn.classList.contains('acc-row-add')) insertRow(sheet, tid, r+1);
+  });
+  function insertRow(sheet, tid, atIndex){
+    var def = tableDef(tid); if(!def) return;
+    pushHistory();
+    sheet.tables[tid].splice(atIndex, 0, accEmptyRow(def.cols.length));
+    resetSelection(); markDirty(); render(sheet);
+  }
+  function deleteRow(sheet, tid, r){
+    if(sheet.tables[tid].length<=1){ showToast('Deve restare almeno una riga.', 'info'); return; }
+    pushHistory();
+    sheet.tables[tid].splice(r, 1);
+    resetSelection(); markDirty(); render(sheet);
+  }
+
+  /* ---- selezione di più celle (trascinando o con Maiusc+clic), come nel Registro personale ---- */
+  function applySelectionHighlight(){
+    Array.prototype.forEach.call(container.querySelectorAll('.acc-cell-selected'), function(el){ el.classList.remove('acc-cell-selected'); });
+    selectedKeys.forEach(function(key){
+      var el = findInput(key);
+      if(el){ var cell = el.closest('td'); if(cell) cell.classList.add('acc-cell-selected'); }
+    });
+  }
+  function startSelection(key){ selectedKeys = [key]; selectionAnchor = key; applySelectionHighlight(); }
+  function extendSelectionTo(key){
+    var a = parseAccKey(selectionAnchor), b = parseAccKey(key);
+    if(!a || !b || a.t!==b.t){ startSelection(key); return; }
+    var keys = [];
+    for(var r=Math.min(a.r,b.r); r<=Math.max(a.r,b.r); r++)
+      for(var c=Math.min(a.c,b.c); c<=Math.max(a.c,b.c); c++) keys.push(a.t+'-'+r+'-'+c);
+    selectedKeys = keys;
+    applySelectionHighlight();
+  }
+  function selectionOrActiveKeys(){
+    if(selectedKeys && selectedKeys.length>1) return selectedKeys.slice();
+    return activeKey ? [activeKey] : [];
+  }
+  container.addEventListener('mousedown', function(e){
+    var target = e.target.closest('[data-acckey]');
+    if(!target) return;
+    if(e.shiftKey && selectionAnchor) extendSelectionTo(target.dataset.acckey);
+    else startSelection(target.dataset.acckey);
+    dragSelecting = true;
+  });
+  container.addEventListener('mouseover', function(e){
+    if(!dragSelecting) return;
+    if(typeof e.buttons==='number' && e.buttons===0){ dragSelecting = false; return; }
+    var target = e.target.closest('[data-acckey]');
+    if(!target) return;
+    extendSelectionTo(target.dataset.acckey);
+    if(window.getSelection) window.getSelection().removeAllRanges();
+  });
+  window.addEventListener('mouseup', function(){ dragSelecting = false; });
+  container.addEventListener('touchstart', function(e){
+    var touch = e.touches[0]; if(!touch) return;
+    var el = document.elementFromPoint(touch.clientX, touch.clientY);
+    var target = el && el.closest('[data-acckey]');
+    if(!target) return;
+    startSelection(target.dataset.acckey);
+    dragSelecting = true;
+  }, {passive:true});
+  container.addEventListener('touchmove', function(e){
+    if(!dragSelecting) return;
+    var touch = e.touches[0]; if(!touch) return;
+    var el = document.elementFromPoint(touch.clientX, touch.clientY);
+    var target = el && el.closest('[data-acckey]');
+    if(target) extendSelectionTo(target.dataset.acckey);
+  }, {passive:true});
+  container.addEventListener('touchend', function(){ dragSelecting = false; });
+  document.addEventListener('keydown', function(e){
+    if(e.key!=='Escape') return;
+    var scr = document.getElementById(cfg.screenId);
+    if(scr && scr.classList.contains('active') && selectedKeys.length>1){
+      selectedKeys = activeKey ? [activeKey] : [];
+      applySelectionHighlight();
+    }
+  });
+
+  /* ---- formattazione (grassetto, corsivo, barrato, colori) e cancellazione ---- */
+  function clearFmtButtonsState(){
+    ['FmtBold','FmtItalic','FmtStrike'].forEach(function(s){ var b=byId(s); if(b) b.classList.remove('active'); });
+  }
+  function allHaveStyle(sheet, keys, prop){
+    return !!sheet && keys.length>0 && keys.every(function(k){ var p=parseAccKey(k); var st=p && styleOf(sheet, p.t, p.r, p.c); return !!(st && st[prop]); });
+  }
+  function updateFmtButtonsState(){
+    var sheet = current(); var keys = selectionOrActiveKeys();
+    byId('FmtBold').classList.toggle('active', allHaveStyle(sheet, keys, 'bold'));
+    byId('FmtItalic').classList.toggle('active', allHaveStyle(sheet, keys, 'italic'));
+    byId('FmtStrike').classList.toggle('active', allHaveStyle(sheet, keys, 'strike'));
+  }
+  function setCellStyleProp(sheet, key, prop, value){
+    var p = parseAccKey(key);
+    if(!p || !sheet.tables[p.t] || !sheet.tables[p.t][p.r]) return null;
+    var row = sheet.tables[p.t][p.r];
+    var st = row.s[p.c] || {};
+    st[prop] = value;
+    row.s[p.c] = st;
+    return st;
+  }
+  function refocusActive(keys){
+    if(keys.length===1 && activeKey){ var af = findInput(activeKey); if(af){ silentFocus = true; af.focus(); silentFocus = false; } }
+  }
+  function toggleCellFormat(prop){
+    var sheet = current(); var keys = selectionOrActiveKeys();
+    if(!sheet || keys.length===0){ showToast('Seleziona prima una cella.', 'info'); return; }
+    pushHistory();
+    var allOn = allHaveStyle(sheet, keys, prop);
+    keys.forEach(function(k){
+      var st = setCellStyleProp(sheet, k, prop, !allOn);
+      var input = findInput(k);
+      if(st && input){
+        input.style.fontWeight = st.bold ? '700' : '';
+        input.style.fontStyle = st.italic ? 'italic' : '';
+        input.style.textDecoration = st.strike ? 'line-through' : '';
+      }
+    });
+    markDirty();
+    refocusActive(keys);
+    updateFmtButtonsState();
+  }
+  byId('FmtBold').addEventListener('click', function(){ toggleCellFormat('bold'); });
+  byId('FmtItalic').addEventListener('click', function(){ toggleCellFormat('italic'); });
+  byId('FmtStrike').addEventListener('click', function(){ toggleCellFormat('strike'); });
+  function applyCellColor(prop, value){
+    var sheet = current(); var keys = selectionOrActiveKeys();
+    if(!sheet || keys.length===0) return;
+    pushHistory();
+    keys.forEach(function(k){
+      setCellStyleProp(sheet, k, prop, value);
+      var input = findInput(k);
+      if(!input) return;
+      if(prop==='color') input.style.color = value;
+      else { var cell = input.closest('td'); if(cell) cell.style.backgroundColor = value; }
+    });
+    markDirty();
+    refocusActive(keys);
+  }
+  function openColorPicker(prop, pickerSuffix, fallback){
+    var sheet = current(); var keys = selectionOrActiveKeys();
+    if(!sheet || keys.length===0){ showToast('Seleziona prima una cella.', 'info'); return; }
+    var p = parseAccKey(keys[0]); var st = p && styleOf(sheet, p.t, p.r, p.c);
+    byId(pickerSuffix).value = (st && st[prop]) || fallback;
+    byId(pickerSuffix).click();
+  }
+  byId('FmtBgColor').addEventListener('click', function(){ openColorPicker('bg', 'BgColorInput', '#ffffff'); });
+  byId('BgColorInput').addEventListener('input', function(e){ applyCellColor('bg', e.target.value); });
+  byId('FmtTextColor').addEventListener('click', function(){ openColorPicker('color', 'TextColorInput', '#222222'); });
+  byId('TextColorInput').addEventListener('input', function(e){ applyCellColor('color', e.target.value); });
+  byId('FmtClear').addEventListener('click', function(){
+    var sheet = current(); var keys = selectionOrActiveKeys();
+    if(!sheet || keys.length===0){ showToast('Seleziona prima una cella.', 'info'); return; }
+    pushHistory();
+    var touchedSort = false;
+    keys.forEach(function(k){
+      var p = parseAccKey(k);
+      if(p && sheet.tables[p.t] && sheet.tables[p.t][p.r]){
+        sheet.tables[p.t][p.r].v[p.c] = '';
+        var def = tableDef(p.t);
+        if(def && def.sortByCol===p.c) touchedSort = true;
+      }
+      var input = findInput(k);
+      if(input){ input.value = ''; if(input.type==='date') input.classList.add('acc-date-empty'); }
+    });
+    cfg.tables.forEach(function(t){ updateTotals(sheet, t.id); });
+    markDirty();
+    if(touchedSort){ sortAllTables(sheet); resetSelection(); render(sheet); }
+    showToast('Contenuto cancellato.', 'info');
+  });
+
+  /* ---- PDF e condivisione (sempre con i colori della modalità chiara, come il Registro personale) ---- */
+  function exportPDF(list){
+    downloadItemsAsPDF(function(s){ return boardHTML(s, true); }, list,
+      (list.length===1 ? (cfg.label+' - '+(list[0].name||'scheda')) : (cfg.label+' - tutte le schede')));
+  }
+  byId('ExportPdf').addEventListener('click', function(){
+    openModal(
+      '<h3>Esporta in PDF</h3>'+
+      '<div class="modal-choices">'+
+        '<button type="button" class="choice-btn" id="'+P+'ExpCurrent">'+iconSvg('pdf')+'<span>Solo questa scheda</span></button>'+
+        '<button type="button" class="choice-btn" id="'+P+'ExpAll">'+iconSvg('pdf')+'<span>Tutte le schede</span></button>'+
+      '</div>'+
+      '<button type="button" class="btn-secondary" id="'+P+'ExpCancel">Annulla</button>'
+    );
+    byId('ExpCancel').onclick = closeModal;
+    byId('ExpCurrent').onclick = function(){ closeModal(); exportPDF([current()]); };
+    byId('ExpAll').onclick = function(){ closeModal(); exportPDF(sheets()); };
+  });
+  byId('SharePage').addEventListener('click', async function(){
+    var sheet = current(); if(!sheet) return;
+    /* si condivide la versione "pulita" (senza caselle di testo né pulsanti delle righe),
+       disegnata per un attimo nell'area di stampa nascosta */
+    var area = $('#regPrintArea');
+    area.innerHTML = boardHTML(sheet, true);
+    try{
+      await sharePageAsPDF(area, cfg.label+' - '+(sheet.name||'scheda'), sheet.name||cfg.label);
+    } finally {
+      area.innerHTML = '';
+    }
+  });
+
+  return { enter: enter, current: current, boardHTML: boardHTML, normalize: normalize, tableDef: tableDef };
+}
+
+/* ================= REGISTRI ACCESSORI =================
+   Una scheda contiene cinque tabelle: Registro sostituzioni, Assemblee, Permessi, 40+40 ore
+   (colonna di sinistra) e Scadenze (colonna di destra).
+   Larghezze (colonna dei pulsanti riga = ACC_ACTIONS_W = 48px, spazio fra Assemblee e Permessi = 14px):
+   - Assemblee (84+58+48=190) + 14 + Permessi (84+280+48=412) = 616 decide la larghezza della
+     colonna di sinistra; Registro sostituzioni e 40+40 ("fill") si allargano fino a quel bordo;
+   - la tabella Scadenze (330+150+48=528) forma la colonna di destra e ("fillHeight") si allunga
+     fino al fondo della tabella 40+40; funziona come quella della sezione "Registro scadenze":
+     le righe si riordinano da sole dalla scadenza più vicina alla più lontana.
+   (Fino alla versione 5 la colonna di destra conteneva gli Adempimenti di fine quadrimestre e di
+   fine anno, poi eliminati: le vecchie schede conservano quei dati nel salvataggio, ma non vengono
+   più mostrati.) */
+var ACC_TABLES = [
+  {id:'sost', theme:'brown', title:'REGISTRO SOSTITUZIONI', rows:8, fill:true, totalCols:[5],
+    cols:[{h:'Data',w:84},{h:'Ora',w:52},{h:'Classe',w:60},{h:'Prof. Sostituito',w:150,left:true},{h:'Motivo',w:150,left:true},{h:'N. ore',w:58}]},
+  {id:'assem', theme:'wine', title:'ASSEMBLEE S.\n(max 10 h)', rows:6, totalCols:[1],
+    cols:[{h:'Data',w:84},{h:'N. ore',w:58}]},
+  {id:'perm', theme:'green', title:'PERMESSI ATTIVITÀ ARTISTICHE/FORMAZIONE\n(max 5 gg) Art. 64, comma 5 CCNL', rows:7,
+    cols:[{h:'Data',w:84},{h:'Motivo',w:280,left:true}]},
+  {id:'funz', theme:'teal', titleCells:[{t:'40 ore (collegi)',span:2},{t:'40 ore (c.d.c.) - no scrutini',span:2}], rows:5, totalCols:[1,3], groupStarts:[2], fill:true,
+    cols:[{h:'Data',w:150},{h:'N. ore',w:130},{h:'Data',w:150},{h:'N. ore',w:130}]},
+  {id:'scad', theme:'amaranth', title:'SCADENZE', rows:27, fillHeight:true, sortByCol:1,
+    cols:[{h:'Descrizione',w:330,left:true},{h:'Data di scadenza',w:150,type:'date'}]}
+];
+function accTableDef(tid){ return ACC_TABLES.find(function(t){ return t.id===tid; }); }
+/* Migrazioni delle schede salvate con versioni precedenti della sezione. Quelle che cambiano il
+   numero di colonne vanno fatte PRIMA della normalizzazione generica (che altrimenti
+   sistemerebbe le vecchie celle nelle colonne sbagliate); quelle che aggiungono righe DOPO. */
+function accMigrateBeforeNormalize(data){
+  if(!data.tables || typeof data.tables!=='object') return;
+  /* Versione 5: nel Registro sostituzioni la colonna "Prof. Sostituito / Motivo" è divisa in due.
+     Il testo già scritto resta nella colonna "Prof. Sostituito" e si aggiunge "Motivo" vuota
+     subito dopo (non si può sapere dove dividere un testo libero). */
+  if((data.layoutVersion||0)<5 && Array.isArray(data.tables.sost)){
+    data.tables.sost = data.tables.sost.map(function(row){
+      var v = (row && Array.isArray(row.v)) ? row.v.slice() : [];
+      var s = (row && Array.isArray(row.s)) ? row.s.slice() : [];
+      if(v.length!==5) return row;
+      while(s.length<5) s.push(null);
+      v.splice(4, 0, ''); s.splice(4, 0, null);
+      return {v:v, s:s};
+    });
+  }
+  /* Versione 4: la tabella 40+40 passa da 2 colonne (ore collegi | ore c.d.c.) a 4
+     (Data | N. ore | Data | N. ore): le ore già scritte vanno nelle nuove colonne "N. ore". */
+  if((data.layoutVersion||0)<4 && Array.isArray(data.tables.funz)){
+    data.tables.funz = data.tables.funz.map(function(row){
+      var v = (row && Array.isArray(row.v)) ? row.v : [];
+      var s = (row && Array.isArray(row.s)) ? row.s : [];
+      if(v.length!==2) return row;
+      return {v:['', v[0]||'', '', v[1]||''], s:[null, s[0]||null, null, s[1]||null]};
+    });
+  }
+}
+function accMigrateAfterNormalize(data){
+  /* Versione 2: Permessi da 5 a 6 righe, per restare alta come Assemblee. */
+  if(!data.layoutVersion || data.layoutVersion<2){
+    if(data.tables.perm.length===5 && data.tables.assem.length===6) data.tables.perm.push(accEmptyRow(accTableDef('perm').cols.length));
+    data.layoutVersion = 2;
+  }
+  /* Versione 3: Assemblee ha la riga del totale, quindi Permessi riceve una riga in più; la
+     tabella di fine anno passa da 11 a 13 righe. Solo se le tabelle hanno ancora il numero di
+     righe della versione precedente (i dati già scritti non vengono toccati). */
+  if(data.layoutVersion<3){
+    if(data.tables.perm.length===data.tables.assem.length) data.tables.perm.push(accEmptyRow(accTableDef('perm').cols.length));
+    data.layoutVersion = 3;
+  }
+}
+var accRegister = createTableRegister({
+  p:'acc', screenId:'screen-accessori', tileId:'menuBtnAccessori',
+  stateKey:'accessorySheets', currentKey:'currentAccSheetId',
+  tables: ACC_TABLES,
+  coll: accessorySheetsColl, docRef: accessorySheetDocRef,
+  label:'Registri accessori', loadError:'Errore nel caricamento dei registri accessori.',
+  layoutVersion:6,
+  normalize: accMigrateBeforeNormalize,
+  afterNormalize: accMigrateAfterNormalize,
+  layout: function(t){
+    return '<div class="acc-col acc-col-left">'+t('sost')+t('assem')+t('perm')+t('funz')+'</div>'+
+           '<div class="acc-col acc-col-right">'+t('scad')+'</div>';
+  }
+});
+state.accessorySheets = [];
+state.currentAccSheetId = null;
+function enterAccessorySection(){ return accRegister.enter(); }
+function getCurrentAccSheet(){ return accRegister.current(); }
+function buildAccBoardHTML(sheet, forPrint){ return accRegister.boardHTML(sheet, forPrint); }
+function normalizeAccessorySheet(data){ return accRegister.normalize(data); }
+
+/* ================= REGISTRO SCADENZE =================
+   Una tabella "REGISTRO SCADENZE" con Descrizione e Data di scadenza. Le righe si riordinano da
+   sole in base alla data: in alto la scadenza più vicina, via via le più lontane; le righe ancora
+   senza data restano in fondo. */
+var DL_TABLES = [
+  {id:'scad', theme:'green', title:'REGISTRO SCADENZE', rows:15, sortByCol:1,
+    cols:[{h:'Descrizione',w:460,left:true},{h:'Data di scadenza',w:150,type:'date'}]}
+];
+var deadlineRegister = createTableRegister({
+  p:'dl', screenId:'screen-scadenze', tileId:'menuBtnScadenze',
+  stateKey:'deadlineSheets', currentKey:'currentDlSheetId',
+  tables: DL_TABLES,
+  coll: deadlineSheetsColl, docRef: deadlineSheetDocRef,
+  label:'Registro scadenze', loadError:'Errore nel caricamento del registro scadenze.',
+  layoutVersion:1,
+  layout: function(t){ return '<div class="acc-col acc-col-single">'+t('scad')+'</div>'; }
+});
+state.deadlineSheets = [];
+state.currentDlSheetId = null;
+function enterDeadlineSection(){ return deadlineRegister.enter(); }
+function getCurrentDlSheet(){ return deadlineRegister.current(); }
+function buildDlBoardHTML(sheet, forPrint){ return deadlineRegister.boardHTML(sheet, forPrint); }
 
 /* ================= BILANCIO ================= */
 state.balanceSheets = [];
