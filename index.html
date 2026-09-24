@@ -809,6 +809,16 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
    destra (che è alta quanto quella di sinistra), e la tabella lo riempie, così il suo bordo
    inferiore coincide con quello della tabella 40+40 */
 .acc-col > .acc-fill-h{align-self:stretch;}
+/* Schermi stretti (telefono, tablet): le due colonne dei Registri accessori non stanno più
+   affiancate e vanno una sotto l'altra. In quel caso la tabella SCADENZE si allarga esattamente
+   quanto la colonna di sinistra (Sostituzioni, 40+40, ...), così i bordi destro e sinistro
+   coincidono. Il contenitore non conta nella larghezza (width:0) ma la riempie (min-width:100%),
+   come per le altre tabelle "fill". Il PDF (.for-print) resta sempre con le colonne affiancate. */
+@media (max-width:1260px){
+  .acc-board:not(.for-print){display:grid;grid-template-columns:auto;justify-content:center;}
+  .acc-board:not(.for-print) > .acc-col-right > .acc-fill-h{width:0;min-width:100%;align-self:start;}
+  .acc-board:not(.for-print) > .acc-col-right > .acc-fill-h > table{width:100% !important;height:auto !important;}
+}
 /* il contenitore delle tabelle "fill" non contribuisce alla larghezza della griglia (width:0) ma
    la riempie tutta (min-width:100%): così la larghezza la decidono solo le altre tabelle */
 .acc-col > .acc-span{grid-column:1 / -1;width:0;min-width:100%;}
@@ -1100,7 +1110,7 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
       </button>
       <button type="button" class="menu-tile" id="menuBtnRegistro" data-tile-key="register">
         <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="9" x2="9" y2="20"></line><line x1="15" y1="9" x2="15" y2="20"></line></svg>
-        <h3>Registro personale</h3>
+        <h3>Registro scolastico personale</h3>
         <p>Voti, medie e schede per classe</p>
       </button>
       <button type="button" class="menu-tile" id="menuBtnAccessori" data-tile-key="accessory">
@@ -2130,6 +2140,40 @@ try{
   db = getFirestore(app);
 }
 
+/* Scritture che non bloccano l'app quando si è offline.
+   Con la cache locale attiva, Firestore registra SUBITO ogni modifica sul dispositivo e la invia
+   al server appena c'è rete; però la "promessa" di setDoc/updateDoc/deleteDoc/commit si compie
+   solo quando il SERVER conferma. Offline quella conferma non arriva mai, e tutto il codice che
+   la aspettava (chiudere la finestra di rinomina, mostrare la nuova scheda, togliere il segno
+   "da salvare", ecc.) restava fermo: sembrava che l'app non permettesse di creare o rinominare.
+   Qui si aspetta la conferma solo se si è online, e comunque al massimo WRITE_ACK_WAIT_MS;
+   offline si prosegue subito (la modifica è già salvata sul dispositivo e partirà da sola).
+   Se il server rifiuta una modifica dopo che l'app è già andata avanti, compare un avviso. */
+var WRITE_ACK_WAIT_MS = 4000;
+function nonBlockingWrite(promise){
+  return new Promise(function(resolve, reject){
+    var done = false;
+    var wait = (navigator.onLine===false) ? 0 : WRITE_ACK_WAIT_MS;
+    var timer = setTimeout(function(){ if(!done){ done = true; resolve(); } }, wait);
+    promise.then(function(v){
+      if(!done){ done = true; clearTimeout(timer); resolve(v); }
+    }, function(err){
+      if(!done){ done = true; clearTimeout(timer); reject(err); return; }
+      console.error(err);
+      showToast('Attenzione: una modifica non è stata accettata dal server'+(err && err.message ? (': '+err.message) : '')+'.', 'error');
+    });
+  });
+}
+function setDocSafe(){ return nonBlockingWrite(setDoc.apply(null, arguments)); }
+function updateDocSafe(){ return nonBlockingWrite(updateDoc.apply(null, arguments)); }
+function deleteDocSafe(){ return nonBlockingWrite(deleteDoc.apply(null, arguments)); }
+function writeBatchSafe(){
+  var batch = writeBatch.apply(null, arguments);
+  var realCommit = batch.commit.bind(batch);
+  batch.commit = function(){ return nonBlockingWrite(realCommit()); };
+  return batch;
+}
+
 /* Registra il service worker (file sw.js caricato nella stessa cartella di
    questo file su GitHub) così l'app si può aprire anche senza connessione.
    Se sw.js non è presente (es. il file non è stato ancora caricato), la
@@ -2758,7 +2802,7 @@ $('#btnNewAgenda').addEventListener('click', function(){
     var id = uid();
     var agendaData = {nome:nome, createdAt:Date.now(), cover:{}, schoolYear:null, enabledSections:[]};
     try{
-      await setDoc(agendaRef(id), agendaData);
+      await setDocSafe(agendaRef(id), agendaData);
       var listEntry = Object.assign({id:id}, agendaData);
       state.agende.push(listEntry);
       closeModal();
@@ -2784,7 +2828,7 @@ async function deleteAgendaCascade(agendaId){
   for(var i=0;i<daysSnap.docs.length;i++){
     var dayDoc = daysSnap.docs[i];
     var elSnap = await getDocs(collection(db,'users',state.uid,'agendas',agendaId,'days',dayDoc.id,'elements'));
-    var batch = writeBatch(db);
+    var batch = writeBatchSafe(db);
     elSnap.docs.forEach(function(e){ batch.delete(e.ref); });
     batch.delete(dayDoc.ref);
     await batch.commit();
@@ -2796,68 +2840,68 @@ async function deleteAgendaCascade(agendaId){
     for(var k=0;k<npSnap.docs.length;k++){
       var npDoc = npSnap.docs[k];
       var npElSnap = await getDocs(collection(db,'users',state.uid,'agendas',agendaId,'notebooks',nbDoc.id,'pages',npDoc.id,'elements'));
-      var npBatch = writeBatch(db);
+      var npBatch = writeBatchSafe(db);
       npElSnap.docs.forEach(function(e){ npBatch.delete(e.ref); });
       npBatch.delete(npDoc.ref);
       await npBatch.commit();
     }
-    await deleteDoc(nbDoc.ref);
+    await deleteDocSafe(nbDoc.ref);
   }
   var ctSnap = await getDocs(contactsColl(agendaId));
   if(ctSnap.docs.length>0){
-    var ctBatch = writeBatch(db);
+    var ctBatch = writeBatchSafe(db);
     ctSnap.docs.forEach(function(d){ ctBatch.delete(d.ref); });
     await ctBatch.commit();
   }
   var slSnap = await getDocs(scheduleLinksColl(agendaId));
   if(slSnap.docs.length>0){
-    var slBatch = writeBatch(db);
+    var slBatch = writeBatchSafe(db);
     slSnap.docs.forEach(function(d){ slBatch.delete(d.ref); });
     await slBatch.commit();
   }
   var regSnap = await getDocs(registerSheetsColl(agendaId));
   if(regSnap.docs.length>0){
-    var regBatch = writeBatch(db);
+    var regBatch = writeBatchSafe(db);
     regSnap.docs.forEach(function(d){ regBatch.delete(d.ref); });
     await regBatch.commit();
   }
   var accSnap = await getDocs(accessorySheetsColl(agendaId));
   if(accSnap.docs.length>0){
-    var accBatch = writeBatch(db);
+    var accBatch = writeBatchSafe(db);
     accSnap.docs.forEach(function(d){ accBatch.delete(d.ref); });
     await accBatch.commit();
   }
   var dlSnap = await getDocs(deadlineSheetsColl(agendaId));
   if(dlSnap.docs.length>0){
-    var dlBatch = writeBatch(db);
+    var dlBatch = writeBatchSafe(db);
     dlSnap.docs.forEach(function(d){ dlBatch.delete(d.ref); });
     await dlBatch.commit();
   }
   var balSnap = await getDocs(balanceSheetsColl(agendaId));
   if(balSnap.docs.length>0){
-    var balBatch = writeBatch(db);
+    var balBatch = writeBatchSafe(db);
     balSnap.docs.forEach(function(d){ balBatch.delete(d.ref); });
     await balBatch.commit();
   }
   var shopSnap = await getDocs(shoppingListsColl(agendaId));
   if(shopSnap.docs.length>0){
-    var shopBatch = writeBatch(db);
+    var shopBatch = writeBatchSafe(db);
     shopSnap.docs.forEach(function(d){ shopBatch.delete(d.ref); });
     await shopBatch.commit();
   }
   var libSnap = await getDocs(librariesColl(agendaId));
   if(libSnap.docs.length>0){
-    var libBatch = writeBatch(db);
+    var libBatch = writeBatchSafe(db);
     libSnap.docs.forEach(function(d){ libBatch.delete(d.ref); });
     await libBatch.commit();
   }
   var lpSnap = await getDocs(privateLessonsColl(agendaId));
   if(lpSnap.docs.length>0){
-    var lpBatch = writeBatch(db);
+    var lpBatch = writeBatchSafe(db);
     lpSnap.docs.forEach(function(d){ lpBatch.delete(d.ref); });
     await lpBatch.commit();
   }
-  await deleteDoc(agendaRef(agendaId));
+  await deleteDocSafe(agendaRef(agendaId));
 }
 
 /* ---- duplicazione di un'intera agenda (con tutti i suoi dati) ---- */
@@ -2867,13 +2911,13 @@ async function duplicateAgendaCascade(sourceId, newId, newName){
   var newData = JSON.parse(JSON.stringify(srcData));
   newData.nome = newName;
   newData.createdAt = Date.now();
-  await setDoc(agendaRef(newId), newData);
+  await setDocSafe(agendaRef(newId), newData);
 
   var daysSnap = await getDocs(daysColl(sourceId));
   for(var i=0;i<daysSnap.docs.length;i++){
     var dayDoc = daysSnap.docs[i];
     var elSnap = await getDocs(collection(db,'users',state.uid,'agendas',sourceId,'days',dayDoc.id,'elements'));
-    var batch = writeBatch(db);
+    var batch = writeBatchSafe(db);
     batch.set(doc(db,'users',state.uid,'agendas',newId,'days',dayDoc.id), dayDoc.data());
     elSnap.docs.forEach(function(e){
       batch.set(doc(db,'users',state.uid,'agendas',newId,'days',dayDoc.id,'elements',e.id), e.data());
@@ -2884,12 +2928,12 @@ async function duplicateAgendaCascade(sourceId, newId, newName){
   var nbSnap = await getDocs(notebooksColl(sourceId));
   for(var j=0;j<nbSnap.docs.length;j++){
     var nbDoc = nbSnap.docs[j];
-    await setDoc(notebookDocRef(newId, nbDoc.id), nbDoc.data());
+    await setDocSafe(notebookDocRef(newId, nbDoc.id), nbDoc.data());
     var npSnap = await getDocs(notebookPagesColl(sourceId, nbDoc.id));
     for(var k=0;k<npSnap.docs.length;k++){
       var npDoc = npSnap.docs[k];
       var npElSnap = await getDocs(collection(db,'users',state.uid,'agendas',sourceId,'notebooks',nbDoc.id,'pages',npDoc.id,'elements'));
-      var npBatch = writeBatch(db);
+      var npBatch = writeBatchSafe(db);
       npBatch.set(doc(db,'users',state.uid,'agendas',newId,'notebooks',nbDoc.id,'pages',npDoc.id), npDoc.data());
       npElSnap.docs.forEach(function(e){
         npBatch.set(doc(db,'users',state.uid,'agendas',newId,'notebooks',nbDoc.id,'pages',npDoc.id,'elements',e.id), e.data());
@@ -2901,7 +2945,7 @@ async function duplicateAgendaCascade(sourceId, newId, newName){
   async function copyFlatColl(srcColl, docRefFn){
     var snap = await getDocs(srcColl(sourceId));
     if(snap.docs.length===0) return;
-    var batch = writeBatch(db);
+    var batch = writeBatchSafe(db);
     snap.docs.forEach(function(d){ batch.set(docRefFn(newId, d.id), d.data()); });
     await batch.commit();
   }
@@ -3050,7 +3094,7 @@ function persistMenuTileOrder(){
   state.currentAgenda.tileOrder = keys;
   var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
   if(listEntry) listEntry.tileOrder = keys;
-  updateDoc(agendaRef(state.currentAgendaId), {tileOrder: keys}).catch(function(err){ console.error(err); });
+  updateDocSafe(agendaRef(state.currentAgendaId), {tileOrder: keys}).catch(function(err){ console.error(err); });
 }
 function initMenuTilesDragReorder(){
   var wrap = $('.menu-tiles');
@@ -3132,7 +3176,7 @@ function initMenuTilesDragReorder(){
 initMenuTilesDragReorder();
 var SECTION_LABELS = {
   calendar:'Calendario', schoolCalendar:'Calendario scolastico', notebook:'Blocco note', contacts:'Rubrica',
-  links:'Schede link', register:'Registro personale', accessory:'Registri accessori', deadlines:'Registro scadenze', balance:'Bilancio', shopping:'Lista della spesa', library:'Libreria',
+  links:'Schede link', register:'Registro scolastico personale', accessory:'Registri accessori', deadlines:'Registro scadenze', balance:'Bilancio', shopping:'Lista della spesa', library:'Libreria',
   lessons:'Lezioni private', calculator:'Calcolatrice'
 };
 function openAddSectionsModal(){
@@ -3140,7 +3184,7 @@ function openAddSectionsModal(){
   if(!Array.isArray(enabled)) enabled = Object.keys(SECTION_TILES);
   var options = [
     ['calendar','Calendario'], ['schoolCalendar','Calendario scolastico'], ['notebook','Blocco note'], ['contacts','Rubrica'],
-    ['links','Schede link'], ['register','Registro personale'], ['accessory','Registri accessori'], ['deadlines','Registro scadenze'], ['balance','Bilancio'], ['shopping','Lista della spesa'],
+    ['links','Schede link'], ['register','Registro scolastico personale'], ['accessory','Registri accessori'], ['deadlines','Registro scadenze'], ['balance','Bilancio'], ['shopping','Lista della spesa'],
     ['library','Libreria'], ['lessons','Lezioni private'], ['calculator','Calcolatrice']
   ];
   options.sort(function(a,b){ return a[1].localeCompare(b[1], 'it', {sensitivity:'base'}); });
@@ -3171,7 +3215,7 @@ function openAddSectionsModal(){
     }
     state.currentAgenda.enabledSections = selected;
     try{
-      await updateDoc(agendaRef(state.currentAgendaId), {enabledSections: selected});
+      await updateDocSafe(agendaRef(state.currentAgendaId), {enabledSections: selected});
       var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
       if(listEntry) listEntry.enabledSections = selected;
       for(var i=0;i<removed.length;i++){
@@ -3186,10 +3230,10 @@ function openAddSectionsModal(){
 async function deleteSectionData(agendaId, key){
   try{
     if(key==='calendar'){
-      await updateDoc(agendaRef(agendaId), {solarYear:null});
+      await updateDocSafe(agendaRef(agendaId), {solarYear:null});
       if(state.currentAgenda && state.currentAgenda.id===agendaId) state.currentAgenda.solarYear = null;
     } else if(key==='schoolCalendar'){
-      await updateDoc(agendaRef(agendaId), {schoolYear:null});
+      await updateDocSafe(agendaRef(agendaId), {schoolYear:null});
       if(state.currentAgenda && state.currentAgenda.id===agendaId) state.currentAgenda.schoolYear = null;
     } else if(key==='notebook'){
       var nbSnap = await getDocs(notebooksColl(agendaId));
@@ -3199,18 +3243,18 @@ async function deleteSectionData(agendaId, key){
         for(var k=0;k<npSnap.docs.length;k++){
           var npDoc = npSnap.docs[k];
           var npElSnap = await getDocs(collection(db,'users',state.uid,'agendas',agendaId,'notebooks',nbDoc.id,'pages',npDoc.id,'elements'));
-          var npBatch = writeBatch(db);
+          var npBatch = writeBatchSafe(db);
           npElSnap.docs.forEach(function(e){ npBatch.delete(e.ref); });
           npBatch.delete(npDoc.ref);
           await npBatch.commit();
         }
-        await deleteDoc(nbDoc.ref);
+        await deleteDocSafe(nbDoc.ref);
       }
       state.notebooks = [];
     } else if(key==='contacts'){
       var ctSnap = await getDocs(contactsColl(agendaId));
       if(ctSnap.docs.length>0){
-        var ctBatch = writeBatch(db);
+        var ctBatch = writeBatchSafe(db);
         ctSnap.docs.forEach(function(d){ ctBatch.delete(d.ref); });
         await ctBatch.commit();
       }
@@ -3218,7 +3262,7 @@ async function deleteSectionData(agendaId, key){
     } else if(key==='links'){
       var slSnap = await getDocs(scheduleLinksColl(agendaId));
       if(slSnap.docs.length>0){
-        var slBatch = writeBatch(db);
+        var slBatch = writeBatchSafe(db);
         slSnap.docs.forEach(function(d){ slBatch.delete(d.ref); });
         await slBatch.commit();
       }
@@ -3226,7 +3270,7 @@ async function deleteSectionData(agendaId, key){
     } else if(key==='register'){
       var regSnap = await getDocs(registerSheetsColl(agendaId));
       if(regSnap.docs.length>0){
-        var regBatch = writeBatch(db);
+        var regBatch = writeBatchSafe(db);
         regSnap.docs.forEach(function(d){ regBatch.delete(d.ref); });
         await regBatch.commit();
       }
@@ -3234,7 +3278,7 @@ async function deleteSectionData(agendaId, key){
     } else if(key==='accessory'){
       var accSnap = await getDocs(accessorySheetsColl(agendaId));
       if(accSnap.docs.length>0){
-        var accBatch = writeBatch(db);
+        var accBatch = writeBatchSafe(db);
         accSnap.docs.forEach(function(d){ accBatch.delete(d.ref); });
         await accBatch.commit();
       }
@@ -3242,7 +3286,7 @@ async function deleteSectionData(agendaId, key){
     } else if(key==='deadlines'){
       var dlSnap = await getDocs(deadlineSheetsColl(agendaId));
       if(dlSnap.docs.length>0){
-        var dlBatch = writeBatch(db);
+        var dlBatch = writeBatchSafe(db);
         dlSnap.docs.forEach(function(d){ dlBatch.delete(d.ref); });
         await dlBatch.commit();
       }
@@ -3250,7 +3294,7 @@ async function deleteSectionData(agendaId, key){
     } else if(key==='balance'){
       var balSnap = await getDocs(balanceSheetsColl(agendaId));
       if(balSnap.docs.length>0){
-        var balBatch = writeBatch(db);
+        var balBatch = writeBatchSafe(db);
         balSnap.docs.forEach(function(d){ balBatch.delete(d.ref); });
         await balBatch.commit();
       }
@@ -3258,7 +3302,7 @@ async function deleteSectionData(agendaId, key){
     } else if(key==='shopping'){
       var shopSnap = await getDocs(shoppingListsColl(agendaId));
       if(shopSnap.docs.length>0){
-        var shopBatch = writeBatch(db);
+        var shopBatch = writeBatchSafe(db);
         shopSnap.docs.forEach(function(d){ shopBatch.delete(d.ref); });
         await shopBatch.commit();
       }
@@ -3266,7 +3310,7 @@ async function deleteSectionData(agendaId, key){
     } else if(key==='library'){
       var libSnap = await getDocs(librariesColl(agendaId));
       if(libSnap.docs.length>0){
-        var libBatch = writeBatch(db);
+        var libBatch = writeBatchSafe(db);
         libSnap.docs.forEach(function(d){ libBatch.delete(d.ref); });
         await libBatch.commit();
       }
@@ -3274,7 +3318,7 @@ async function deleteSectionData(agendaId, key){
     } else if(key==='lessons'){
       var lpSnap = await getDocs(privateLessonsColl(agendaId));
       if(lpSnap.docs.length>0){
-        var lpBatch = writeBatch(db);
+        var lpBatch = writeBatchSafe(db);
         lpSnap.docs.forEach(function(d){ lpBatch.delete(d.ref); });
         await lpBatch.commit();
       }
@@ -3507,7 +3551,7 @@ $('#coverSave').addEventListener('click', async function(){
   state.currentAgenda.cover = cover;
   state.currentAgenda.nome = cover.cognomeNome;
   try{
-    await updateDoc(agendaRef(state.currentAgendaId), {cover: cover, nome: cover.cognomeNome});
+    await updateDocSafe(agendaRef(state.currentAgendaId), {cover: cover, nome: cover.cognomeNome});
     var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
     if(listEntry){ listEntry.cover = cover; listEntry.nome = cover.cognomeNome; }
     showToast('Copertina salvata.', 'success');
@@ -3552,7 +3596,7 @@ $('#calGenerateBtn').addEventListener('click', async function(){
   state.currentAgenda[field] = label;
   try{
     var payload = {}; payload[field] = label;
-    await updateDoc(agendaRef(state.currentAgendaId), payload);
+    await updateDocSafe(agendaRef(state.currentAgendaId), payload);
     var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
     if(listEntry) listEntry[field] = label;
   }catch(err){ console.error(err); showToast('Errore nel salvataggio anno.', 'error'); }
@@ -3617,7 +3661,7 @@ function markDirty(){
 async function saveDayData(silent){
   var dKey = (pageMode==='notebook') ? currentPageKey : dateKey(state.currentDate);
   try{
-    var batch = writeBatch(db);
+    var batch = writeBatchSafe(db);
     state.deletedElementIds.forEach(function(elId){
       batch.delete(elementRef(state.currentAgendaId, dKey, elId));
     });
@@ -3651,7 +3695,7 @@ async function updateDaysWithContent(dKey, hasContent){
   if(!hasContent && idx>-1){ list.splice(idx,1); changed=true; }
   if(changed){
     agenda.daysWithContent = list;
-    try{ await updateDoc(agendaRef(state.currentAgendaId), {daysWithContent: list}); }
+    try{ await updateDocSafe(agendaRef(state.currentAgendaId), {daysWithContent: list}); }
     catch(err){ console.error(err); }
     var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
     if(listEntry) listEntry.daysWithContent = list;
@@ -3783,11 +3827,11 @@ async function performDuplication(data, targetDates){
   try{
     if(!data.groupId){
       data.groupId = uid();
-      await updateDoc(elementRef(state.currentAgendaId, dateKey(state.currentDate), data.id), {groupId: data.groupId});
+      await updateDocSafe(elementRef(state.currentAgendaId, dateKey(state.currentDate), data.id), {groupId: data.groupId});
     }
     var payload = Object.assign({}, data);
     delete payload.id;
-    var batch = writeBatch(db);
+    var batch = writeBatchSafe(db);
     var count = 0;
     var newDaysAdded = [];
     for(var i=0;i<targetDates.length;i++){
@@ -3796,7 +3840,7 @@ async function performDuplication(data, targetDates){
       batch.set(elementRef(state.currentAgendaId, dk, newId), Object.assign({}, payload, {createdAt: Date.now()}));
       newDaysAdded.push(dk);
       count++;
-      if(count%450===0){ await batch.commit(); batch = writeBatch(db); }
+      if(count%450===0){ await batch.commit(); batch = writeBatchSafe(db); }
     }
     await batch.commit();
     var agenda = state.currentAgenda;
@@ -3805,7 +3849,7 @@ async function performDuplication(data, targetDates){
     newDaysAdded.forEach(function(dk){ if(list.indexOf(dk)===-1){ list.push(dk); changed=true; } });
     if(changed){
       agenda.daysWithContent = list;
-      await updateDoc(agendaRef(state.currentAgendaId), {daysWithContent: list});
+      await updateDocSafe(agendaRef(state.currentAgendaId), {daysWithContent: list});
       var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
       if(listEntry) listEntry.daysWithContent = list;
     }
@@ -3835,7 +3879,7 @@ async function deleteEntireGroup(groupId, wrapper, data){
     var q = query(collectionGroup(db,'elements'), where('groupId','==',groupId));
     var snap = await getDocs(q);
     var affectedDays = {};
-    var batch = writeBatch(db);
+    var batch = writeBatchSafe(db);
     var count = 0;
     for(var i=0;i<snap.docs.length;i++){
       var docSnap = snap.docs[i];
@@ -3844,7 +3888,7 @@ async function deleteEntireGroup(groupId, wrapper, data){
       var segs = docSnap.ref.path.split('/');
       var dIdx = segs.indexOf('days');
       if(dIdx>-1) affectedDays[segs[dIdx+1]] = true;
-      if(count%450===0){ await batch.commit(); batch = writeBatch(db); }
+      if(count%450===0){ await batch.commit(); batch = writeBatchSafe(db); }
     }
     await batch.commit();
     performLocalDelete(wrapper, data, true);
@@ -3869,7 +3913,7 @@ async function refreshDaysWithContentAfterGroupDelete(dateKeys){
   }
   if(changed){
     agenda.daysWithContent = list;
-    try{ await updateDoc(agendaRef(state.currentAgendaId), {daysWithContent: list}); }catch(e){ console.error(e); }
+    try{ await updateDocSafe(agendaRef(state.currentAgendaId), {daysWithContent: list}); }catch(e){ console.error(e); }
     var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
     if(listEntry) listEntry.daysWithContent = list;
   }
@@ -4021,13 +4065,13 @@ function openNewNotebookModal(isFirst){
     try{
       var newId = uid();
       var notebookData = {name:name, createdAt: Date.now()};
-      await setDoc(notebookDocRef(state.currentAgendaId, newId), notebookData);
+      await setDocSafe(notebookDocRef(state.currentAgendaId, newId), notebookData);
       var entry = Object.assign({id:newId}, notebookData);
       state.notebooks = state.notebooks || [];
       state.notebooks.push(entry);
       var firstPageId = uid();
       var pageData = {createdAt: Date.now(), background:'righi', orientation:'verticale'};
-      await setDoc(notebookPageDocRef(state.currentAgendaId, newId, firstPageId), pageData);
+      await setDocSafe(notebookPageDocRef(state.currentAgendaId, newId, firstPageId), pageData);
       closeModal();
       openNotebook(newId, firstPageId);
     }catch(err){ console.error(err); showToast('Errore nella creazione del blocco note.', 'error'); }
@@ -4053,7 +4097,7 @@ function renameNotebook(id){
     if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
     nb.name = nuovoNome;
     try{
-      await updateDoc(notebookDocRef(state.currentAgendaId, id), {name: nuovoNome});
+      await updateDocSafe(notebookDocRef(state.currentAgendaId, id), {name: nuovoNome});
       if(pageMode==='notebook' && currentNotebookId===id) updateNotebookBarName();
       closeModal();
       renderNotebookList($('#npSearchInput').value);
@@ -4069,12 +4113,12 @@ async function deleteNotebook(id){
     for(var i=0;i<pagesSnap.docs.length;i++){
       var pageDoc = pagesSnap.docs[i];
       var elSnap = await getDocs(collection(db,'users',state.uid,'agendas',state.currentAgendaId,'notebooks',id,'pages',pageDoc.id,'elements'));
-      var batch = writeBatch(db);
+      var batch = writeBatchSafe(db);
       elSnap.docs.forEach(function(e){ batch.delete(e.ref); });
       batch.delete(pageDoc.ref);
       await batch.commit();
     }
-    await deleteDoc(notebookDocRef(state.currentAgendaId, id));
+    await deleteDocSafe(notebookDocRef(state.currentAgendaId, id));
     state.notebooks = (state.notebooks||[]).filter(function(n){ return n.id!==id; });
     renderNotebookList($('#npSearchInput').value);
     showToast('Blocco note eliminato.', 'info');
@@ -4120,7 +4164,7 @@ async function openNotebook(notebookId, pageId){
   if(pages.length===0){
     var newPageId = uid();
     var pageData = {createdAt: Date.now(), background:'righi', orientation:'verticale'};
-    try{ await setDoc(notebookPageDocRef(state.currentAgendaId, notebookId, newPageId), pageData); }catch(err){ console.error(err); }
+    try{ await setDocSafe(notebookPageDocRef(state.currentAgendaId, notebookId, newPageId), pageData); }catch(err){ console.error(err); }
     state.notebookPagesCache.push(Object.assign({id:newPageId}, pageData));
     pages = sortedCurrentNotebookPages();
   }
@@ -4192,7 +4236,7 @@ $('#npAddBtn').addEventListener('click', async function(){
   try{
     var newPageId = uid();
     var pageData = {createdAt: Date.now(), background:'righi', orientation:'verticale'};
-    await setDoc(notebookPageDocRef(state.currentAgendaId, currentNotebookId, newPageId), pageData);
+    await setDocSafe(notebookPageDocRef(state.currentAgendaId, currentNotebookId, newPageId), pageData);
     state.notebookPagesCache = state.notebookPagesCache || [];
     state.notebookPagesCache.push(Object.assign({id:newPageId}, pageData));
     await openNotebookPageScreen(currentNotebookId, newPageId);
@@ -4208,7 +4252,7 @@ $('#npDeletePageBtn').addEventListener('click', async function(){
   var idx = pages.findIndex(function(p){ return p.id===pageIdToDelete; });
   try{
     var elSnap = await getDocs(collection(db,'users',state.uid,'agendas',state.currentAgendaId,'notebooks',currentNotebookId,'pages',pageIdToDelete,'elements'));
-    var batch = writeBatch(db);
+    var batch = writeBatchSafe(db);
     elSnap.docs.forEach(function(e){ batch.delete(e.ref); });
     batch.delete(notebookPageDocRef(state.currentAgendaId, currentNotebookId, pageIdToDelete));
     await batch.commit();
@@ -4234,12 +4278,12 @@ async function savePageBackground(bg){
     var pageInfo = (state.notebookPagesCache||[]).find(function(p){ return p.id===currentPageKey; });
     if(pageInfo){
       pageInfo.background = bg;
-      try{ await updateDoc(notebookPageDocRef(state.currentAgendaId, currentNotebookId, currentPageKey), {background: bg}); }
+      try{ await updateDocSafe(notebookPageDocRef(state.currentAgendaId, currentNotebookId, currentPageKey), {background: bg}); }
       catch(err){ console.error(err); showToast('Errore nel salvataggio dello sfondo.', 'error'); }
     }
   } else {
     state.currentDayMeta.background = bg;
-    try{ await setDoc(dayMetaDocRef(state.currentAgendaId, dateKey(state.currentDate)), {background: bg}, {merge:true}); }
+    try{ await setDocSafe(dayMetaDocRef(state.currentAgendaId, dateKey(state.currentDate)), {background: bg}, {merge:true}); }
     catch(err){ console.error(err); showToast('Errore nel salvataggio dello sfondo.', 'error'); }
   }
 }
@@ -4276,12 +4320,12 @@ async function savePageOrientation(o){
     var pageInfo = (state.notebookPagesCache||[]).find(function(p){ return p.id===currentPageKey; });
     if(pageInfo){
       pageInfo.orientation = o;
-      try{ await updateDoc(notebookPageDocRef(state.currentAgendaId, currentNotebookId, currentPageKey), {orientation: o}); }
+      try{ await updateDocSafe(notebookPageDocRef(state.currentAgendaId, currentNotebookId, currentPageKey), {orientation: o}); }
       catch(err){ console.error(err); showToast("Errore nel salvataggio dell'orientamento.", 'error'); }
     }
   } else {
     state.currentDayMeta.orientation = o;
-    try{ await setDoc(dayMetaDocRef(state.currentAgendaId, dateKey(state.currentDate)), {orientation: o}, {merge:true}); }
+    try{ await setDocSafe(dayMetaDocRef(state.currentAgendaId, dateKey(state.currentDate)), {orientation: o}, {merge:true}); }
     catch(err){ console.error(err); showToast("Errore nel salvataggio dell'orientamento.", 'error'); }
   }
 }
@@ -4520,12 +4564,12 @@ function openContactEditModal(existing){
     var payload = {name:name, phones:phones, emails:emails, address:address, workAddress:workAddress, phone:phones[0]||'', email:emails[0]||''};
     try{
       if(existing){
-        await updateDoc(contactDocRef(state.currentAgendaId, existing.id), payload);
+        await updateDocSafe(contactDocRef(state.currentAgendaId, existing.id), payload);
         Object.assign(existing, payload);
       } else {
         var newId = uid();
         payload.createdAt = Date.now();
-        await setDoc(contactDocRef(state.currentAgendaId, newId), payload);
+        await setDocSafe(contactDocRef(state.currentAgendaId, newId), payload);
         var entry = Object.assign({id:newId}, payload);
         state.contacts = state.contacts || [];
         state.contacts.push(entry);
@@ -4540,7 +4584,7 @@ async function deleteContact(id){
   var c = (state.contacts||[]).find(function(x){ return x.id===id; });
   if(!confirm('Eliminare definitivamente il contatto "'+(c?c.name:'')+'"?')) return;
   try{
-    await deleteDoc(contactDocRef(state.currentAgendaId, id));
+    await deleteDocSafe(contactDocRef(state.currentAgendaId, id));
     state.contacts = (state.contacts||[]).filter(function(x){ return x.id!==id; });
     renderContactsList($('#contactsSearchInput').value);
     showToast('Contatto eliminato.', 'info');
@@ -4630,12 +4674,12 @@ function openScheduleLinkEditModal(existing){
     if(!/^https?:\/\//i.test(url)) url = 'https://'+url;
     try{
       if(existing){
-        await updateDoc(scheduleLinkDocRef(state.currentAgendaId, existing.id), {name:name, url:url});
+        await updateDocSafe(scheduleLinkDocRef(state.currentAgendaId, existing.id), {name:name, url:url});
         existing.name = name; existing.url = url;
       } else {
         var newId = uid();
         var payload = {name:name, url:url, createdAt: Date.now()};
-        await setDoc(scheduleLinkDocRef(state.currentAgendaId, newId), payload);
+        await setDocSafe(scheduleLinkDocRef(state.currentAgendaId, newId), payload);
         state.scheduleLinks = state.scheduleLinks || [];
         state.scheduleLinks.push(Object.assign({id:newId}, payload));
       }
@@ -4649,7 +4693,7 @@ async function deleteScheduleLink(id){
   var l = (state.scheduleLinks||[]).find(function(x){ return x.id===id; });
   if(!confirm('Eliminare definitivamente il link "'+(l?l.name:'')+'"?')) return;
   try{
-    await deleteDoc(scheduleLinkDocRef(state.currentAgendaId, id));
+    await deleteDocSafe(scheduleLinkDocRef(state.currentAgendaId, id));
     state.scheduleLinks = (state.scheduleLinks||[]).filter(function(x){ return x.id!==id; });
     renderScheduleLinkList($('#slSearchInput').value);
     showToast('Link eliminato.', 'info');
@@ -4787,7 +4831,7 @@ async function createRegisterSheet(name, color){
   var data = defaultSheetData(name, color || REG_COLORS[(state.registerSheets||[]).length % REG_COLORS.length]);
   data.order = (state.registerSheets||[]).length;
   try{
-    await setDoc(registerSheetDocRef(state.currentAgendaId, newId), sheetForFirestore(data));
+    await setDocSafe(registerSheetDocRef(state.currentAgendaId, newId), sheetForFirestore(data));
     var entry = Object.assign({id:newId}, data);
     state.registerSheets = state.registerSheets || [];
     state.registerSheets.push(entry);
@@ -4874,7 +4918,7 @@ function persistRegisterTabsOrder(){
   state.registerSheets.forEach(function(s, idx){
     if(s.order !== idx){
       s.order = idx;
-      updateDoc(registerSheetDocRef(state.currentAgendaId, s.id), {order: idx}).catch(function(err){ console.error(err); });
+      updateDocSafe(registerSheetDocRef(state.currentAgendaId, s.id), {order: idx}).catch(function(err){ console.error(err); });
     }
   });
 }
@@ -4918,7 +4962,7 @@ function renameRegisterSheet(id){
     sheet.name = nuovoNome;
     sheet.color = nuovoColore;
     try{
-      await updateDoc(registerSheetDocRef(state.currentAgendaId, id), {name: nuovoNome, color: nuovoColore});
+      await updateDocSafe(registerSheetDocRef(state.currentAgendaId, id), {name: nuovoNome, color: nuovoColore});
       closeModal();
       renderRegisterTabs();
       showToast('Scheda aggiornata.', 'success');
@@ -4956,7 +5000,7 @@ $('#regDupSheet').addEventListener('click', async function(){
   copy.createdAt = Date.now();
   copy.order = state.registerSheets.length;
   try{
-    await setDoc(registerSheetDocRef(state.currentAgendaId, newId), sheetForFirestore(copy));
+    await setDocSafe(registerSheetDocRef(state.currentAgendaId, newId), sheetForFirestore(copy));
     var entry = Object.assign({id:newId}, copy);
     state.registerSheets.push(entry);
     state.currentSheetId = newId;
@@ -4970,7 +5014,7 @@ $('#regDelSheet').addEventListener('click', async function(){
   if(state.registerSheets.length<=1){ showToast('Deve restare almeno una scheda.', 'info'); return; }
   if(!confirm('Eliminare definitivamente la scheda "'+sheet.name+'"?')) return;
   try{
-    await deleteDoc(registerSheetDocRef(state.currentAgendaId, sheet.id));
+    await deleteDocSafe(registerSheetDocRef(state.currentAgendaId, sheet.id));
     state.registerSheets = state.registerSheets.filter(function(s){ return s.id!==sheet.id; });
     state.currentSheetId = state.registerSheets[0].id;
     renderRegisterTabs();
@@ -4989,7 +5033,7 @@ async function saveRegisterSheet(silent){
   var sheet = getCurrentSheet();
   if(!sheet) return false;
   try{
-    await setDoc(registerSheetDocRef(state.currentAgendaId, sheet.id), sheetForFirestore(sheet));
+    await setDocSafe(registerSheetDocRef(state.currentAgendaId, sheet.id), sheetForFirestore(sheet));
     registerDirty = false;
     var b=$('#regSaveBtn'); if(b) b.classList.remove('needs-save');
     if(!silent) showToast('Modifiche salvate.', 'success');
@@ -5879,7 +5923,7 @@ $('#regExportPdf').addEventListener('click', function(){
 });
 $('#regSharePage').addEventListener('click', function(){
   var sheet = getCurrentSheet(); if(!sheet) return;
-  sharePageAsPDF($('#regTableContainer'), 'Registro - '+(sheet.name||'scheda'), sheet.name||'Registro personale');
+  sharePageAsPDF($('#regTableContainer'), 'Registro - '+(sheet.name||'scheda'), sheet.name||'Registro scolastico personale');
 });
 
 /* ================= REGISTRI A TABELLE (motore comune) =================
@@ -6145,7 +6189,7 @@ function createTableRegister(cfg){
     var data = defaultData(name, color || REG_COLORS[sheets().length % REG_COLORS.length]);
     data.order = sheets().length;
     try{
-      await setDoc(cfg.docRef(state.currentAgendaId, newId), forFirestore(data));
+      await setDocSafe(cfg.docRef(state.currentAgendaId, newId), forFirestore(data));
       var entry = Object.assign({id:newId}, data);
       state[cfg.stateKey] = sheets();
       state[cfg.stateKey].push(entry);
@@ -6157,7 +6201,7 @@ function createTableRegister(cfg){
     var sheet = current();
     if(!sheet) return false;
     try{
-      await setDoc(cfg.docRef(state.currentAgendaId, sheet.id), forFirestore(sheet));
+      await setDocSafe(cfg.docRef(state.currentAgendaId, sheet.id), forFirestore(sheet));
       clearDirty();
       if(!silent) showToast('Modifiche salvate.', 'success');
       return true;
@@ -6239,7 +6283,7 @@ function createTableRegister(cfg){
     reordered.forEach(function(s, idx){
       if(s.order !== idx){
         s.order = idx;
-        updateDoc(cfg.docRef(state.currentAgendaId, s.id), {order: idx}).catch(function(err){ console.error(err); });
+        updateDocSafe(cfg.docRef(state.currentAgendaId, s.id), {order: idx}).catch(function(err){ console.error(err); });
       }
     });
   }
@@ -6274,7 +6318,7 @@ function createTableRegister(cfg){
       sheet.name = nuovoNome;
       sheet.color = nuovoColore;
       try{
-        await updateDoc(cfg.docRef(state.currentAgendaId, id), {name: nuovoNome, color: nuovoColore});
+        await updateDocSafe(cfg.docRef(state.currentAgendaId, id), {name: nuovoNome, color: nuovoColore});
         closeModal();
         renderTabs();
         showToast('Scheda aggiornata.', 'success');
@@ -6317,7 +6361,7 @@ function createTableRegister(cfg){
     copy.createdAt = Date.now();
     copy.order = sheets().length;
     try{
-      await setDoc(cfg.docRef(state.currentAgendaId, newId), forFirestore(copy));
+      await setDocSafe(cfg.docRef(state.currentAgendaId, newId), forFirestore(copy));
       var entry = Object.assign({id:newId}, copy);
       sheets().push(entry);
       state[cfg.currentKey] = newId;
@@ -6332,7 +6376,7 @@ function createTableRegister(cfg){
     if(sheets().length<=1){ showToast('Deve restare almeno una scheda.', 'info'); return; }
     if(!confirm('Eliminare definitivamente la scheda "'+sheet.name+'"?')) return;
     try{
-      await deleteDoc(cfg.docRef(state.currentAgendaId, sheet.id));
+      await deleteDocSafe(cfg.docRef(state.currentAgendaId, sheet.id));
       state[cfg.stateKey] = sheets().filter(function(s){ return s.id!==sheet.id; });
       state[cfg.currentKey] = sheets()[0].id;
       clearDirty(); resetHistory(); resetSelection();
@@ -6863,7 +6907,7 @@ function openNewBalanceModal(isFirst){
     try{
       var newId = uid();
       var data = {name:name, rows:defaultBalanceRows(), createdAt: Date.now()};
-      await setDoc(balanceSheetDocRef(state.currentAgendaId, newId), data);
+      await setDocSafe(balanceSheetDocRef(state.currentAgendaId, newId), data);
       var entry = Object.assign({id:newId}, data);
       state.balanceSheets = state.balanceSheets || [];
       state.balanceSheets.push(entry);
@@ -6892,7 +6936,7 @@ function renameBalanceSheet(id){
     if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
     sheet.name = nuovoNome;
     try{
-      await updateDoc(balanceSheetDocRef(state.currentAgendaId, id), {name: nuovoNome});
+      await updateDocSafe(balanceSheetDocRef(state.currentAgendaId, id), {name: nuovoNome});
       if(state.currentBalanceId===id) $('#balName').textContent = nuovoNome;
       closeModal();
       renderBalanceList();
@@ -6904,7 +6948,7 @@ async function deleteBalanceSheet(id){
   var sheet = (state.balanceSheets||[]).find(function(s){ return s.id===id; });
   if(!confirm('Eliminare definitivamente il bilancio "'+(sheet?sheet.name:'')+'"? Questa azione non può essere annullata.')) return;
   try{
-    await deleteDoc(balanceSheetDocRef(state.currentAgendaId, id));
+    await deleteDocSafe(balanceSheetDocRef(state.currentAgendaId, id));
     state.balanceSheets = (state.balanceSheets||[]).filter(function(s){ return s.id!==id; });
     renderBalanceList();
     showToast('Bilancio eliminato.', 'info');
@@ -7030,7 +7074,7 @@ async function saveBalanceSheet(silent){
   try{
     var payload = Object.assign({}, sheet);
     delete payload.id;
-    await setDoc(balanceSheetDocRef(state.currentAgendaId, sheet.id), payload);
+    await setDocSafe(balanceSheetDocRef(state.currentAgendaId, sheet.id), payload);
     balanceDirty = false;
     var b=$('#balSaveBtn'); if(b) b.classList.remove('needs-save');
     if(!silent) showToast('Modifiche salvate.', 'success');
@@ -7163,7 +7207,7 @@ function openNewShoppingListModal(isFirst){
     try{
       var newId = uid();
       var data = {name:name, items:[], createdAt: Date.now()};
-      await setDoc(shoppingListDocRef(state.currentAgendaId, newId), data);
+      await setDocSafe(shoppingListDocRef(state.currentAgendaId, newId), data);
       var entry = Object.assign({id:newId}, data);
       state.shoppingLists = state.shoppingLists || [];
       state.shoppingLists.push(entry);
@@ -7192,7 +7236,7 @@ function renameShoppingList(id){
     if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
     list.name = nuovoNome;
     try{
-      await updateDoc(shoppingListDocRef(state.currentAgendaId, id), {name: nuovoNome});
+      await updateDocSafe(shoppingListDocRef(state.currentAgendaId, id), {name: nuovoNome});
       if(state.currentShoppingListId===id) $('#shopListName').textContent = nuovoNome;
       closeModal();
       renderShoppingListsList();
@@ -7204,7 +7248,7 @@ async function deleteShoppingList(id){
   var list = (state.shoppingLists||[]).find(function(l){ return l.id===id; });
   if(!confirm('Eliminare definitivamente la lista "'+(list?list.name:'')+'"? Questa azione non può essere annullata.')) return;
   try{
-    await deleteDoc(shoppingListDocRef(state.currentAgendaId, id));
+    await deleteDocSafe(shoppingListDocRef(state.currentAgendaId, id));
     state.shoppingLists = (state.shoppingLists||[]).filter(function(l){ return l.id!==id; });
     renderShoppingListsList();
     showToast('Lista eliminata.', 'info');
@@ -7254,7 +7298,7 @@ function wireShoppingItemEvents(list){
 }
 async function saveShoppingListItems(list){
   try{
-    await updateDoc(shoppingListDocRef(state.currentAgendaId, list.id), {items: list.items});
+    await updateDocSafe(shoppingListDocRef(state.currentAgendaId, list.id), {items: list.items});
     return true;
   }catch(err){ console.error(err); showToast('Errore durante il salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); return false; }
 }
@@ -7428,7 +7472,7 @@ function openNewLibraryModal(isFirst){
     try{
       var newId = uid();
       var data = {name:name, books:[], createdAt: Date.now()};
-      await setDoc(libraryDocRef(state.currentAgendaId, newId), data);
+      await setDocSafe(libraryDocRef(state.currentAgendaId, newId), data);
       var entry = Object.assign({id:newId}, data);
       state.libraries = state.libraries || [];
       state.libraries.push(entry);
@@ -7457,7 +7501,7 @@ function renameLibrary(id){
     if(!nuovoNome){ showToast('Inserisci un nome.', 'error'); return; }
     lib.name = nuovoNome;
     try{
-      await updateDoc(libraryDocRef(state.currentAgendaId, id), {name: nuovoNome});
+      await updateDocSafe(libraryDocRef(state.currentAgendaId, id), {name: nuovoNome});
       if(state.currentLibraryId===id) $('#libName').textContent = nuovoNome;
       closeModal();
       renderLibraryList();
@@ -7469,7 +7513,7 @@ async function deleteLibrary(id){
   var lib = (state.libraries||[]).find(function(l){ return l.id===id; });
   if(!confirm('Eliminare definitivamente la libreria "'+(lib?lib.name:'')+'"? Questa azione non può essere annullata.')) return;
   try{
-    await deleteDoc(libraryDocRef(state.currentAgendaId, id));
+    await deleteDocSafe(libraryDocRef(state.currentAgendaId, id));
     state.libraries = (state.libraries||[]).filter(function(l){ return l.id!==id; });
     renderLibraryList();
     showToast('Libreria eliminata.', 'info');
@@ -7488,7 +7532,7 @@ $('#libBack').addEventListener('click', function(){ showLibraryListScreen(); });
 $('#libSearchInput').addEventListener('input', function(e){ renderLibraryTable(e.target.value); });
 async function saveLibraryBooks(lib){
   try{
-    await updateDoc(libraryDocRef(state.currentAgendaId, lib.id), {books: lib.books});
+    await updateDocSafe(libraryDocRef(state.currentAgendaId, lib.id), {books: lib.books});
     return true;
   }catch(err){ console.error(err); showToast('Errore durante il salvataggio'+(err.message?(': '+err.message):'')+'.', 'error'); return false; }
 }
@@ -7782,7 +7826,7 @@ function openStudentProfileModal(existing, isFirst){
     try{
       if(existing){
         existing.name = name; existing.subject = subject; existing.schedule = scheduleData; existing.hourlyRate = rate;
-        await updateDoc(privateLessonDocRef(state.currentAgendaId, existing.id), {name:name, subject:subject, schedule:scheduleData, hourlyRate:rate});
+        await updateDocSafe(privateLessonDocRef(state.currentAgendaId, existing.id), {name:name, subject:subject, schedule:scheduleData, hourlyRate:rate});
         closeModal();
         if(state.currentStudentId===existing.id){ renderStudentProfile(existing); renderLessonsTable(existing); }
         renderLessonsList();
@@ -7791,7 +7835,7 @@ function openStudentProfileModal(existing, isFirst){
         var newId = uid();
         var data = defaultStudentData(name);
         data.subject = subject; data.schedule = scheduleData; data.hourlyRate = rate;
-        await setDoc(privateLessonDocRef(state.currentAgendaId, newId), studentForFirestore(data));
+        await setDocSafe(privateLessonDocRef(state.currentAgendaId, newId), studentForFirestore(data));
         var entry = Object.assign({id:newId}, data);
         state.privateLessons = state.privateLessons || [];
         state.privateLessons.push(entry);
@@ -7805,7 +7849,7 @@ async function deleteStudent(id){
   var s = (state.privateLessons||[]).find(function(x){ return x.id===id; });
   if(!confirm('Eliminare definitivamente l\'alunno "'+(s?s.name:'')+'"? Questa azione non può essere annullata.')) return;
   try{
-    await deleteDoc(privateLessonDocRef(state.currentAgendaId, id));
+    await deleteDocSafe(privateLessonDocRef(state.currentAgendaId, id));
     state.privateLessons = (state.privateLessons||[]).filter(function(x){ return x.id!==id; });
     renderLessonsList();
     showToast('Alunno eliminato.', 'info');
@@ -7930,7 +7974,7 @@ function openPaymentStatusModal(student){
     updatePaymentCell(student);
     markLpDirty();
     closeModal();
-    try{ await updateDoc(privateLessonDocRef(state.currentAgendaId, student.id), {paid: student.paid}); }
+    try{ await updateDocSafe(privateLessonDocRef(state.currentAgendaId, student.id), {paid: student.paid}); }
     catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
   };
 }
@@ -7979,7 +8023,7 @@ async function saveStudent(silent){
   var student = getCurrentStudent();
   if(!student) return false;
   try{
-    await setDoc(privateLessonDocRef(state.currentAgendaId, student.id), studentForFirestore(student));
+    await setDocSafe(privateLessonDocRef(state.currentAgendaId, student.id), studentForFirestore(student));
     lpDirty = false;
     var b=$('#lpSaveBtn'); if(b) b.classList.remove('needs-save');
     if(!silent) showToast('Modifiche salvate.', 'success');
