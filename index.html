@@ -340,6 +340,10 @@ body.dark .theme-toggle .icon-moon{display:block;}
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
   padding:16px;max-width:1080px;margin:0 auto 30px;width:100%;
 }
+/* allineamento per singola riga (dentro un riquadro di testo): la sillabazione automatica vale solo
+   per le righe giustificate, anche se il resto del riquadro ha un altro allineamento (e viceversa) */
+.text-content [style*="text-align: justify"]{hyphens:auto;-webkit-hyphens:auto;}
+.text-content [style*="text-align: left"],.text-content [style*="text-align: center"],.text-content [style*="text-align: right"],.text-content [style*="text-align: start"],.text-content [style*="text-align: end"]{hyphens:manual;-webkit-hyphens:manual;}
 .notebook-footer-nav{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
 /* Striscia di "paginette" numerate: permette di saltare direttamente a una pagina del blocco
    note cliccandone il numero, oltre a poterlo fare con le frecce sinistra/destra. Scorre in
@@ -5740,12 +5744,15 @@ function bakeOneJustifiedElementForCapture(el){
       italic: cs.fontStyle==='italic' || cs.fontStyle==='oblique',
       underline: (cs.textDecorationLine||cs.textDecoration||'').indexOf('underline')!==-1
     };
+    /* allineamento della riga (paragrafo) a cui appartiene questo testo: ogni riga può avere il
+       suo (sinistra, centro, destra, giustificato), non più per forza quello di tutto il riquadro */
+    var lineAlign = textAlignAtNode(el, node);
     for(var i=0;i<text.length;i++){
       var r = document.createRange();
       r.setStart(node, i);
       r.setEnd(node, i+1);
       var rect = r.getBoundingClientRect();
-      chars.push({ ch: text[i], top: Math.round(rect.top), node: node, off: i, fmt: fmt });
+      chars.push({ ch: text[i], top: Math.round(rect.top), node: node, off: i, fmt: fmt, align: lineAlign });
     }
   });
   if(chars.length === 0) return null;
@@ -5813,6 +5820,7 @@ function bakeOneJustifiedElementForCapture(el){
     var lineChars = lines[li];
     var rawText = lineChars.map(function(c){ return c.ch; }).join('');
     var isLast = (li === lines.length-1);
+    var lineAlign = lineChars[0].align || 'left';
     var needsHyphen = false;
     var paragraphEnd = isLast;
     if(!isLast){
@@ -5821,7 +5829,7 @@ function bakeOneJustifiedElementForCapture(el){
       var startsWithWs = nextRaw.length>0 && isWs(nextRaw[0]);
       var lastNonWsChar = rawText.replace(/\s+$/,'').slice(-1);
       paragraphEnd = isHardBreakBetween(lineChars[lineChars.length-1], lines[li+1][0]);
-      if(!paragraphEnd && !endsWithWs && !startsWithWs && rawText.trim().length>0 && !isHyphenChar(lastNonWsChar)){
+      if(lineAlign==='justify' && !paragraphEnd && !endsWithWs && !startsWithWs && rawText.trim().length>0 && !isHyphenChar(lastNonWsChar)){
         needsHyphen = true; /* interruzione avvenuta in mezzo a una parola: era una sillabazione */
       }
     }
@@ -5839,7 +5847,7 @@ function bakeOneJustifiedElementForCapture(el){
       var hyphenFmt = lastWord.length ? lastWord[lastWord.length-1].fmt : {bold:false,italic:false,underline:false};
       lastWord.push({ ch:'-', fmt: hyphenFmt });
     }
-    var justifyLine = !paragraphEnd && words.length > 1;
+    var justifyLine = lineAlign==='justify' && !paragraphEnd && words.length > 1;
     /* ogni parola tranne l'ultima porta con sé uno spazio vero: garantisce almeno uno spazio
        normale tra le parole anche quando la riga è completamente piena (es. con il trattino). */
     var spans = words.map(function(w, wi){
@@ -5848,7 +5856,7 @@ function bakeOneJustifiedElementForCapture(el){
     htmlParts.push(
       justifyLine
         ? '<div style="display:flex;justify-content:space-between;white-space:nowrap;">'+spans.join('')+'</div>'
-        : '<div style="white-space:nowrap;text-align:left;">'+(spans.join(' ')||'&nbsp;')+'</div>'
+        : '<div style="white-space:nowrap;text-align:'+(lineAlign==='justify' ? 'left' : lineAlign)+';">'+(spans.join(' ')||'&nbsp;')+'</div>'
     );
   }
   el.innerHTML = htmlParts.join('');
@@ -5871,7 +5879,9 @@ function bakeJustifiedHyphensForCapture(root){
   for(var idx=0; idx<els.length; idx++){
     var el = els[idx];
     var cs = window.getComputedStyle(el);
-    if(cs.hyphens !== 'auto' && cs.webkitHyphens !== 'auto') continue;
+    /* da ricostruire se tutto il riquadro è giustificato oppure se lo è anche solo una sua riga */
+    var hasJustifiedLine = !!el.querySelector('[style*="text-align: justify"],[align="justify"]');
+    if(cs.hyphens !== 'auto' && cs.webkitHyphens !== 'auto' && !hasJustifiedLine) continue;
     var r = bakeOneJustifiedElementForCapture(el);
     if(r) restores.push(r);
   }
@@ -8398,6 +8408,36 @@ function textAlignCss(align){
   var hy = (a==='justify') ? 'auto' : 'manual';
   return 'text-align:'+a+';hyphens:'+hy+';-webkit-hyphens:'+hy+';-ms-hyphens:'+hy+';';
 }
+/* true se il testo del riquadro è su più righe "vere" (a capo con Invio: <br> o blocchi) */
+function textHasSeveralLines(contentEl){
+  if(contentEl.querySelector('br')){
+    /* un solo <br> finale (che il browser lascia in fondo) non conta come riga in più */
+    var brs = contentEl.querySelectorAll('br');
+    if(brs.length>1 || (brs[0] && brs[0].nextSibling && (brs[0].nextSibling.nodeType!==3 || brs[0].nextSibling.nodeValue.trim()!==''))) return true;
+  }
+  var blocks = Array.prototype.filter.call(contentEl.children, function(ch){ return /^(DIV|P|LI|H[1-6])$/.test(ch.tagName); });
+  if(blocks.length>1) return true;
+  if(blocks.length===1){
+    /* testo prima del primo blocco + un blocco = due righe */
+    var before = blocks[0].previousSibling;
+    while(before){ if(before.nodeType===3 ? before.nodeValue.trim()!=='' : true) return true; before = before.previousSibling; }
+  }
+  return false;
+}
+/* allineamento effettivo (left/center/right/justify) della riga che contiene "node" */
+function textAlignAtNode(contentEl, node){
+  var el = node && (node.nodeType===1 ? node : node.parentElement);
+  while(el && el!==contentEl && (window.getComputedStyle(el).display||'').indexOf('inline')===0) el = el.parentElement;
+  if(!el || !contentEl.contains(el)) el = contentEl;
+  return normalizeTextAlignValue(window.getComputedStyle(el).textAlign);
+}
+function normalizeTextAlignValue(ta){
+  ta = String(ta||'');
+  if(ta==='justify') return 'justify';
+  if(ta.indexOf('center')!==-1) return 'center';
+  if(ta==='right' || ta==='end') return 'right';
+  return 'left';
+}
 function applyTextAlignLive(contentEl, align){
   var a = align || 'left';
   contentEl.style.textAlign = a;
@@ -9138,7 +9178,32 @@ function renderTextEl(data){
     if(hasLiveSelectionInside()){ document.execCommand('underline', false, null); data.html=contentEl.innerHTML; undBtn.classList.toggle('active', document.queryCommandState('underline')); markDirty(); }
     else { data.underline=!data.underline; undBtn.classList.toggle('active',data.underline); contentEl.style.textDecoration=data.underline?'underline':'none'; markDirty(); }
   });
-  wrapper.querySelector('.t-align').addEventListener('change', function(e){ data.align=e.target.value; applyTextAlignLive(contentEl, data.align); markDirty(); });
+  /* Allineamento per riga: se il testo ha più righe (a capo con Invio), l'allineamento scelto vale
+     solo per la riga — o le righe — dove si trova il cursore o che sono evidenziate, come in un
+     programma di videoscrittura; le altre righe mantengono il loro allineamento. Se il testo è una
+     riga sola, l'allineamento vale per tutto il riquadro, come prima.
+     Aprendo il menu la selezione nel testo andrebbe persa (il focus passa al menu): per questo
+     l'ultima posizione del cursore/selezione viene ricordata (vedi il listener "selectionchange")
+     e ripristinata qui prima di applicare il comando. */
+  wrapper.querySelector('.t-align').addEventListener('change', function(e){
+    var value = e.target.value;
+    var range = wrapper._lastTextRange;
+    var rangeOk = range && contentEl.contains(range.startContainer) && contentEl.contains(range.endContainer);
+    if(rangeOk && textHasSeveralLines(contentEl)){
+      var cmd = {left:'justifyLeft', center:'justifyCenter', right:'justifyRight', justify:'justifyFull'}[value] || 'justifyLeft';
+      try{ contentEl.focus({preventScroll:true}); }catch(err){ contentEl.focus(); }
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      try{ document.execCommand('styleWithCSS', false, true); }catch(err){}
+      document.execCommand(cmd, false, null);
+      try{ document.execCommand('styleWithCSS', false, false); }catch(err){}
+      data.html = contentEl.innerHTML;
+      markDirty();
+      return;
+    }
+    data.align = value; applyTextAlignLive(contentEl, data.align); markDirty();
+  });
   wrapper.querySelector('.t-color').addEventListener('input', function(e){ data.colorCustom=true; data.color=e.target.value; contentEl.style.color=data.color; markDirty(); });
   attachTextResizeHandle(wrapper.querySelector('.resize-handle-text'), wrapper, data);
   return wrapper;
@@ -9154,6 +9219,15 @@ document.addEventListener('selectionchange', function(){
   var contentEl = wrapper.querySelector('.text-content');
   if(!contentEl || document.activeElement !== contentEl) return;
   var boldBtn = wrapper.querySelector('.t-bold'), italBtn = wrapper.querySelector('.t-italic'), undBtn = wrapper.querySelector('.t-underline');
+  var sel = window.getSelection();
+  if(sel && sel.rangeCount>0){
+    var rg = sel.getRangeAt(0);
+    if(contentEl.contains(rg.startContainer) && contentEl.contains(rg.endContainer)){
+      wrapper._lastTextRange = rg.cloneRange();
+      var alignSel = wrapper.querySelector('.t-align');
+      if(alignSel){ var a = textAlignAtNode(contentEl, rg.startContainer); if(a) alignSel.value = a; }
+    }
+  }
   try{
     if(boldBtn) boldBtn.classList.toggle('active', document.queryCommandState('bold'));
     if(italBtn) italBtn.classList.toggle('active', document.queryCommandState('italic'));
