@@ -552,6 +552,19 @@ body.dark .canvas-text .text-mini-toolbar button{color:#fff;}
 body.dark .canvas-text .text-mini-toolbar select{color-scheme:dark;}
 body.dark .canvas-text .text-mini-toolbar select option{color:#fff;background:#332C22;}
 .canvas-text .text-content{min-width:60px;outline:none;line-height:1.45;padding:2px 3px;cursor:text;}
+/* A capo con "Invio": a seconda del browser o della tastiera dello smartphone (e anche incollando
+   testo da Word o da pagine web) la nuova riga può diventare un paragrafo <p>, che per impostazione
+   predefinita ha un margine sopra e sotto: le righe andate a capo con Invio risultavano così più
+   distanziate (circa 1,7 volte) di quelle che vanno a capo da sole. Qui ogni blocco dentro il testo
+   ha la stessa interlinea del resto del riquadro e nessun margine, in modo che la distanza fra le
+   righe sia sempre la stessa. (Premere Invio due volte lascia, com'è giusto, una riga vuota.) */
+.canvas-text .text-content p,.canvas-text .text-content div,.canvas-text .text-content li,
+.canvas-text .text-content blockquote,.canvas-text .text-content ul,.canvas-text .text-content ol,
+.canvas-text .text-content h1,.canvas-text .text-content h2,.canvas-text .text-content h3,
+.canvas-text .text-content h4,.canvas-text .text-content h5,.canvas-text .text-content h6{margin-top:0 !important;margin-bottom:0 !important;padding-top:0 !important;padding-bottom:0 !important;}
+.canvas-text .text-content *{line-height:inherit !important;}
+.canvas-text .text-content h1,.canvas-text .text-content h2,.canvas-text .text-content h3,
+.canvas-text .text-content h4,.canvas-text .text-content h5,.canvas-text .text-content h6{font-size:inherit;}
 .canvas-text:not(.editing) .text-content:empty:before{content:'(vuoto)';color:#B4A98C;}
 .canvas-text.dictating .text-content:empty:before{content:'Parla...';color:var(--accent);font-style:italic;}
 .canvas-text.editing .text-content{box-shadow:0 0 0 2px var(--gold);border-radius:4px;}
@@ -9091,6 +9104,9 @@ function enterTextEditMode(wrapper, data, skipHistory){
   var contentEl = wrapper.querySelector('.text-content');
   contentEl.contentEditable = 'true';
   contentEl.focus();
+  /* con Invio ogni browser crei la nuova riga allo stesso modo (un blocco <div>, come Chrome),
+     invece di un paragrafo <p> con i suoi margini */
+  try{ document.execCommand('defaultParagraphSeparator', false, 'div'); }catch(err){}
   activeEditingText = wrapper;
 }
 function exitTextEditMode(wrapper){
