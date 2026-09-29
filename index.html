@@ -4836,6 +4836,25 @@ $('#regRedo').addEventListener('click', redoRegisterChange);
 var REG_COLORS = ['#4E7FBD','#C0524B','#3E9C5C','#D08A3E','#8B5FBF','#2C5F79','#C25A8A'];
 
 function colLetter(i){ return String.fromCharCode(65+i); }
+/* Data di una colonna dei voti (salvata come aaaa-mm-gg in dates1/dates2): se c'è, al posto della
+   lettera (A, B, C...) si mostra solo giorno/mese, es. "04/09"; altrimenti resta la lettera. */
+function regColDate(sheet, quarter, i){
+  var arr = sheet && sheet['dates'+quarter];
+  return (arr && arr[i]) ? String(arr[i]) : '';
+}
+function fmtDayMonth(iso){
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||'');
+  return m ? (m[3]+'/'+m[2]) : '';
+}
+function regColLabel(sheet, quarter, i){
+  var d = regColDate(sheet, quarter, i);
+  return d ? fmtDayMonth(d) : colLetter(i);
+}
+function regColTitle(sheet, quarter, i){
+  var d = regColDate(sheet, quarter, i);
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
+  return 'Colonna '+colLetter(i)+(m ? (' - '+m[3]+'/'+m[2]+'/'+m[1]) : '');
+}
 function computeAvg(gradesRow, excludedArr){
   var nums = gradesRow
     .filter(function(v, i){ return !(excludedArr && excludedArr[i]); })
@@ -4856,6 +4875,7 @@ function defaultSheetData(name, color){
     grades2:Array.from({length:10}, function(){ return new Array(9).fill(''); }),
     desc1:new Array(9).fill(''), desc2:new Array(9).fill(''),
     excluded1:new Array(9).fill(false), excluded2:new Array(9).fill(false),
+    dates1:new Array(9).fill(''), dates2:new Array(9).fill(''),
     cellStyles:{},
     createdAt: Date.now()
   };
@@ -4891,6 +4911,12 @@ function sheetFromFirestore(data){
   if(!Array.isArray(data.excluded2) || data.excluded2.length!==data.numCols2) data.excluded2 = new Array(data.numCols2).fill(false);
   if(!Array.isArray(data.notes) || data.notes.length!==data.numRows) data.notes = new Array(data.numRows).fill('');
   if(!data.cellStyles || typeof data.cellStyles!=='object') data.cellStyles = {};
+  /* date delle colonne (aggiunte in seguito: le schede più vecchie non le hanno) */
+  [1,2].forEach(function(q){
+    var n = data['numCols'+q], arr = Array.isArray(data['dates'+q]) ? data['dates'+q].slice(0, n) : [];
+    while(arr.length<n) arr.push('');
+    data['dates'+q] = arr.map(function(x){ return x ? String(x) : ''; });
+  });
   return data;
 }
 function getCurrentSheet(){ return (state.registerSheets||[]).find(function(s){ return s.id===state.currentSheetId; }); }
@@ -5172,12 +5198,12 @@ function buildRegisterTableInnerHTML(sheet, forPrint){
   html += '<th class="reg-classe-cell" colspan="3"'+cellBgStyle(sheet,'classname')+'>CLASSE: '+(forPrint ? '<span'+cellFmtStyle(sheet,'classname')+'>'+escapeHtml(sheet.className||'')+'</span>' : '<input type="text" class="reg-input" id="regClassName" data-cellkey="classname"'+cellFmtStyle(sheet,'classname')+' value="'+escapeAttr(sheet.className||'')+'">')+'</th>';
   for(var i=0;i<n1;i++){
     var excl1 = !!(sheet.excluded1 && sheet.excluded1[i]);
-    html += '<th class="reg-hdr-grade'+(excl1?' excluded':'')+'"'+(forPrint?'':' data-quarter="1" data-col="'+i+'"')+' title="'+(excl1?'Colonna esclusa dalla media':'')+'">'+colLetter(i)+(excl1?'<span class="reg-excl-mark">✕</span>':'')+'</th>';
+    html += '<th class="reg-hdr-grade'+(excl1?' excluded':'')+'"'+(forPrint?'':' data-quarter="1" data-col="'+i+'"')+' title="'+escapeAttr(regColTitle(sheet,1,i)+(excl1?' (esclusa dalla media)':''))+'">'+regColLabel(sheet,1,i)+(excl1?'<span class="reg-excl-mark">✕</span>':'')+'</th>';
   }
   html += '<th class="reg-hdr-media1">MEDIA 1Q</th>';
   for(var j=0;j<n2;j++){
     var excl2 = !!(sheet.excluded2 && sheet.excluded2[j]);
-    html += '<th class="reg-hdr-grade'+(excl2?' excluded':'')+'"'+(forPrint?'':' data-quarter="2" data-col="'+j+'"')+' title="'+(excl2?'Colonna esclusa dalla media':'')+'">'+colLetter(j)+(excl2?'<span class="reg-excl-mark">✕</span>':'')+'</th>';
+    html += '<th class="reg-hdr-grade'+(excl2?' excluded':'')+'"'+(forPrint?'':' data-quarter="2" data-col="'+j+'"')+' title="'+escapeAttr(regColTitle(sheet,2,j)+(excl2?' (esclusa dalla media)':''))+'">'+regColLabel(sheet,2,j)+(excl2?'<span class="reg-excl-mark">✕</span>':'')+'</th>';
   }
   html += '<th class="reg-hdr-media2">MEDIA 2Q</th></tr></thead><tbody>';
   for(var r=0;r<sheet.numRows;r++){
@@ -5220,12 +5246,12 @@ function buildRegisterTableInnerHTML(sheet, forPrint){
     if(d<n1){
       var dv1 = sheet.desc1[d]||'';
       var dKey1 = 'desc-1-'+d;
-      html += '<td class="reg-desc-letter">'+colLetter(d)+'</td><td class="reg-desc-text" colspan="'+n1+'"'+cellBgStyle(sheet,dKey1)+'>'+(forPrint?'<span'+cellFmtStyle(sheet,dKey1)+'>'+escapeHtml(dv1)+'</span>':'<input type="text" class="reg-input" data-desc-quarter="1" data-desc-index="'+d+'" data-cellkey="'+dKey1+'"'+cellFmtStyle(sheet,dKey1)+' value="'+escapeAttr(dv1)+'">')+'</td>';
+      html += '<td class="reg-desc-letter">'+regColLabel(sheet,1,d)+'</td><td class="reg-desc-text" colspan="'+n1+'"'+cellBgStyle(sheet,dKey1)+'>'+(forPrint?'<span'+cellFmtStyle(sheet,dKey1)+'>'+escapeHtml(dv1)+'</span>':'<input type="text" class="reg-input" data-desc-quarter="1" data-desc-index="'+d+'" data-cellkey="'+dKey1+'"'+cellFmtStyle(sheet,dKey1)+' value="'+escapeAttr(dv1)+'">')+'</td>';
     } else { html += '<td colspan="'+(1+n1)+'"></td>'; }
     if(d<n2){
       var dv2 = sheet.desc2[d]||'';
       var dKey2 = 'desc-2-'+d;
-      html += '<td class="reg-desc-letter">'+colLetter(d)+'</td><td class="reg-desc-text" colspan="'+n2+'"'+cellBgStyle(sheet,dKey2)+'>'+(forPrint?'<span'+cellFmtStyle(sheet,dKey2)+'>'+escapeHtml(dv2)+'</span>':'<input type="text" class="reg-input" data-desc-quarter="2" data-desc-index="'+d+'" data-cellkey="'+dKey2+'"'+cellFmtStyle(sheet,dKey2)+' value="'+escapeAttr(dv2)+'">')+'</td>';
+      html += '<td class="reg-desc-letter">'+regColLabel(sheet,2,d)+'</td><td class="reg-desc-text" colspan="'+n2+'"'+cellBgStyle(sheet,dKey2)+'>'+(forPrint?'<span'+cellFmtStyle(sheet,dKey2)+'>'+escapeHtml(dv2)+'</span>':'<input type="text" class="reg-input" data-desc-quarter="2" data-desc-index="'+d+'" data-cellkey="'+dKey2+'"'+cellFmtStyle(sheet,dKey2)+' value="'+escapeAttr(dv2)+'">')+'</td>';
     } else { html += '<td colspan="'+(1+n2)+'"></td>'; }
     html += '</tr>';
   }
@@ -5643,10 +5669,14 @@ function insertRegisterCol(sheet, quarter, atIndex){
     sheet.numCols1++; sheet.grades1.forEach(function(row){ row.splice(atIndex,0,''); }); sheet.desc1.splice(atIndex,0,'');
     if(!Array.isArray(sheet.excluded1)) sheet.excluded1 = new Array(sheet.numCols1-1).fill(false);
     sheet.excluded1.splice(atIndex,0,false);
+    if(!Array.isArray(sheet.dates1)) sheet.dates1 = new Array(sheet.numCols1-1).fill('');
+    sheet.dates1.splice(atIndex,0,'');
   } else {
     sheet.numCols2++; sheet.grades2.forEach(function(row){ row.splice(atIndex,0,''); }); sheet.desc2.splice(atIndex,0,'');
     if(!Array.isArray(sheet.excluded2)) sheet.excluded2 = new Array(sheet.numCols2-1).fill(false);
     sheet.excluded2.splice(atIndex,0,false);
+    if(!Array.isArray(sheet.dates2)) sheet.dates2 = new Array(sheet.numCols2-1).fill('');
+    sheet.dates2.splice(atIndex,0,'');
   }
   markRegisterDirty();
   renderRegisterTable(sheet);
@@ -5658,9 +5688,11 @@ function deleteRegisterColAt(sheet, quarter, atIndex){
   if(quarter===1){
     sheet.numCols1--; sheet.grades1.forEach(function(row){ row.splice(atIndex,1); }); sheet.desc1.splice(atIndex,1);
     if(Array.isArray(sheet.excluded1)) sheet.excluded1.splice(atIndex,1);
+    if(Array.isArray(sheet.dates1)) sheet.dates1.splice(atIndex,1);
   } else {
     sheet.numCols2--; sheet.grades2.forEach(function(row){ row.splice(atIndex,1); }); sheet.desc2.splice(atIndex,1);
     if(Array.isArray(sheet.excluded2)) sheet.excluded2.splice(atIndex,1);
+    if(Array.isArray(sheet.dates2)) sheet.dates2.splice(atIndex,1);
   }
   markRegisterDirty();
   renderRegisterTable(sheet);
@@ -5678,8 +5710,19 @@ function openColumnActionsModal(sheet, quarter, colIndex){
   quarter = +quarter;
   var arrName = quarter===1 ? 'excluded1' : 'excluded2';
   var isExcluded = !!(sheet[arrName] && sheet[arrName][colIndex]);
+  var curDate = regColDate(sheet, quarter, colIndex);
+  var today = new Date();
+  var todayIso = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   openModal(
-    '<h3>Colonna '+colLetter(colIndex)+'</h3>'+
+    '<h3>Colonna '+colLetter(colIndex)+(curDate ? ' ('+fmtDayMonth(curDate)+')' : '')+'</h3>'+
+    /* la data scelta prende il posto della lettera della colonna e della stessa lettera accanto a
+       "Descrizione voti" (solo giorno/mese, es. 04/09) */
+    '<label for="colDateInput">Data</label>'+
+    '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">'+
+      '<input type="date" id="colDateInput" value="'+escapeAttr(curDate || todayIso)+'" style="flex:1;min-width:0;">'+
+      '<button type="button" class="btn-primary" id="colDateApply">Imposta</button>'+
+    '</div>'+
+    (curDate ? '<button type="button" class="btn-secondary" id="colDateRemove" style="margin-bottom:14px;">Rimuovi data (torna la lettera '+colLetter(colIndex)+')</button>' : '<div style="height:8px;"></div>')+
     '<div class="modal-choices">'+
       '<button type="button" class="choice-btn" id="colInsertLeft">'+iconSvg('plus')+'<span>Inserisci colonna a sinistra</span></button>'+
       '<button type="button" class="choice-btn" id="colInsertRight">'+iconSvg('plus')+'<span>Inserisci colonna a destra</span></button>'+
@@ -5689,6 +5732,26 @@ function openColumnActionsModal(sheet, quarter, colIndex){
     '<button type="button" class="btn-secondary" id="colActionsCancel">Annulla</button>'
   );
   $('#colActionsCancel').onclick = closeModal;
+  function setColDate(value){
+    pushRegisterHistory();
+    var key = 'dates'+quarter, n = quarter===1 ? sheet.numCols1 : sheet.numCols2;
+    if(!Array.isArray(sheet[key]) || sheet[key].length!==n){
+      var arr = Array.isArray(sheet[key]) ? sheet[key].slice(0, n) : [];
+      while(arr.length<n) arr.push('');
+      sheet[key] = arr;
+    }
+    sheet[key][colIndex] = value;
+    markRegisterDirty();
+    closeModal();
+    renderRegisterTable(sheet);
+  }
+  $('#colDateApply').onclick = function(){
+    var v = $('#colDateInput').value;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){ showToast('Scegli una data.', 'error'); return; }
+    setColDate(v);
+  };
+  $('#colDateInput').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); $('#colDateApply').click(); } });
+  if(curDate) $('#colDateRemove').onclick = function(){ setColDate(''); };
   $('#colToggleExcl').onclick = function(){ closeModal(); toggleColumnExcluded(sheet, quarter, colIndex); };
   $('#colInsertLeft').onclick = function(){ closeModal(); insertRegisterCol(sheet, quarter, colIndex); };
   $('#colInsertRight').onclick = function(){ closeModal(); insertRegisterCol(sheet, quarter, colIndex+1); };
