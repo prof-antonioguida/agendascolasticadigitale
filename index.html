@@ -354,12 +354,17 @@ body.dark .theme-toggle .icon-moon{display:block;}
 }
 .notebook-page-strip:empty{display:none;}
 .np-page-chip{
-  flex:0 0 auto;width:34px;height:34px;border-radius:7px;border:1px solid var(--paper-line);
+  flex:0 0 auto;min-width:34px;max-width:160px;height:34px;padding:0 9px;border-radius:7px;border:1px solid var(--paper-line);
   background:var(--surface);color:var(--ink);font-size:.82rem;font-weight:600;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;
+  display:block;line-height:32px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:background .15s,color .15s,transform .12s,box-shadow .12s;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
 }
 .np-page-chip:hover{background:var(--surface-alt);}
 .np-page-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+/* pagina "presa" per essere spostata (trascinamento con il mouse o pressione prolungata al tocco) */
+.np-page-chip.dragging{transform:scale(1.08);box-shadow:0 4px 12px rgba(0,0,0,.28);cursor:grabbing;position:relative;z-index:2;opacity:.92;}
+.notebook-page-strip.chip-dragging{cursor:grabbing;}
 .np-search{
   width:100%;max-width:420px;padding:10px 14px;border-radius:22px;border:1px solid var(--paper-line);
   background:var(--surface);font-size:.9rem;margin:16px 0 20px;color:var(--ink);
@@ -1624,6 +1629,7 @@ body.dark .choice-btn.choice-danger > span small{color:var(--ink-soft);}
       <button type="button" class="icon-btn" id="npPrevBtn" data-icon="arrowLeft" title="Pagina precedente"></button>
       <button type="button" class="topbar-btn" id="npAddBtn" data-icon="plus" data-label="Nuova pagina"></button>
       <button type="button" class="icon-btn" id="npNextBtn" data-icon="arrowRight" title="Pagina successiva"></button>
+      <button type="button" class="icon-btn" id="npRenamePageBtn" data-icon="pencil" title="Rinomina questa pagina"></button>
     </div>
   </div>
 </div>
@@ -4220,14 +4226,35 @@ async function deleteNotebook(id){
 
 state.notebooks = [];
 state.notebookPagesCache = [];
+/* Ordine delle pagine: quello scelto dall'utente trascinando le paginette in basso (campo "order");
+   per le pagine che non lo hanno ancora (blocchi note creati prima di questa funzione) vale l'ordine
+   di creazione. */
 function sortedCurrentNotebookPages(){
-  return (state.notebookPagesCache||[]).slice().sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+  var byCreation = (state.notebookPagesCache||[]).slice().sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+  var rank = {};
+  byCreation.forEach(function(p, i){ rank[p.id] = (typeof p.order==='number') ? p.order : i; });
+  return byCreation.sort(function(a,b){ return (rank[a.id]-rank[b.id]) || ((a.createdAt||0)-(b.createdAt||0)); });
+}
+function nextNotebookPageOrder(){
+  var pages = sortedCurrentNotebookPages();
+  var max = pages.length-1;
+  pages.forEach(function(p){ if(typeof p.order==='number' && p.order>max) max = p.order; });
+  return max+1;
+}
+function notebookPageLabel(p, i){
+  var n = p && typeof p.name==='string' ? p.name.trim() : '';
+  return n || String(i+1);
 }
 function updateNotebookBarName(){
   var nb = (state.notebooks||[]).find(function(n){ return n.id===currentNotebookId; });
   var pages = sortedCurrentNotebookPages();
   var idx = pages.findIndex(function(p){ return p.id===currentPageKey; });
-  $('#npNameDisplay').textContent = (nb?nb.name:'') + (pages.length>1 ? ' — Pagina '+(idx+1)+' di '+pages.length : '');
+  var cur = idx>=0 ? pages[idx] : null;
+  var pageName = cur && typeof cur.name==='string' ? cur.name.trim() : '';
+  var suffix = '';
+  if(pageName) suffix = ' — '+pageName + (pages.length>1 ? ' ('+(idx+1)+' di '+pages.length+')' : '');
+  else if(pages.length>1) suffix = ' — Pagina '+(idx+1)+' di '+pages.length;
+  $('#npNameDisplay').textContent = (nb?nb.name:'') + suffix;
   renderNotebookPageStrip(pages, idx);
 }
 /* Striscia di "paginette" numerate in fondo alla pagina del blocco note: un click su un numero
@@ -4235,19 +4262,180 @@ function updateNotebookBarName(){
 function renderNotebookPageStrip(pages, activeIdx){
   var strip = $('#notebookPageStrip');
   if(!strip) return;
-  if(!pages || pages.length<2){ strip.innerHTML=''; return; } /* con una sola pagina non serve */
+  /* con una sola pagina senza nome la striscia non serve */
+  if(!pages || pages.length===0 || (pages.length<2 && !String(pages[0].name||'').trim())){ strip.innerHTML=''; return; }
   strip.innerHTML = pages.map(function(p, i){
-    return '<button type="button" class="np-page-chip'+(i===activeIdx?' active':'')+'" data-page-id="'+p.id+'" title="Pagina '+(i+1)+'">'+(i+1)+'</button>';
+    var label = notebookPageLabel(p, i);
+    var tip = (label===String(i+1) ? 'Pagina '+(i+1) : label+' (pagina '+(i+1)+')') +
+      (i===activeIdx ? ' — clicca di nuovo per rinominarla' : '') +
+      ' — trascina per spostarla (su smartphone: tieni premuto, poi trascina)';
+    return '<button type="button" class="np-page-chip'+(i===activeIdx?' active':'')+'" data-page-id="'+p.id+'" title="'+escapeAttr(escapeHtml(tip))+'">'+escapeHtml(label)+'</button>';
   }).join('');
   var activeChip = strip.querySelector('.np-page-chip.active');
   if(activeChip && activeChip.scrollIntoView) activeChip.scrollIntoView({block:'nearest', inline:'center'});
 }
+var npChipJustDragged = false;
 $('#notebookPageStrip').addEventListener('click', function(evt){
   var chip = evt.target.closest('.np-page-chip');
-  if(!chip || chip.classList.contains('active')) return;
+  if(!chip) return;
+  if(npChipJustDragged){ npChipJustDragged = false; return; }
   var pageId = chip.dataset.pageId;
+  /* un click sulla pagina già aperta serve a rinominarla */
+  if(chip.classList.contains('active')){ renameNotebookPage(pageId); return; }
   if(pageId && currentNotebookId) openNotebookPageScreen(currentNotebookId, pageId);
 });
+$('#npRenamePageBtn').addEventListener('click', function(){
+  if(pageMode!=='notebook' || !currentNotebookId || !currentPageKey) return;
+  renameNotebookPage(currentPageKey);
+});
+/* Rinomina una pagina del blocco note: il nome prende il posto del numero nella paginetta in basso.
+   Lasciando il campo vuoto la pagina torna a mostrare il suo numero. */
+function renameNotebookPage(pageId){
+  var pages = sortedCurrentNotebookPages();
+  var idx = pages.findIndex(function(p){ return p.id===pageId; });
+  if(idx<0) return;
+  var page = pages[idx];
+  var notebookId = currentNotebookId;
+  openModal(
+    '<h3>Rinomina pagina</h3>'+
+    '<label for="npPageRenameInput">Nome della pagina '+(idx+1)+'</label>'+
+    '<input type="text" id="npPageRenameInput" value="'+escapeAttr(page.name||'')+'" maxlength="40" placeholder="'+(idx+1)+'">'+
+    '<p class="modal-hint" style="font-size:.8rem;opacity:.75;margin:6px 0 0;">Lascia vuoto per mostrare di nuovo il numero della pagina.</p>'+
+    '<div class="modal-actions">'+
+      '<button type="button" class="btn-secondary" id="npPageRenameCancel">Annulla</button>'+
+      '<button type="button" class="btn-primary" id="npPageRenameConfirm">Salva</button>'+
+    '</div>'
+  );
+  var input = $('#npPageRenameInput');
+  setTimeout(function(){ input.focus(); input.select(); }, 60);
+  $('#npPageRenameCancel').onclick = closeModal;
+  input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); $('#npPageRenameConfirm').click(); } });
+  $('#npPageRenameConfirm').onclick = async function(){
+    var nuovoNome = input.value.trim().replace(/\s+/g,' ');
+    if(nuovoNome){
+      var others = sortedCurrentNotebookPages().filter(function(p){ return p.id!==page.id; })
+        .map(function(p, i){ return p.name && p.name.trim() ? p.name : null; }).filter(Boolean);
+      nuovoNome = confirmUniqueName(nuovoNome, others);
+      if(nuovoNome===null){ input.focus(); input.select(); return; }
+    }
+    page.name = nuovoNome;
+    closeModal();
+    if(pageMode==='notebook' && currentNotebookId===notebookId) updateNotebookBarName();
+    try{
+      await updateDocSafe(notebookPageDocRef(state.currentAgendaId, notebookId, page.id), {name: nuovoNome});
+      showToast(nuovoNome ? 'Pagina rinominata.' : 'Nome della pagina rimosso.', 'success');
+    }catch(err){ console.error(err); showToast('Errore nel salvataggio del nome della pagina.', 'error'); }
+  };
+}
+/* Spostamento delle pagine trascinando le paginette in basso, a destra o a sinistra.
+   Con il mouse basta trascinare; al tocco si tiene premuto un attimo sulla paginetta (così lo
+   scorrimento orizzontale della striscia continua a funzionare normalmente) e poi si trascina. */
+(function initNotebookChipsDrag(){
+  var strip = $('#notebookPageStrip');
+  var drag = null;
+  function chipsOf(){ return Array.prototype.slice.call(strip.querySelectorAll('.np-page-chip')); }
+  function moveTo(clientX){
+    var chips = chipsOf();
+    var draggedIndex = chips.indexOf(drag.chip);
+    for(var i=0;i<chips.length;i++){
+      if(chips[i]===drag.chip) continue;
+      var r = chips[i].getBoundingClientRect();
+      var midX = r.left + r.width/2;
+      if(clientX < midX && i < draggedIndex){ strip.insertBefore(drag.chip, chips[i]); drag.moved = true; break; }
+      else if(clientX > midX && i > draggedIndex){ strip.insertBefore(drag.chip, chips[i].nextSibling); drag.moved = true; break; }
+    }
+    /* scorrimento automatico della striscia quando si arriva ai bordi */
+    var sr = strip.getBoundingClientRect();
+    if(clientX < sr.left+24) strip.scrollLeft -= 10;
+    else if(clientX > sr.right-24) strip.scrollLeft += 10;
+  }
+  function begin(){
+    drag.dragging = true;
+    drag.chip.classList.add('dragging');
+    strip.classList.add('chip-dragging');
+  }
+  function end(){
+    if(!drag) return;
+    if(drag.timer) clearTimeout(drag.timer);
+    if(drag.dragging){
+      drag.chip.classList.remove('dragging');
+      strip.classList.remove('chip-dragging');
+      npChipJustDragged = true;
+      setTimeout(function(){ npChipJustDragged = false; }, 350);
+      if(drag.moved) persistNotebookPagesOrder();
+    }
+    drag = null;
+  }
+  /* mouse / penna */
+  strip.addEventListener('pointerdown', function(e){
+    if(e.pointerType==='touch') return;
+    if(e.button !== undefined && e.button !== 0) return;
+    var chip = e.target.closest('.np-page-chip');
+    if(!chip) return;
+    drag = { chip: chip, startX: e.clientX, startY: e.clientY, dragging:false, moved:false, pointerId:e.pointerId, touch:false };
+  });
+  strip.addEventListener('pointermove', function(e){
+    if(!drag || drag.touch || drag.pointerId !== e.pointerId) return;
+    if(!drag.dragging){
+      if(Math.abs(e.clientX-drag.startX) < 6 && Math.abs(e.clientY-drag.startY) < 6) return;
+      begin();
+      try{ drag.chip.setPointerCapture(e.pointerId); }catch(err){}
+    }
+    e.preventDefault();
+    moveTo(e.clientX);
+  });
+  strip.addEventListener('pointerup', function(e){ if(drag && !drag.touch && drag.pointerId===e.pointerId) end(); });
+  strip.addEventListener('pointercancel', function(e){ if(drag && !drag.touch && drag.pointerId===e.pointerId) end(); });
+  /* tocco: pressione prolungata, poi trascinamento */
+  strip.addEventListener('touchstart', function(e){
+    if(e.touches.length!==1){ if(drag && drag.touch) end(); return; }
+    var chip = e.target.closest && e.target.closest('.np-page-chip');
+    if(!chip) return;
+    var t = e.touches[0];
+    drag = { chip: chip, startX: t.clientX, startY: t.clientY, dragging:false, moved:false, touch:true, cancelled:false };
+    var d = drag;
+    d.timer = setTimeout(function(){
+      if(drag!==d || d.cancelled) return;
+      begin();
+      if(navigator.vibrate){ try{ navigator.vibrate(25); }catch(err){} }
+    }, 450);
+  }, {passive:true});
+  strip.addEventListener('touchmove', function(e){
+    if(!drag || !drag.touch) return;
+    var t = e.touches[0];
+    if(!drag.dragging){
+      /* il dito si è mosso prima della pressione prolungata: è un normale scorrimento */
+      if(Math.abs(t.clientX-drag.startX) > 8 || Math.abs(t.clientY-drag.startY) > 8){ drag.cancelled = true; clearTimeout(drag.timer); drag = null; }
+      return;
+    }
+    if(e.cancelable) e.preventDefault();
+    moveTo(t.clientX);
+  }, {passive:false});
+  strip.addEventListener('touchend', function(e){
+    if(!drag || !drag.touch) return;
+    var wasDragging = drag.dragging;
+    end();
+    if(wasDragging && e.cancelable) e.preventDefault(); /* niente click "fantasma" dopo lo spostamento */
+  }, {passive:false});
+  strip.addEventListener('touchcancel', function(){ if(drag && drag.touch) end(); });
+  strip.addEventListener('contextmenu', function(e){ if(e.target.closest('.np-page-chip')) e.preventDefault(); });
+})();
+function persistNotebookPagesOrder(){
+  var strip = $('#notebookPageStrip');
+  var ids = Array.prototype.map.call(strip.querySelectorAll('.np-page-chip'), function(c){ return c.dataset.pageId; });
+  var cache = state.notebookPagesCache||[];
+  var reordered = ids.map(function(id){ return cache.find(function(p){ return p.id===id; }); }).filter(Boolean);
+  if(reordered.length !== cache.length){ updateNotebookBarName(); return; }
+  var notebookId = currentNotebookId;
+  reordered.forEach(function(p, idx){
+    if(p.order !== idx){
+      p.order = idx;
+      updateDocSafe(notebookPageDocRef(state.currentAgendaId, notebookId, p.id), {order: idx})
+        .catch(function(err){ console.error(err); showToast("Errore nel salvataggio dell'ordine delle pagine.", 'error'); });
+    }
+  });
+  updateNotebookBarName();
+}
 async function openNotebook(notebookId, pageId){
   try{
     var snap = await getDocs(notebookPagesColl(state.currentAgendaId, notebookId));
@@ -4328,7 +4516,7 @@ $('#npAddBtn').addEventListener('click', async function(){
   if(pageMode!=='notebook' || !currentNotebookId) return;
   try{
     var newPageId = uid();
-    var pageData = {createdAt: Date.now(), background:'righi', orientation:'verticale'};
+    var pageData = {createdAt: Date.now(), background:'righi', orientation:'verticale', order: nextNotebookPageOrder()};
     await setDocSafe(notebookPageDocRef(state.currentAgendaId, currentNotebookId, newPageId), pageData);
     state.notebookPagesCache = state.notebookPagesCache || [];
     state.notebookPagesCache.push(Object.assign({id:newPageId}, pageData));
