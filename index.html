@@ -5131,6 +5131,7 @@ async function enterRegisterSection(){
   regActiveCellKey = null;
   regSelectedCells = [];
   regSelectionAnchorKey = null;
+  regCustomSelection = false;
   clearRegFmtButtonsState();
   $('#regAgendaName').textContent = state.currentAgenda ? state.currentAgenda.nome : '';
   renderRegisterTabs();
@@ -5244,6 +5245,7 @@ async function switchRegisterSheet(id){
   regActiveCellKey = null;
   regSelectedCells = [];
   regSelectionAnchorKey = null;
+  regCustomSelection = false;
   clearRegFmtButtonsState();
   var b=$('#regSaveBtn'); if(b) b.classList.remove('needs-save');
   renderRegisterTabs();
@@ -5518,6 +5520,7 @@ function wireRegisterTableEvents(sheet){
     inp.addEventListener('focus', function(){
       regActiveCellKey = inp.dataset.cellkey;
       if(!regDragSelectActive){
+        regCustomSelection = false;
         regSelectedCells = [inp.dataset.cellkey];
         regSelectionAnchorKey = inp.dataset.cellkey;
         applyRegSelectionHighlight();
@@ -5530,6 +5533,8 @@ var regActiveCellKey = null;
 var regSelectedCells = [];
 var regSelectionAnchorKey = null;
 var regDragSelectActive = false;
+var regCustomSelection = false;   /* true dopo una selezione fatta con CTRL+clic */
+var regCtrlDrag = null;           /* {base:[...], anchor:key} durante un CTRL+trascinamento */
 function parseRegCellKey(key){
   if(key==='classname') return {region:'classname', row:0, col:0};
   var m;
@@ -5570,6 +5575,7 @@ function applyRegSelectionHighlight(){
   });
 }
 function startRegSelection(key){
+  regCustomSelection = false;
   regSelectedCells = [key];
   regSelectionAnchorKey = key;
   applyRegSelectionHighlight();
@@ -5582,8 +5588,23 @@ function extendRegSelectionTo(key){
   applyRegSelectionHighlight();
 }
 function regSelectionOrActiveKeys(){
-  if(regSelectedCells && regSelectedCells.length>1) return regSelectedCells.slice();
+  if(regSelectedCells && (regSelectedCells.length>1 || (regCustomSelection && regSelectedCells.length===1))) return regSelectedCells.slice();
   return regActiveCellKey ? [regActiveCellKey] : [];
+}
+/* CTRL+clic (Cmd+clic sul Mac) sulle celle dei registri: aggiunge alla selezione la cella cliccata
+   oppure, se era già selezionata, la toglie; CTRL+trascinamento aggiunge un intero rettangolo di
+   celle. Così si possono selezionare celle sparse (anche in punti diversi della tabella) e poi
+   applicare a tutte insieme grassetto, colori, cancella, ecc. */
+function isMultiSelectClick(e){ return !!(e && (e.ctrlKey || e.metaKey)); }
+function toggleKeyInList(list, key){
+  var out = (list||[]).slice(), i = out.indexOf(key);
+  if(i>=0) out.splice(i,1); else out.push(key);
+  return out;
+}
+function unionKeyLists(a, b){
+  var out = (a||[]).slice();
+  (b||[]).forEach(function(k){ if(out.indexOf(k)<0) out.push(k); });
+  return out;
 }
 /* Tocco sulle tabelle dei registri (telefono/tablet): per non confondere lo scorrimento della
    pagina con la selezione delle celle:
@@ -5651,6 +5672,19 @@ function initRegCellSelection(){
     if(!target) return;
     if(Date.now()-regTouch.lastTouch<800) return; /* mousedown "finto" generato dopo un tocco */
     var key = target.dataset.cellkey;
+    if(isMultiSelectClick(e)){
+      e.preventDefault(); /* la cella non si apre per scrivere: si aggiunge/toglie solo dalla selezione */
+      var base = (regSelectedCells && regSelectedCells.length) ? regSelectedCells.slice() : (regActiveCellKey ? [regActiveCellKey] : []);
+      regSelectedCells = toggleKeyInList(base, key);
+      regSelectionAnchorKey = key;
+      regCustomSelection = true;
+      regCtrlDrag = { base: base, anchor: key };
+      regDragSelectActive = true;
+      applyRegSelectionHighlight();
+      var shc = getCurrentSheet(); if(shc) updateRegFmtButtonsState(shc);
+      return;
+    }
+    regCtrlDrag = null;
     if(e.shiftKey && regSelectionAnchorKey){
       extendRegSelectionTo(key);
     } else {
@@ -5663,10 +5697,21 @@ function initRegCellSelection(){
     if(typeof e.buttons==='number' && e.buttons===0){ regDragSelectActive = false; return; }
     var target = e.target.closest('[data-cellkey]');
     if(!target) return;
-    extendRegSelectionTo(target.dataset.cellkey);
+    if(regCtrlDrag){
+      var k = target.dataset.cellkey;
+      if(k!==regCtrlDrag.anchor){
+        var a = parseRegCellKey(regCtrlDrag.anchor), b = parseRegCellKey(k);
+        var range = (a && b && a.region===b.region) ? regCellKeysInRange(a.region, a.row, a.col, b.row, b.col) : [k];
+        regSelectedCells = unionKeyLists(regCtrlDrag.base, range);
+        applyRegSelectionHighlight();
+        var shd = getCurrentSheet(); if(shd) updateRegFmtButtonsState(shd);
+      }
+    } else {
+      extendRegSelectionTo(target.dataset.cellkey);
+    }
     if(window.getSelection) window.getSelection().removeAllRanges();
   });
-  window.addEventListener('mouseup', function(){ regDragSelectActive = false; });
+  window.addEventListener('mouseup', function(){ regDragSelectActive = false; regCtrlDrag = null; });
   regTouch = attachTouchCellSelection(container, 'data-cellkey', {
     start: function(key){ startRegSelection(key); regActiveCellKey = key; var sh = getCurrentSheet(); if(sh) updateRegFmtButtonsState(sh); },
     extend: function(key){ extendRegSelectionTo(key); }
@@ -5674,7 +5719,8 @@ function initRegCellSelection(){
   document.addEventListener('keydown', function(e){
     if(e.key!=='Escape') return;
     var scr = document.getElementById('screen-registro');
-    if(scr && scr.classList.contains('active') && regSelectedCells.length>1){
+    if(scr && scr.classList.contains('active') && (regSelectedCells.length>1 || regCustomSelection)){
+      regCustomSelection = false;
       regSelectedCells = regActiveCellKey ? [regActiveCellKey] : [];
       clearRegSelectionHighlight();
       applyRegSelectionHighlight();
@@ -5717,7 +5763,7 @@ function toggleRegCellFormat(prop){
     }
   });
   markRegisterDirty();
-  if(keys.length===1 && regActiveCellKey && !regTouch.touchSelection){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
+  if(keys.length===1 && regActiveCellKey && keys[0]===regActiveCellKey && !regTouch.touchSelection){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
   updateRegFmtButtonsState(sheet);
 }
 $('#regFmtBold').addEventListener('click', function(){ toggleRegCellFormat('bold'); });
@@ -5743,7 +5789,7 @@ function applyCellColor(prop, value){
     }
   });
   markRegisterDirty();
-  if(keys.length===1 && regActiveCellKey && !regTouch.touchSelection){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
+  if(keys.length===1 && regActiveCellKey && keys[0]===regActiveCellKey && !regTouch.touchSelection){ var af = document.querySelector('[data-cellkey="'+regActiveCellKey+'"]'); if(af) af.focus(); }
 }
 $('#regFmtBgColor').addEventListener('click', function(){
   var sheet = getCurrentSheet(); var keys = regSelectionOrActiveKeys();
@@ -6458,6 +6504,7 @@ function createTableRegister(cfg){
   var tabsWrap = byId('Tabs');
   var dirty = false, histUndo = [], histRedo = [];
   var activeKey = null, selectedKeys = [], selectionAnchor = null, dragSelecting = false;
+  var customSelection = false, ctrlDrag = null; /* selezione con CTRL+clic / CTRL+trascinamento */
   var tabJustDragged = false, silentFocus = false;
 
   function sheets(){ return state[cfg.stateKey] || []; }
@@ -6516,7 +6563,7 @@ function createTableRegister(cfg){
   byId('Redo').addEventListener('click', redo);
 
   function resetSelection(){
-    activeKey = null; selectedKeys = []; selectionAnchor = null;
+    activeKey = null; selectedKeys = []; selectionAnchor = null; customSelection = false; ctrlDrag = null;
     clearFmtButtonsState();
   }
 
@@ -6817,6 +6864,7 @@ function createTableRegister(cfg){
     if(!silentFocus) pushHistory();
     activeKey = inp.dataset.acckey;
     if(!dragSelecting){
+      customSelection = false;
       selectedKeys = [activeKey];
       selectionAnchor = activeKey;
       applySelectionHighlight();
@@ -6908,7 +6956,15 @@ function createTableRegister(cfg){
       if(el){ var cell = el.closest('td'); if(cell) cell.classList.add('acc-cell-selected'); }
     });
   }
-  function startSelection(key){ selectedKeys = [key]; selectionAnchor = key; applySelectionHighlight(); }
+  function startSelection(key){ customSelection = false; selectedKeys = [key]; selectionAnchor = key; applySelectionHighlight(); }
+  function rangeKeys(fromKey, toKey){
+    var a = parseAccKey(fromKey), b = parseAccKey(toKey);
+    if(!a || !b || a.t!==b.t) return [toKey];
+    var keys = [];
+    for(var r=Math.min(a.r,b.r); r<=Math.max(a.r,b.r); r++)
+      for(var c=Math.min(a.c,b.c); c<=Math.max(a.c,b.c); c++) keys.push(a.t+'-'+r+'-'+c);
+    return keys;
+  }
   function extendSelectionTo(key){
     var a = parseAccKey(selectionAnchor), b = parseAccKey(key);
     if(!a || !b || a.t!==b.t){ startSelection(key); return; }
@@ -6919,13 +6975,27 @@ function createTableRegister(cfg){
     applySelectionHighlight();
   }
   function selectionOrActiveKeys(){
-    if(selectedKeys && selectedKeys.length>1) return selectedKeys.slice();
+    if(selectedKeys && (selectedKeys.length>1 || (customSelection && selectedKeys.length===1))) return selectedKeys.slice();
     return activeKey ? [activeKey] : [];
   }
   container.addEventListener('mousedown', function(e){
     var target = e.target.closest('[data-acckey]');
     if(!target) return;
     if(Date.now()-touchApi.lastTouch<800) return; /* mousedown "finto" generato dopo un tocco */
+    if(isMultiSelectClick(e)){
+      e.preventDefault(); /* la cella non si apre per scrivere: si aggiunge/toglie solo dalla selezione */
+      var key = target.dataset.acckey;
+      var base = (selectedKeys && selectedKeys.length) ? selectedKeys.slice() : (activeKey ? [activeKey] : []);
+      selectedKeys = toggleKeyInList(base, key);
+      selectionAnchor = key;
+      customSelection = true;
+      ctrlDrag = { base: base, anchor: key };
+      dragSelecting = true;
+      applySelectionHighlight();
+      updateFmtButtonsState();
+      return;
+    }
+    ctrlDrag = null;
     if(e.shiftKey && selectionAnchor) extendSelectionTo(target.dataset.acckey);
     else startSelection(target.dataset.acckey);
     dragSelecting = true;
@@ -6935,10 +7005,18 @@ function createTableRegister(cfg){
     if(typeof e.buttons==='number' && e.buttons===0){ dragSelecting = false; return; }
     var target = e.target.closest('[data-acckey]');
     if(!target) return;
-    extendSelectionTo(target.dataset.acckey);
+    if(ctrlDrag){
+      if(target.dataset.acckey!==ctrlDrag.anchor){
+        selectedKeys = unionKeyLists(ctrlDrag.base, rangeKeys(ctrlDrag.anchor, target.dataset.acckey));
+        applySelectionHighlight();
+        updateFmtButtonsState();
+      }
+    } else {
+      extendSelectionTo(target.dataset.acckey);
+    }
     if(window.getSelection) window.getSelection().removeAllRanges();
   });
-  window.addEventListener('mouseup', function(){ dragSelecting = false; });
+  window.addEventListener('mouseup', function(){ dragSelecting = false; ctrlDrag = null; });
   var touchApi = attachTouchCellSelection(container, 'data-acckey', {
     start: function(key){ startSelection(key); activeKey = key; updateFmtButtonsState(); },
     extend: function(key){ extendSelectionTo(key); }
@@ -6946,7 +7024,8 @@ function createTableRegister(cfg){
   document.addEventListener('keydown', function(e){
     if(e.key!=='Escape') return;
     var scr = document.getElementById(cfg.screenId);
-    if(scr && scr.classList.contains('active') && selectedKeys.length>1){
+    if(scr && scr.classList.contains('active') && (selectedKeys.length>1 || customSelection)){
+      customSelection = false;
       selectedKeys = activeKey ? [activeKey] : [];
       applySelectionHighlight();
     }
@@ -6975,7 +7054,7 @@ function createTableRegister(cfg){
     return st;
   }
   function refocusActive(keys){
-    if(keys.length===1 && activeKey && !touchApi.touchSelection){ var af = findInput(activeKey); if(af){ silentFocus = true; af.focus(); silentFocus = false; } }
+    if(keys.length===1 && activeKey && keys[0]===activeKey && !touchApi.touchSelection){ var af = findInput(activeKey); if(af){ silentFocus = true; af.focus(); silentFocus = false; } }
   }
   function toggleCellFormat(prop){
     var sheet = current(); var keys = selectionOrActiveKeys();
