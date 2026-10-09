@@ -3971,18 +3971,29 @@ function openDeleteGroupChoiceModal(data, wrapper){
 async function deleteEntireGroup(groupId, wrapper, data){
   showToast('Eliminazione dei duplicati in corso...', 'info');
   try{
-    var q = query(collectionGroup(db,'elements'), where('groupId','==',groupId));
-    var snap = await getDocs(q);
+    /* Le copie si cercano solo nei giorni di QUESTA agenda che hanno contenuti:
+       le regole del database (giustamente) non permettono di cercare in tutto il database. */
+    var agendaId = state.currentAgendaId;
+    var agenda = state.currentAgenda || {};
+    var days = (agenda.daysWithContent || []).slice();
+    var todayKey = dateKey(state.currentDate);
+    if(days.indexOf(todayKey)===-1) days.push(todayKey);
+    var refs = [];
     var affectedDays = {};
+    for(var i=0;i<days.length;i+=20){
+      var chunk = days.slice(i, i+20);
+      var snaps = await Promise.all(chunk.map(function(dk){
+        return getDocs(query(collection(db, 'users', state.uid, 'agendas', agendaId, 'days', dk, 'elements'), where('groupId','==',groupId)));
+      }));
+      snaps.forEach(function(snap, j){
+        snap.docs.forEach(function(d){ refs.push(d.ref); affectedDays[chunk[j]] = true; });
+      });
+    }
     var batch = writeBatchSafe(db);
     var count = 0;
-    for(var i=0;i<snap.docs.length;i++){
-      var docSnap = snap.docs[i];
-      batch.delete(docSnap.ref);
+    for(var k=0;k<refs.length;k++){
+      batch.delete(refs[k]);
       count++;
-      var segs = docSnap.ref.path.split('/');
-      var dIdx = segs.indexOf('days');
-      if(dIdx>-1) affectedDays[segs[dIdx+1]] = true;
       if(count%450===0){ await batch.commit(); batch = writeBatchSafe(db); }
     }
     await batch.commit();
