@@ -3750,6 +3750,7 @@ function generateCalendar(label, type){
 /* ================= DAY PAGE (pagina a inserimento libero) ================= */
 function markDirty(){
   state.dirty=true;
+  state.pageChanged=true;
   var el = $('#btnSaveDay');
   if(el) el.classList.add('needs-save');
 }
@@ -3767,7 +3768,9 @@ async function saveDayData(silent){
     });
     await batch.commit();
     if(pageMode==='day'){ await updateDaysWithContent(dKey, state.dayElements.length>0); }
+    if(pageMode==='notebook'){ await saveNotebookPendingPages(); }
     state.deletedElementIds = [];
+    state.pageChanged=false;
     state.dirty=false;
     var saveBtn = $('#btnSaveDay'); if(saveBtn) saveBtn.classList.remove('needs-save');
     if(!silent) showToast('Modifiche salvate.', 'success');
@@ -3779,6 +3782,40 @@ async function saveDayData(silent){
   }
 }
 $('#btnSaveDay').addEventListener('click', function(){ saveDayData(false); });
+/* Blocco note: passando da una pagina all'altra NON si chiede più di salvare. Le modifiche non
+   ancora salvate della pagina che si lascia restano in memoria (qui sotto, pagina per pagina) e
+   ricompaiono se si torna su quella pagina. Si salvano tutte insieme con "Salva", oppure quando si
+   esce dal blocco note: solo in quel momento l'app chiede se salvarle. */
+var notebookPendingPages = {};   /* pageId -> {elements:[...], deleted:[...]} */
+function notebookHasPendingPages(){ return Object.keys(notebookPendingPages).length>0; }
+function stashCurrentNotebookPage(){
+  if(pageMode!=='notebook' || !currentPageKey || !state.pageChanged) return;
+  notebookPendingPages[currentPageKey] = {
+    elements: cloneDayElements(state.dayElements),
+    deleted: (state.deletedElementIds||[]).slice()
+  };
+  state.pageChanged = false;
+}
+function discardNotebookPendingPages(){ notebookPendingPages = {}; }
+async function saveNotebookPendingPages(){
+  var ids = Object.keys(notebookPendingPages);
+  for(var i=0;i<ids.length;i++){
+    var pid = ids[i], pend = notebookPendingPages[pid];
+    var b = writeBatchSafe(db);
+    pend.deleted.forEach(function(elId){ b.delete(elementRef(state.currentAgendaId, pid, elId)); });
+    pend.elements.forEach(function(el){
+      var payload = Object.assign({}, el); delete payload.id;
+      b.set(elementRef(state.currentAgendaId, pid, el.id), payload);
+    });
+    await b.commit();
+    delete notebookPendingPages[pid];
+  }
+}
+function unsavedNotebookPagesCount(){
+  var n = Object.keys(notebookPendingPages).length;
+  if(state.pageChanged && currentPageKey && !notebookPendingPages[currentPageKey]) n++;
+  return n;
+}
 
 async function updateDaysWithContent(dKey, hasContent){
   var agenda = state.currentAgenda;
@@ -3917,38 +3954,62 @@ function openDuplicateModal(data){
     await performDuplication(data, targetDates);
   };
 }
+/* Duplicazione di un elemento su altri giorni.
+   Prima l'app provava ad "aggiornare" l'elemento originale sul server per segnarlo come parte di una
+   serie: se l'elemento era appena stato creato e la pagina non era ancora stata salvata, sul server
+   non esisteva ancora e Firestore rispondeva con un errore ("No document to update"), bloccando
+   tutta la duplicazione. Ora la pagina corrente viene salvata prima (se ci sono modifiche non salvate)
+   e l'originale viene scritto per intero, così funziona sempre, anche offline.
+   Ogni elemento della serie ricorda in quali giorni si trovano le sue copie (groupDays), così
+   "Elimina tutti i duplicati" sa dove cercarle senza ricerche su tutto il database. */
+function plainElementPayload(data){
+  var payload = JSON.parse(JSON.stringify(data)); /* copia pulita: niente valori "undefined" */
+  delete payload.id;
+  return payload;
+}
 async function performDuplication(data, targetDates){
   showToast('Duplicazione in corso...', 'info');
   try{
-    if(!data.groupId){
-      data.groupId = uid();
-      await updateDocSafe(elementRef(state.currentAgendaId, dateKey(state.currentDate), data.id), {groupId: data.groupId});
+    var origKey = dateKey(state.currentDate);
+    if(!data.groupId) data.groupId = uid();
+    var days = {};
+    (data.groupDays||[]).forEach(function(k){ days[k] = true; });
+    days[origKey] = true;
+    var newDaysAdded = targetDates.map(function(d){ return dateKey(d); });
+    newDaysAdded.forEach(function(k){ days[k] = true; });
+    data.groupDays = Object.keys(days).sort();
+    /* l'oggetto in memoria della pagina potrebbe essere una copia (es. dopo Annulla/Ripeti) */
+    var live = (state.dayElements||[]).find(function(e){ return e.id===data.id; });
+    if(live && live!==data){ live.groupId = data.groupId; live.groupDays = data.groupDays; data = live; }
+    /* 1) l'elemento originale (con i dati della serie) */
+    if(state.dirty){
+      var saved = await saveDayData(true);
+      if(!saved) throw new Error('non è stato possibile salvare la pagina di oggi');
+    } else {
+      await setDocSafe(elementRef(state.currentAgendaId, origKey, data.id), plainElementPayload(data));
     }
-    var payload = Object.assign({}, data);
-    delete payload.id;
+    /* 2) le copie negli altri giorni */
+    var payload = plainElementPayload(data);
     var batch = writeBatchSafe(db);
     var count = 0;
-    var newDaysAdded = [];
-    for(var i=0;i<targetDates.length;i++){
-      var dk = dateKey(targetDates[i]);
-      var newId = uid();
-      batch.set(elementRef(state.currentAgendaId, dk, newId), Object.assign({}, payload, {createdAt: Date.now()}));
-      newDaysAdded.push(dk);
+    for(var i=0;i<newDaysAdded.length;i++){
+      batch.set(elementRef(state.currentAgendaId, newDaysAdded[i], uid()), Object.assign({}, payload, {createdAt: Date.now()}));
       count++;
       if(count%450===0){ await batch.commit(); batch = writeBatchSafe(db); }
     }
     await batch.commit();
+    /* 3) i giorni con contenuto (pallino nel calendario) */
     var agenda = state.currentAgenda;
     var list = agenda.daysWithContent || [];
     var changed = false;
-    newDaysAdded.forEach(function(dk){ if(list.indexOf(dk)===-1){ list.push(dk); changed=true; } });
+    newDaysAdded.concat([origKey]).forEach(function(dk){ if(list.indexOf(dk)===-1){ list.push(dk); changed=true; } });
     if(changed){
       agenda.daysWithContent = list;
       await updateDocSafe(agendaRef(state.currentAgendaId), {daysWithContent: list});
       var listEntry = state.agende.find(function(a){ return a.id===state.currentAgendaId; });
       if(listEntry) listEntry.daysWithContent = list;
     }
-    showToast('Elemento duplicato su '+targetDates.length+' giorni.', 'success');
+    showToast('Elemento duplicato su '+targetDates.length+' giorn'+(targetDates.length===1?'o':'i')+'.', 'success');
   }catch(err){
     console.error(err);
     showToast('Errore durante la duplicazione'+(err.message?(': '+err.message):'')+'.', 'error');
@@ -3968,36 +4029,47 @@ function openDeleteGroupChoiceModal(data, wrapper){
   $('#delOnlyThis').onclick = function(){ closeModal(); performLocalDelete(wrapper, data); };
   $('#delAllGroup').onclick = async function(){ closeModal(); await deleteEntireGroup(data.groupId, wrapper, data); };
 }
+/* Elimina tutte le copie di una serie. Si cerca giorno per giorno (solo nei giorni della serie,
+   oppure, per le serie create con le versioni precedenti dell'app, nei giorni che hanno contenuto):
+   una ricerca su tutto il database ("collection group") richiederebbe un indice e regole di
+   sicurezza particolari su Firebase e veniva rifiutata. */
 async function deleteEntireGroup(groupId, wrapper, data){
   showToast('Eliminazione dei duplicati in corso...', 'info');
   try{
-    /* Le copie si cercano solo nei giorni di QUESTA agenda che hanno contenuti:
-       le regole del database (giustamente) non permettono di cercare in tutto il database. */
-    var agendaId = state.currentAgendaId;
-    var agenda = state.currentAgenda || {};
-    var days = (agenda.daysWithContent || []).slice();
-    var todayKey = dateKey(state.currentDate);
-    if(days.indexOf(todayKey)===-1) days.push(todayKey);
-    var refs = [];
-    var affectedDays = {};
-    for(var i=0;i<days.length;i+=20){
-      var chunk = days.slice(i, i+20);
-      var snaps = await Promise.all(chunk.map(function(dk){
-        return getDocs(query(collection(db, 'users', state.uid, 'agendas', agendaId, 'days', dk, 'elements'), where('groupId','==',groupId)));
-      }));
-      snaps.forEach(function(snap, j){
-        snap.docs.forEach(function(d){ refs.push(d.ref); affectedDays[chunk[j]] = true; });
-      });
+    var aid = state.currentAgendaId;
+    var curKey = dateKey(state.currentDate);
+    var start = (data.groupDays && data.groupDays.length) ? data.groupDays.slice()
+      : ((state.currentAgenda && state.currentAgenda.daysWithContent) || []).slice();
+    start.push(curKey);
+    var visited = {}, toVisit = start, refs = [], affectedDays = {};
+    while(toVisit.length){
+      var level = toVisit.filter(function(k, i){ return !visited[k] && toVisit.indexOf(k)===i; });
+      toVisit = [];
+      level.forEach(function(k){ visited[k] = true; });
+      for(var c=0; c<level.length; c+=20){
+        var chunk = level.slice(c, c+20);
+        var snaps = await Promise.all(chunk.map(function(dk){
+          return getDocs(query(elementsColl(aid, dk), where('groupId','==',groupId)))
+            .then(function(snap){ return {dk: dk, snap: snap}; });
+        }));
+        snaps.forEach(function(r){
+          r.snap.docs.forEach(function(ds){
+            refs.push(ds.ref);
+            affectedDays[r.dk] = true;
+            var gd = (ds.data() || {}).groupDays;
+            if(gd && gd.length) gd.forEach(function(k){ if(!visited[k]) toVisit.push(k); });
+          });
+        });
+      }
     }
     var batch = writeBatchSafe(db);
-    var count = 0;
-    for(var k=0;k<refs.length;k++){
-      batch.delete(refs[k]);
-      count++;
-      if(count%450===0){ await batch.commit(); batch = writeBatchSafe(db); }
+    for(var i=0;i<refs.length;i++){
+      batch.delete(refs[i]);
+      if((i+1)%450===0){ await batch.commit(); batch = writeBatchSafe(db); }
     }
     await batch.commit();
     performLocalDelete(wrapper, data, true);
+    affectedDays[curKey] = true;
     await refreshDaysWithContentAfterGroupDelete(Object.keys(affectedDays));
     showToast('Duplicati eliminati.', 'success');
   }catch(err){
@@ -4028,10 +4100,12 @@ async function refreshDaysWithContentAfterGroupDelete(dateKeys){
 async function openDayScreen(date){
   if(freeDrawOverlay) finishFreeDraw(false);
   if(eraserActive){ eraserActive=false; var eb=$('#btnEraser'); if(eb) eb.classList.remove('active'); }
-  if(state.dirty && state.currentDate){
+  if(state.dirty && (state.currentDate || pageMode==='notebook')){
     var doSave = confirm('Ci sono modifiche non salvate in questa pagina. Vuoi salvarle prima di continuare?');
     if(doSave) await saveDayData(true);
   }
+  discardNotebookPendingPages();
+  state.pageChanged = false;
   pageMode = 'day';
   currentPageKey = null;
   state.currentDate = date;
@@ -4466,9 +4540,16 @@ async function openNotebook(notebookId, pageId){
 async function openNotebookPageScreen(notebookId, pageId){
   if(freeDrawOverlay) finishFreeDraw(false);
   if(eraserActive){ eraserActive=false; var eb=$('#btnEraser'); if(eb) eb.classList.remove('active'); }
-  if(state.dirty && pageMode==='notebook' && currentPageKey){
-    var doSave = confirm('Ci sono modifiche non salvate in questa pagina. Vuoi salvarle prima di continuare?');
-    if(doSave) await saveDayData(true);
+  if(pageMode==='notebook' && currentPageKey && currentNotebookId===notebookId){
+    /* stessa blocco note, altra pagina: niente domanda, le modifiche restano in memoria */
+    stashCurrentNotebookPage();
+  } else {
+    if(state.dirty && pageMode==='notebook' && currentPageKey){
+      var doSave = confirm('Ci sono modifiche non salvate in questo blocco note. Vuoi salvarle prima di continuare?');
+      if(doSave) await saveDayData(true);
+    }
+    discardNotebookPendingPages();
+    state.pageChanged = false;
   }
   pageMode = 'notebook';
   currentNotebookId = notebookId;
@@ -4490,18 +4571,27 @@ async function openNotebookPageScreen(notebookId, pageId){
   }
   applyNotebookBackground(pageInfo ? pageInfo.background : 'righi');
   applyPageOrientation(pageInfo ? pageInfo.orientation : 'verticale');
-  try{
-    var elSnap = await getDocs(elementsColl(state.currentAgendaId, pageId));
-    var els = elSnap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
-    els.sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
-    state.dayElements = els;
-  }catch(err){
-    console.error(err);
-    showToast('Errore nel caricamento della pagina'+(err.message?(': '+err.message):'')+'.', 'error');
-    state.dayElements = [];
+  var restored = notebookPendingPages[pageId];
+  if(restored){
+    /* pagina modificata prima e non ancora salvata: si riprende la versione in memoria */
+    delete notebookPendingPages[pageId];
+    state.dayElements = restored.elements;
+    state.deletedElementIds = restored.deleted;
+  } else {
+    try{
+      var elSnap = await getDocs(elementsColl(state.currentAgendaId, pageId));
+      var els = elSnap.docs.map(function(d){ var data=d.data(); data.id=d.id; return data; });
+      els.sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+      state.dayElements = els;
+    }catch(err){
+      console.error(err);
+      showToast('Errore nel caricamento della pagina'+(err.message?(': '+err.message):'')+'.', 'error');
+      state.dayElements = [];
+    }
   }
-  state.dirty = false;
-  var saveBtn = $('#btnSaveDay'); if(saveBtn) saveBtn.classList.remove('needs-save');
+  state.pageChanged = !!restored;
+  state.dirty = !!restored || notebookHasPendingPages();
+  var saveBtn = $('#btnSaveDay'); if(saveBtn) saveBtn.classList.toggle('needs-save', state.dirty);
   canvas.innerHTML='';
   if(state.dayElements.length===0){
     canvas.innerHTML = '<p class="empty-day-hint">Pagina vuota. Scegli uno strumento qui sopra, poi clicca sulla pagina per posizionare il primo elemento.</p>';
@@ -4549,6 +4639,8 @@ $('#npDeletePageBtn').addEventListener('click', async function(){
     batch.delete(notebookPageDocRef(state.currentAgendaId, currentNotebookId, pageIdToDelete));
     await batch.commit();
     state.notebookPagesCache = (state.notebookPagesCache||[]).filter(function(p){ return p.id!==pageIdToDelete; });
+    delete notebookPendingPages[pageIdToDelete];
+    state.pageChanged = false; /* le modifiche non salvate della pagina eliminata non servono più */
     showToast('Pagina eliminata.', 'info');
   }catch(err){ console.error(err); showToast('Errore durante l\'eliminazione'+(err.message?(': '+err.message):'')+'.', 'error'); return; }
   var remaining = sortedCurrentNotebookPages();
@@ -8713,8 +8805,14 @@ $('#dayNext').addEventListener('click', function(){
 async function guardNavigate(target){
   if(freeDrawOverlay) finishFreeDraw(false);
   if(state.dirty){
-    var doSave = confirm('Ci sono modifiche non salvate. Vuoi salvarle prima di uscire da questa pagina?');
+    var msg = 'Ci sono modifiche non salvate. Vuoi salvarle prima di uscire da questa pagina?';
+    if(pageMode==='notebook'){
+      var n = unsavedNotebookPagesCount();
+      msg = 'Ci sono modifiche non salvate in questo blocco note'+(n>1 ? ' ('+n+' pagine)' : '')+'. Vuoi salvarle prima di uscire?';
+    }
+    var doSave = confirm(msg);
     if(doSave){ var ok = await saveDayData(true); if(!ok) return false; }
+    else if(pageMode==='notebook'){ discardNotebookPendingPages(); state.pageChanged = false; state.dirty = false; }
   }
   target();
   return true;
