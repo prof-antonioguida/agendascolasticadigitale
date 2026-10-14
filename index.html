@@ -376,13 +376,14 @@ body.dark .theme-toggle .icon-moon{display:block;}
 }
 .np-list-item:hover{background:var(--surface-alt);}
 .np-list-item .np-item-name{font-family:var(--font-display);font-weight:600;font-size:1.02rem;flex:1;}
-.np-list-item .np-item-delete,.np-list-item .np-item-rename{
+.np-list-item .np-item-delete,.np-list-item .np-item-rename,.np-list-item .np-item-copy{
   background:none;border:none;color:var(--ink-soft);cursor:pointer;flex-shrink:0;
   width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;
 }
 .np-list-item .np-item-delete:hover{background:rgba(162,58,44,.15);color:var(--accent);}
-.np-list-item .np-item-rename:hover{background:var(--paper-deep);color:var(--ink);}
-.np-list-item .np-item-delete svg,.np-list-item .np-item-rename svg{width:15px;height:15px;}
+.np-list-item .np-item-rename:hover,.np-list-item .np-item-copy:hover{background:var(--paper-deep);color:var(--ink);}
+.np-list-item .np-item-delete svg,.np-list-item .np-item-rename svg,.np-list-item .np-item-copy svg{width:15px;height:15px;}
+.np-list-item .np-item-copy.copied{color:#3E9C5C;}
 .contact-detail-row{
   display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--paper-line);
 }
@@ -2399,6 +2400,7 @@ var ICONS = {
   email:'<rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="12" cy="12" r="2.6"></circle><path d="M14.6 12 v1.2 a2 2 0 0 0 4 0 V12 a6.6 6.6 0 1 1 -2.6 -5.3"></path>',
   duplicate:'<rect x="4" y="7" width="12" height="14" rx="2"></rect><path d="M9 4 H18 A2 2 0 0 1 20 6 V17"></path>',
   slashBox:'<rect x="4" y="4" width="16" height="16" rx="1.5"></rect><path d="M4 20 L20 4"></path>',
+  check:'<polyline points="5 12.5 10 17.5 19 7"></polyline>',
   undo:'<path d="M4 12 A8 8 0 1 1 8.5 19.3"></path><polyline points="4 6 4 12 10 12"></polyline>',
   redo:'<path d="M20 12 A8 8 0 1 0 15.5 19.3"></path><polyline points="20 6 20 12 14 12"></polyline>',
   list:'<line x1="8" y1="6" x2="20" y2="6"></line><line x1="8" y1="12" x2="20" y2="12"></line><line x1="8" y1="18" x2="20" y2="18"></line><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle>',
@@ -4996,6 +4998,26 @@ $('#slBack').addEventListener('click', function(){ showMenuScreen(); });
 $('#slSearchInput').addEventListener('input', function(e){ renderScheduleLinkList(e.target.value); });
 $('#slAddBtn').addEventListener('click', function(){ openScheduleLinkEditModal(null); });
 
+/* Copia un testo negli appunti. Prova prima il metodo moderno; se non è disponibile (alcune
+   app Android basate su WebView, pagine non sicure) usa il metodo classico con una casella nascosta. */
+async function copyTextToClipboard(text){
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext!==false){
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  }catch(err){ /* si prova il metodo classico */ }
+  try{
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, text.length);
+    var ok = document.execCommand('copy');
+    ta.remove();
+    return !!ok;
+  }catch(err2){ return false; }
+}
 function sortedScheduleLinks(){
   return (state.scheduleLinks||[]).slice().sort(function(a,b){
     return (a.name||'').localeCompare(b.name||'', 'it', {sensitivity:'base'});
@@ -5017,15 +5039,32 @@ function renderScheduleLinkList(filter){
   wrap.innerHTML = links.map(function(l){
     return '<div class="np-list-item" data-id="'+l.id+'">'+
       '<span class="np-item-name">'+escapeHtml(l.name||'Senza nome')+'</span>'+
+      '<button type="button" class="np-item-copy" data-id="'+l.id+'" title="Copia link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.duplicate+'</svg></button>'+
       '<button type="button" class="np-item-rename" data-id="'+l.id+'" title="Modifica link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.pencil+'</svg></button>'+
       '<button type="button" class="np-item-delete" data-id="'+l.id+'" title="Elimina link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.trash+'</svg></button>'+
     '</div>';
   }).join('');
   $$('#slListContainer .np-list-item').forEach(function(item){
     item.addEventListener('click', function(e){
-      if(e.target.closest('.np-item-delete') || e.target.closest('.np-item-rename')) return;
+      if(e.target.closest('.np-item-delete') || e.target.closest('.np-item-rename') || e.target.closest('.np-item-copy')) return;
       var l = state.scheduleLinks.find(function(x){ return x.id===item.dataset.id; });
       if(l && l.url) window.open(l.url, '_blank', 'noopener');
+    });
+  });
+  /* copia l'indirizzo del link negli appunti, per incollarlo dove si vuole */
+  $$('#slListContainer .np-item-copy').forEach(function(btn){
+    btn.addEventListener('click', async function(e){
+      e.stopPropagation();
+      var l = state.scheduleLinks.find(function(x){ return x.id===btn.dataset.id; });
+      if(!l || !l.url){ showToast('Questo link non ha un indirizzo da copiare.', 'info'); return; }
+      var ok = await copyTextToClipboard(l.url);
+      if(ok){
+        showToast('Link copiato: ora puoi incollarlo dove vuoi.', 'success');
+        btn.classList.add('copied'); btn.innerHTML = iconSvg('check') || btn.innerHTML;
+        setTimeout(function(){ btn.classList.remove('copied'); btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ICONS.duplicate+'</svg>'; }, 1500);
+      } else {
+        showToast('Non è stato possibile copiare il link.', 'error');
+      }
     });
   });
   $$('#slListContainer .np-item-rename').forEach(function(btn){
