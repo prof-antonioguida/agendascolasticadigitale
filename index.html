@@ -5026,11 +5026,19 @@ function sortedScheduleLinks(){
 function renderScheduleLinkList(filter){
   var wrap = $('#slListContainer');
   var links = sortedScheduleLinks();
-  var f = (filter||'').trim().toLowerCase();
+  /* La ricerca guarda solo il NOME del link (non l'indirizzo, che conteneva lettere invisibili
+     all'utente). In cima i nomi che iniziano con il testo cercato, poi quelli con una parola che
+     inizia così, poi quelli che lo contengono altrove. Maiuscole e accenti non contano. */
+  function normSearch(x){ return String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+  var f = normSearch(filter);
   if(f){
-    links = links.filter(function(l){
-      return (l.name && l.name.toLowerCase().indexOf(f)>-1) || (l.url && l.url.toLowerCase().indexOf(f)>-1);
-    });
+    links = links.map(function(l){
+      var n = normSearch(l.name);
+      var rank = n.indexOf(f)===0 ? 0 : (n.split(/[^a-z0-9]+/).some(function(w){ return w.indexOf(f)===0; }) ? 1 : (n.indexOf(f)>-1 ? 2 : -1));
+      return {l:l, rank:rank};
+    }).filter(function(x){ return x.rank>=0; })
+      .sort(function(a,b){ return a.rank-b.rank; })   /* ordinamento stabile: a parità resta l'ordine alfabetico */
+      .map(function(x){ return x.l; });
   }
   if(links.length===0){
     wrap.innerHTML = '<p class="empty-hint">'+(f? 'Nessun link corrisponde alla ricerca.' : 'Non hai ancora aggiunto nessun link.')+'</p>';
