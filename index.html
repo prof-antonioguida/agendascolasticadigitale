@@ -155,6 +155,20 @@ input,select{font-family:inherit;}
   border-radius:9px;padding:8px 15px;cursor:pointer;font-weight:600;font-size:.8rem;flex-shrink:0;
 }
 .home-header .user-chip button#btnLogout:hover{background:var(--accent-deep);}
+/* Tasto "Esci" sempre visibile in alto a destra, in tutte le sezioni dell'app (nella Home c'è già
+   quello accanto all'email). Le barre in alto lasciano spazio a destra per non finirci sotto. */
+#btnGlobalLogout{
+  display:none;position:fixed;top:16px;right:14px;z-index:900;
+  align-items:center;gap:6px;background:var(--accent);border:1px solid var(--accent-deep);color:#fff;
+  border-radius:9px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:.8rem;font-family:inherit;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+}
+#btnGlobalLogout svg{width:15px;height:15px;}
+#btnGlobalLogout:hover{background:var(--accent-deep);}
+body.show-logout #btnGlobalLogout{display:flex;}
+body.show-logout .day-topbar{padding-right:104px;}
+body.show-logout .top-header{padding-right:92px;}
+@media print{ #btnGlobalLogout{display:none !important;} }
 .home-header .user-chip button#btnDeleteAccount{
   background:var(--surface);border:2px solid var(--frame-color);color:var(--ink);
   border-radius:9px;padding:8px 15px;cursor:pointer;font-weight:600;font-size:.8rem;flex-shrink:0;
@@ -1038,6 +1052,7 @@ body.dark .choice-btn.choice-danger > span small{color:var(--ink-soft);}
 <div id="toastContainer"></div>
 
 <!-- ============ LOADING ============ -->
+<button type="button" id="btnGlobalLogout" title="Esci dall'account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg><span>Esci</span></button>
 <div id="screen-loading" class="screen active loading-screen">
   <div class="loading-text">Caricamento...</div>
 </div>
@@ -2280,7 +2295,9 @@ function escapeAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
 
 var screenHistoryStack = ['screen-loading'];
 var isPoppingScreen = false;
+var SCREENS_WITHOUT_GLOBAL_LOGOUT = {'screen-loading':1, 'screen-auth':1, 'screen-home':1};
 function showScreen(id){
+  document.body.classList.toggle('show-logout', !SCREENS_WITHOUT_GLOBAL_LOGOUT[id]);
   $$('.screen').forEach(function(s){ s.classList.remove('active'); });
   var el = document.getElementById(id);
   if(el) el.classList.add('active');
@@ -2609,14 +2626,24 @@ async function completeLogin(user){
   showScreen('screen-home');
 }
 
-$('#btnLogout').addEventListener('click', async function(){
-  if(state.dirty && !confirm('Hai modifiche non salvate. Uscire comunque?')) return;
+function hasAnyUnsavedChanges(){
+  return !!(state.dirty || registerDirty || balanceDirty || lpDirty || document.querySelector('.screen.active .needs-save'));
+}
+async function doLogout(){
+  if(hasAnyUnsavedChanges() && !confirm('Hai modifiche non salvate. Uscire comunque?')) return;
+  if(!SCREENS_WITHOUT_GLOBAL_LOGOUT[(document.querySelector('.screen.active')||{}).id] && !hasAnyUnsavedChanges()){
+    if(!confirm('Vuoi uscire dal tuo account?')) return;
+  }
+  state.dirty = false; registerDirty = false; balanceDirty = false; lpDirty = false;
+  try{ discardNotebookPendingPages(); }catch(e){}
   try{ await signOut(auth); }catch(err){ console.error(err); }
   state.uid=null; state.email=null; state.agende=[]; state.currentAgendaId=null; state.currentAgenda=null;
   $('#authEmail').value=''; $('#authPassword').value=''; $('#authConfirm').value='';
   switchAuthMode('login');
   showScreen('screen-auth');
-});
+}
+$('#btnLogout').addEventListener('click', doLogout);
+$('#btnGlobalLogout').addEventListener('click', doLogout);
 
 $('#btnForgotPassword').addEventListener('click', async function(){
   var email = $('#authEmail').value.trim();
