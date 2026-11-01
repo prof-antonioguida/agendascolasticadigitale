@@ -612,6 +612,10 @@ body.dark .audio-badge,body.dark .link-badge,body.dark .phone-badge,body.dark .e
 .link-edit-btn{background:var(--paper-deep);border:none;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;margin-left:2px;flex-shrink:0;width:22px;height:22px;border-radius:50%;}
 .link-edit-btn svg{width:12px;height:12px;}
 .link-edit-btn:hover{color:#fff;background:var(--accent);}
+.link-copy-btn{background:var(--paper-deep);border:none;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;margin-left:2px;flex-shrink:0;width:22px;height:22px;border-radius:50%;}
+.link-copy-btn svg{width:12px;height:12px;}
+.link-copy-btn:hover{color:#fff;background:var(--accent);}
+.link-copy-btn.copied{color:#fff;background:#3E9C5C;}
 
 /* drawing (elemento finito: si comporta come un'immagine ridimensionabile) */
 .canvas-drawing img{width:100%;height:100%;display:block;pointer-events:none;}
@@ -1223,7 +1227,7 @@ body.dark .choice-btn.choice-danger > span small{color:var(--ink-soft);}
     <span class="reg-sep"></span>
     <button type="button" class="icon-btn tool" id="regFmtBold" data-icon="fmtBold" title="Grassetto"></button>
     <button type="button" class="icon-btn tool" id="regFmtItalic" data-icon="fmtItalic" title="Corsivo"></button>
-    <button type="button" class="icon-btn tool" id="regFmtStrike" data-icon="fmtStrike" title="Barrato"></button>
+    <button type="button" class="icon-btn tool" id="regFmtStrike" data-icon="slashBox" title="Barra cella (linea diagonale)"></button>
     <button type="button" class="icon-btn tool" id="regFmtBgColor" data-icon="bgColor" title="Colore sfondo cella"></button>
     <button type="button" class="icon-btn tool" id="regFmtTextColor" data-icon="textColor" title="Colore testo"></button>
     <input type="color" id="regBgColorInput" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;">
@@ -5559,14 +5563,19 @@ function cellFmtStyle(sheet, key){
   var parts = [];
   if(s.bold) parts.push('font-weight:700');
   if(s.italic) parts.push('font-style:italic');
-  if(s.strike) parts.push('text-decoration:line-through');
   if(s.color) parts.push('color:'+s.color);
   return parts.length ? ' style="'+parts.join(';')+'"' : '';
 }
+/* "Barrato" nel Registro personale: non barra più il testo, ma traccia sulla cella una linea
+   sottile dall'angolo in basso a sinistra a quello in alto a destra; il contenuto resta leggibile. */
+var REG_CELL_DIAGONAL = 'linear-gradient(to bottom right, rgba(40,40,40,0) 48.9%, rgba(40,40,40,.85) 48.9%, rgba(40,40,40,.85) 51.1%, rgba(40,40,40,0) 51.1%)';
 function cellBgStyle(sheet, key){
   var s = sheet.cellStyles && sheet.cellStyles[key];
-  if(!s || !s.bg) return '';
-  return ' style="background-color:'+s.bg+'"';
+  if(!s || (!s.bg && !s.strike)) return '';
+  var parts = [];
+  if(s.bg) parts.push('background-color:'+s.bg);
+  if(s.strike) parts.push('background-image:'+REG_CELL_DIAGONAL+';background-repeat:no-repeat;background-size:100% 100%');
+  return ' style="'+parts.join(';')+'"';
 }
 function buildRegisterTableInnerHTML(sheet, forPrint){
   var n1 = sheet.numCols1, n2 = sheet.numCols2;
@@ -6006,7 +6015,13 @@ function toggleRegCellFormat(prop){
     if(input){
       input.style.fontWeight = cur.bold ? '700' : '';
       input.style.fontStyle = cur.italic ? 'italic' : '';
-      input.style.textDecoration = cur.strike ? 'line-through' : '';
+      input.style.textDecoration = '';
+      var tdCell = input.closest('td,th');
+      if(tdCell){
+        tdCell.style.backgroundImage = cur.strike ? REG_CELL_DIAGONAL : '';
+        tdCell.style.backgroundRepeat = cur.strike ? 'no-repeat' : '';
+        tdCell.style.backgroundSize = cur.strike ? '100% 100%' : '';
+      }
     }
   });
   markRegisterDirty();
@@ -9580,7 +9595,7 @@ function attachElementInteractions(wrapper, data){
   function ignoreTarget(evt){
     return evt.target.closest('.resize-handle') ||
            evt.target.closest('.link-open-btn') || evt.target.closest('.phone-call-btn') || evt.target.closest('.email-open-btn') ||
-           evt.target.closest('.link-edit-btn') ||
+           evt.target.closest('.link-edit-btn') || evt.target.closest('.link-copy-btn') ||
            evt.target.closest('.play-toggle') || evt.target.closest('.text-mini-toolbar');
   }
   function down(evt){
@@ -9720,6 +9735,92 @@ function fourHandlesHTML(){
 }
 
 /* ---- testo ---- */
+/* Taglia la selezione di un testo modificabile: la copia negli appunti (testo semplice e
+   formattato) e poi la cancella dal testo. */
+function cutSelectionInEditable(contentEl, sel){
+  var rg = sel.getRangeAt(0);
+  var text = sel.toString();
+  var holder = document.createElement('div');
+  holder.appendChild(rg.cloneContents());
+  var html = holder.innerHTML;
+  var copied = false;
+  function onCopy(ev){
+    try{ ev.clipboardData.setData('text/plain', text); ev.clipboardData.setData('text/html', html); ev.preventDefault(); copied = true; }catch(err){}
+  }
+  document.addEventListener('copy', onCopy, true);
+  try{ document.execCommand('copy'); }catch(err){}
+  document.removeEventListener('copy', onCopy, true);
+  if(!copied && navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).catch(function(){}); }
+  var deleted = false;
+  try{ deleted = document.execCommand('delete', false, null); }catch(err){ deleted = false; }
+  if(!deleted || !sel.isCollapsed){
+    try{
+      var r2 = sel.rangeCount ? sel.getRangeAt(0) : rg;
+      r2.deleteContents(); r2.collapse(true);
+      sel.removeAllRanges(); sel.addRange(r2);
+    }catch(err){}
+  }
+}
+/* Allineamento per riga senza dipendere dai comandi del browser (che con il "giustificato" non
+   funzionavano in tutti i browser): ogni riga (a capo con Invio) diventa un blocco <div> e si
+   imposta l'allineamento sui blocchi toccati dalla selezione o dal cursore. */
+function textLineBlocks(contentEl){
+  /* raggruppa il testo "libero" al primo livello (testo, grassetti, ecc.) in blocchi <div>,
+     spezzando ai <br>, così ogni riga ha il suo blocco */
+  var nodes = Array.prototype.slice.call(contentEl.childNodes);
+  var run = [];
+  function flush(endBr){
+    if(run.length===0 && !endBr) return;
+    if(!endBr && run.every(function(n){ return n.nodeType===3 && !/\S/.test(n.nodeValue); })){ run = []; return; }
+    var d = document.createElement('div');
+    var ref = run.length ? run[0] : endBr;
+    contentEl.insertBefore(d, ref);
+    run.forEach(function(n){ d.appendChild(n); });
+    if(endBr){
+      if(run.length===0 || d.textContent==='' ) d.appendChild(endBr); else endBr.parentNode.removeChild(endBr);
+    }
+    run = [];
+  }
+  nodes.forEach(function(n){
+    var isBlock = n.nodeType===1 && /^(DIV|P|LI|UL|OL|H[1-6]|BLOCKQUOTE|PRE|TABLE)$/.test(n.tagName);
+    if(isBlock){ flush(null); return; }
+    if(n.nodeType===1 && n.tagName==='BR'){ flush(n); return; }
+    run.push(n);
+  });
+  flush(null);
+  return Array.prototype.filter.call(contentEl.children, function(ch){ return /^(DIV|P|LI|UL|OL|H[1-6]|BLOCKQUOTE|PRE|TABLE)$/.test(ch.tagName); });
+}
+function applyAlignToTextLines(contentEl, range, align){
+  var a = align || 'left';
+  /* prima di riorganizzare le righe si annotano i nodi toccati dalla selezione e i suoi estremi
+     (spostando i nodi il browser altererebbe la selezione) */
+  var hit = Array.prototype.filter.call(contentEl.childNodes, function(n){
+    try{ return range.intersectsNode(n); }catch(err){ return false; }
+  });
+  var sc = range.startContainer, so = range.startOffset, ec = range.endContainer, eo = range.endOffset;
+  var blocks = textLineBlocks(contentEl);
+  var touched = blocks.filter(function(b){
+    return hit.some(function(n){ return n===b || b.contains(n); });
+  });
+  try{
+    if(sc!==contentEl && ec!==contentEl && contentEl.contains(sc) && contentEl.contains(ec)){
+      range.setStart(sc, so); range.setEnd(ec, eo);
+    } else if(touched.length){
+      range.setStartBefore(touched[0]); range.setEndAfter(touched[touched.length-1]);
+    }
+  }catch(err){}
+  if(touched.length===0 && blocks.length) touched = [blocks[blocks.length-1]];
+  var hy = (a==='justify') ? 'auto' : 'manual';
+  touched.forEach(function(b){
+    b.style.textAlign = a;
+    b.style.hyphens = hy; b.style.webkitHyphens = hy;
+    /* gli allineamenti messi in precedenza su parti interne della riga non devono prevalere */
+    Array.prototype.forEach.call(b.querySelectorAll('[style*="text-align"],[align]'), function(inner){
+      inner.style.textAlign = ''; inner.removeAttribute('align');
+    });
+  });
+  return touched.length;
+}
 function enterTextEditMode(wrapper, data, skipHistory){
   if(activeEditingText && activeEditingText!==wrapper) exitTextEditMode(activeEditingText);
   /* skipHistory: quando il box di testo è appena stato creato, addCanvasElement() ha già
@@ -9774,6 +9875,22 @@ function renderTextEl(data){
     '<div class="resize-handle-text" title="Ridimensiona larghezza"></div>';
   var contentEl = wrapper.querySelector('.text-content');
   contentEl.addEventListener('input', function(){ data.html = contentEl.innerHTML; markDirty(); });
+  /* CTRL+X (Cmd+X sul Mac): taglia il testo selezionato. Lo gestiamo noi invece di affidarci al
+     solo comportamento del browser, che in alcuni casi (alcuni browser, dopo aver usato la barra
+     stile, ecc.) non tagliava nulla. */
+  contentEl.addEventListener('keydown', function(e){
+    if(!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+    if(String(e.key).toLowerCase()!=='x') return;
+    if(contentEl.isContentEditable!==true) return;
+    var sel = window.getSelection();
+    if(!sel || sel.rangeCount===0 || sel.isCollapsed) return;
+    var rg = sel.getRangeAt(0);
+    if(!contentEl.contains(rg.commonAncestorContainer)) return;
+    e.preventDefault();
+    cutSelectionInEditable(contentEl, sel);
+    data.html = contentEl.innerHTML;
+    markDirty();
+  });
   /* Non usciamo dalla modalità modifica al semplice "blur" del testo: cliccare su un controllo
      della barra stile (carattere, dimensione, grassetto, colore...) sposta il focus fuori dal
      testo e farebbe scattare subito l'uscita, nascondendo la barra proprio mentre si sta per
@@ -9832,22 +9949,30 @@ function renderTextEl(data){
     var range = wrapper._lastTextRange;
     var rangeOk = range && contentEl.contains(range.startContainer) && contentEl.contains(range.endContainer);
     if(rangeOk && textHasSeveralLines(contentEl)){
-      var cmd = {left:'justifyLeft', center:'justifyCenter', right:'justifyRight', justify:'justifyFull'}[value] || 'justifyLeft';
+      applyAlignToTextLines(contentEl, range, value);
       try{ contentEl.focus({preventScroll:true}); }catch(err){ contentEl.focus(); }
-      var sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-      try{ document.execCommand('styleWithCSS', false, true); }catch(err){}
-      document.execCommand(cmd, false, null);
-      try{ document.execCommand('styleWithCSS', false, false); }catch(err){}
+      try{ var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range); }catch(err){}
       data.html = contentEl.innerHTML;
       markDirty();
       return;
     }
-    data.align = value; applyTextAlignLive(contentEl, data.align); markDirty();
+    data.align = value; applyTextAlignLive(contentEl, data.align);
+    /* testo su una riga sola: l'allineamento vale per tutto il riquadro; eventuali allineamenti
+       rimasti su parti interne non devono prevalere */
+    Array.prototype.forEach.call(contentEl.querySelectorAll('[style*="text-align"],[align]'), function(inner){ inner.style.textAlign=''; inner.removeAttribute('align'); });
+    data.html = contentEl.innerHTML;
+    /* si torna a scrivere nel testo, così CTRL+X, CTRL+C, ecc. funzionano subito */
+    try{ contentEl.focus({preventScroll:true}); }catch(err){ contentEl.focus(); }
+    if(rangeOk){ try{ var sel1 = window.getSelection(); sel1.removeAllRanges(); sel1.addRange(range); }catch(err){} }
+    markDirty();
   });
   wrapper.querySelector('.t-color').addEventListener('input', function(e){ data.colorCustom=true; data.color=e.target.value; contentEl.style.color=data.color; markDirty(); });
   attachTextResizeHandle(wrapper.querySelector('.resize-handle-text'), wrapper, data);
+  /* i pulsanti G/C/S della barra stile non devono togliere il cursore dal testo: altrimenti
+     subito dopo CTRL+X / CTRL+C non agirebbero sul testo selezionato */
+  wrapper.querySelector('.text-mini-toolbar').addEventListener('mousedown', function(e){
+    if(e.target.closest('button')) e.preventDefault();
+  });
   return wrapper;
 }
 /* Un solo listener globale (non uno per ogni riquadro di testo) che, mentre si scrive o si
@@ -10077,6 +10202,7 @@ function renderLinkEl(data){
     '<div class="link-badge">'+
       '<span class="link-badge-icon">'+iconSvg('link')+'</span>'+
       '<span class="el-media-label lbl-text">'+escapeHtml(data.label||data.url)+'</span>'+
+      '<button type="button" class="link-copy-btn" title="Copia link">'+iconSvg('duplicate')+'</button>'+
       '<button type="button" class="link-edit-btn" title="Modifica">'+iconSvg('pencil')+'</button>'+
       '<a href="'+escapeAttr(data.url)+'" target="_blank" rel="noopener noreferrer" class="link-open-btn" title="Apri link">'+iconSvg('externalLink')+'</a>'+
     '</div>';
@@ -10088,6 +10214,20 @@ function renderLinkEl(data){
   editBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
   editBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
   editBtn.addEventListener('click', function(evt){ evt.stopPropagation(); openLinkModal(data.x, data.y, data, wrapper); });
+  /* copia l'indirizzo del link negli appunti (come in "Schede link") */
+  var copyBtn = wrapper.querySelector('.link-copy-btn');
+  copyBtn.addEventListener('mousedown', function(evt){ evt.stopPropagation(); });
+  copyBtn.addEventListener('touchstart', function(evt){ evt.stopPropagation(); });
+  copyBtn.addEventListener('click', async function(evt){
+    evt.stopPropagation();
+    if(!data.url){ showToast('Questo link non ha un indirizzo da copiare.', 'info'); return; }
+    var ok = await copyTextToClipboard(data.url);
+    if(ok){
+      showToast('Link copiato: ora puoi incollarlo dove vuoi.', 'success');
+      copyBtn.classList.add('copied'); copyBtn.innerHTML = iconSvg('check');
+      setTimeout(function(){ copyBtn.classList.remove('copied'); copyBtn.innerHTML = iconSvg('duplicate'); }, 1500);
+    } else showToast('Non è stato possibile copiare il link.', 'error');
+  });
   return wrapper;
 }
 
