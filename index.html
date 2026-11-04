@@ -1037,8 +1037,11 @@ body.dark .choice-btn.choice-danger > span small{color:var(--ink-soft);}
 .lp-table tbody tr.lp-date-row:nth-child(even) td.lp-alt{background:#f2f2f2;}
 .lp-table td.lp-count-cell{background:#CFE8CB;font-weight:700;color:#1f3d1c;}
 .lp-table tr.lp-rate-row td,.lp-table tr.lp-pay-row td{background:#CFE8CB;font-weight:700;color:#1f3d1c;}
-.lp-table .lp-pay-cell{cursor:pointer;}
-.lp-table .lp-pay-cell:hover{background:#b9dcb2;}
+.lp-table th.lp-partial-hdr{min-width:120px;}
+.lp-table td.lp-partial-cell{background:#E3F0FA;font-weight:700;color:#173a57;cursor:pointer;white-space:nowrap;}
+.lp-table td.lp-partial-cell:hover{background:#cfe3f3;}
+.lp-table td.lp-partial-cell.is-paid{background:#CFE8CB;color:#1f3d1c;}
+.lp-paid-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:10px;background:#3E9C5C;color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.02em;vertical-align:1px;}
 .lp-table tr.lp-rate-row td.lp-label,.lp-table tr.lp-pay-row td.lp-label{text-align:left;}
 .lp-table input.lp-input{border:none;background:transparent;width:100%;text-align:center;font-size:inherit;font-family:inherit;color:inherit;}
 .lp-table .lp-row-actions{display:flex;gap:2px;align-items:center;justify-content:center;}
@@ -8454,7 +8457,7 @@ function defaultStudentData(name){
     name:name, subject:'', schedule:[], hourlyRate:'',
     numRows:1, numCols:6,
     dateRows:[ new Array(6).fill('') ],
-    cellStyles:{}, paid:false,
+    cellStyles:{}, paid:false, rowPaid:[false],
     createdAt: Date.now()
   };
 }
@@ -8469,7 +8472,31 @@ function studentFromFirestore(data){
   if(!data.cellStyles || typeof data.cellStyles!=='object') data.cellStyles = {};
   if(!Array.isArray(data.schedule)) data.schedule = [];
   data.paid = !!data.paid;
+  // Pagamento per riga ("Totali parziali"). Gli alunni salvati prima di questa funzione non hanno
+  // rowPaid: se il pagamento complessivo era già segnato, si considerano pagate le righe con lezioni.
+  if(!Array.isArray(data.rowPaid)){
+    data.rowPaid = data.dateRows.map(function(row){ return !!data.paid && countFilledInRow(row)>0; });
+  }
+  ensureRowPaid(data);
   return data;
+}
+function ensureRowPaid(student){
+  if(!Array.isArray(student.rowPaid)) student.rowPaid = [];
+  var n = (student.dateRows||[]).length;
+  while(student.rowPaid.length < n) student.rowPaid.push(false);
+  if(student.rowPaid.length > n) student.rowPaid.length = n;
+  for(var i=0;i<n;i++) student.rowPaid[i] = !!student.rowPaid[i];
+}
+function lpRate(student){
+  var rate = parseFloat((student.hourlyRate+'').replace(',','.'));
+  return isNaN(rate) ? 0 : rate;
+}
+function computeRowPayment(student, r){
+  return countFilledInRow((student.dateRows||[])[r]) * lpRate(student);
+}
+function formatPartialCellHTML(student, r){
+  ensureRowPaid(student);
+  return '€ '+fmtMoney2(computeRowPayment(student, r))+(student.rowPaid[r] ? ' <span class="lp-paid-tag">Pagato</span>' : '');
 }
 function countFilledInRow(row){
   return (row||[]).filter(function(v){ return v && (v+'').trim(); }).length;
@@ -8480,9 +8507,7 @@ function totalFilledDates(student){
   return total;
 }
 function computePayment(student){
-  var rate = parseFloat((student.hourlyRate+'').replace(',','.'));
-  if(isNaN(rate)) rate = 0;
-  return totalFilledDates(student) * rate;
+  return totalFilledDates(student) * lpRate(student);
 }
 function fmtMoney2(n){ return n.toFixed(2).replace('.', ','); }
 
@@ -8659,7 +8684,8 @@ function buildLessonsTableInnerHTML(student){
   for(var i=0;i<n;i++){
     html += '<th class="lp-hdr-datecol" data-col="'+i+'" title="Colonna data '+(i+1)+'">'+(i+1)+'</th>';
   }
-  html += '<th class="lp-total-cell">Totali</th><th></th></tr></thead><tbody>';
+  html += '<th class="lp-total-cell">Totali</th><th class="lp-partial-hdr">Totali parziali</th><th></th></tr></thead><tbody>';
+  ensureRowPaid(student);
   student.dateRows.forEach(function(row, r){
     html += '<tr class="lp-date-row" data-row="'+r+'">';
     for(var c=0;c<n;c++){
@@ -8668,6 +8694,7 @@ function buildLessonsTableInnerHTML(student){
       html += '<td class="lp-alt lp-date-cell"><input type="date" class="lp-input" data-row="'+r+'" data-col="'+c+'" data-cellkey="'+key+'"'+cellFmtStyle(student,key)+' value="'+escapeAttr(v)+'"></td>';
     }
     html += '<td class="lp-count-cell" data-count-row="'+r+'">'+countFilledInRow(row)+'</td>';
+    html += '<td class="lp-partial-cell'+(student.rowPaid[r]?' is-paid':'')+'" data-partial-row="'+r+'" title="Clicca per segnare come pagato">'+formatPartialCellHTML(student, r)+'</td>';
     html += '<td class="lp-row-actions">'+
       (r===0 ? '<button type="button" class="lp-add-row-top-btn" data-row="'+r+'" title="Inserisci riga sopra">'+iconSvg('arrowUp')+'</button>' : '')+
       '<button type="button" class="lp-del-row-btn" data-row="'+r+'" title="Elimina questa riga">'+iconSvg('close')+'</button>'+
@@ -8675,9 +8702,9 @@ function buildLessonsTableInnerHTML(student){
     '</td></tr>';
   });
   html += '<tr class="lp-rate-row"><td class="lp-label" colspan="'+n+'">Tariffa oraria</td>'+
-    '<td colspan="2"><input type="text" inputmode="decimal" class="lp-input" data-cellkey="rate"'+cellFmtStyle(student,'rate')+' value="'+escapeAttr(student.hourlyRate||'')+'"></td></tr>';
+    '<td colspan="3"><input type="text" inputmode="decimal" class="lp-input" data-cellkey="rate"'+cellFmtStyle(student,'rate')+' value="'+escapeAttr(student.hourlyRate||'')+'"></td></tr>';
   html += '<tr class="lp-pay-row"><td class="lp-label" colspan="'+n+'">Pagamento totale</td>'+
-    '<td colspan="2" id="lpPaymentCell" class="lp-pay-cell" title="Clicca per segnare come pagato">'+formatPaymentCellText(student)+'</td></tr>';
+    '<td colspan="3" id="lpPaymentCell" class="lp-pay-cell">'+formatPaymentCellText(student)+'</td></tr>';
   html += '</tbody></table>';
   return html;
 }
@@ -8693,13 +8720,18 @@ function wireLessonsTableEvents(student){
       student.dateRows[r][c] = e.target.value;
       var cell = document.querySelector('[data-count-row="'+r+'"]');
       if(cell) cell.textContent = countFilledInRow(student.dateRows[r]);
+      updatePartialCell(student, r);
       updatePaymentCell(student);
       markLpDirty();
     });
   });
   var rateInput = document.querySelector('[data-cellkey="rate"]');
   if(rateInput){
-    rateInput.addEventListener('input', function(e){ student.hourlyRate = e.target.value; updatePaymentCell(student); markLpDirty(); });
+    rateInput.addEventListener('input', function(e){
+      student.hourlyRate = e.target.value;
+      student.dateRows.forEach(function(_, r){ updatePartialCell(student, r); });
+      updatePaymentCell(student); markLpDirty();
+    });
   }
   $$('.lp-del-row-btn').forEach(function(btn){ btn.addEventListener('click', function(){ deleteLessonRow(student, +btn.dataset.row); }); });
   $$('.lp-add-row-btn').forEach(function(btn){ btn.addEventListener('click', function(){ insertLessonRow(student, +btn.dataset.row+1); }); });
@@ -8707,23 +8739,32 @@ function wireLessonsTableEvents(student){
   $$('.lp-hdr-datecol').forEach(function(th){
     th.addEventListener('click', function(){ openLpColumnActionsModal(student, +th.dataset.col); });
   });
-  var payCell = $('#lpPaymentCell');
-  if(payCell) payCell.addEventListener('click', function(){ openPaymentStatusModal(student); });
+  // lo stato "Pagato" ora si segna riga per riga, nella colonna "Totali parziali"
+  $$('.lp-partial-cell').forEach(function(td){
+    td.addEventListener('click', function(){ openPaymentStatusModal(student, +td.dataset.partialRow); });
+  });
 }
 function formatPaymentCellText(student){
-  var txt = '€ '+fmtMoney2(computePayment(student));
-  if(student.paid) txt += ' (PAGATO)';
-  return txt;
+  return '€ '+fmtMoney2(computePayment(student));
+}
+function updatePartialCell(student, r){
+  var cell = document.querySelector('[data-partial-row="'+r+'"]');
+  if(!cell) return;
+  ensureRowPaid(student);
+  cell.innerHTML = formatPartialCellHTML(student, r);
+  cell.classList.toggle('is-paid', !!student.rowPaid[r]);
 }
 function updatePaymentCell(student){
   var cell = $('#lpPaymentCell');
   if(cell) cell.textContent = formatPaymentCellText(student);
 }
-function openPaymentStatusModal(student){
+function openPaymentStatusModal(student, r){
+  ensureRowPaid(student);
   openModal(
     '<h3>Stato pagamento</h3>'+
+    '<p style="margin:0 0 6px;font-size:.88rem;color:var(--ink-soft);">Riga '+(r+1)+' &middot; '+countFilledInRow(student.dateRows[r])+' lezioni &middot; € '+fmtMoney2(computeRowPayment(student, r))+'</p>'+
     '<label style="display:flex;align-items:center;gap:10px;font-size:.95rem;cursor:pointer;margin:10px 0 4px;">'+
-      '<input type="checkbox" id="lpPaidCheckbox" style="width:20px;height:20px;"'+(student.paid?' checked':'')+'> Pagato'+
+      '<input type="checkbox" id="lpPaidCheckbox" style="width:20px;height:20px;"'+(student.rowPaid[r]?' checked':'')+'> Pagato'+
     '</label>'+
     '<div class="modal-actions">'+
       '<button type="button" class="btn-secondary" id="lpPaidCancel">Annulla</button>'+
@@ -8732,23 +8773,26 @@ function openPaymentStatusModal(student){
   );
   $('#lpPaidCancel').onclick = closeModal;
   $('#lpPaidConfirm').onclick = async function(){
-    student.paid = $('#lpPaidCheckbox').checked;
-    updatePaymentCell(student);
-    markLpDirty();
+    student.rowPaid[r] = $('#lpPaidCheckbox').checked;
+    updatePartialCell(student, r);
     closeModal();
-    try{ await updateDocSafe(privateLessonDocRef(state.currentAgendaId, student.id), {paid: student.paid}); }
+    try{ await updateDocSafe(privateLessonDocRef(state.currentAgendaId, student.id), {rowPaid: student.rowPaid.slice()}); }
     catch(err){ console.error(err); showToast('Errore nel salvataggio.', 'error'); }
   };
 }
 function insertLessonRow(student, atIndex){
+  ensureRowPaid(student);
   student.dateRows.splice(atIndex, 0, new Array(student.numCols).fill(''));
+  student.rowPaid.splice(atIndex, 0, false);
   student.numRows = student.dateRows.length;
   markLpDirty();
   renderLessonsTable(student);
 }
 function deleteLessonRow(student, r){
   if(student.dateRows.length<=1){ showToast('Deve restare almeno una riga.', 'info'); return; }
+  ensureRowPaid(student);
   student.dateRows.splice(r,1);
+  student.rowPaid.splice(r,1);
   student.numRows = student.dateRows.length;
   markLpDirty();
   renderLessonsTable(student);
@@ -8804,14 +8848,16 @@ function buildLessonsTableForPrint(student){
   html += '<h4 class="lp-table-caption" style="text-align:left;margin:0 0 6px;">Date delle lezioni</h4>';
   html += '<table class="lp-table"><thead><tr>';
   for(var i=0;i<n;i++) html += '<th>'+(i+1)+'</th>';
-  html += '<th class="lp-total-cell">Totali</th></tr></thead><tbody>';
-  student.dateRows.forEach(function(row){
+  html += '<th class="lp-total-cell">Totali</th><th class="lp-partial-hdr">Totali parziali</th></tr></thead><tbody>';
+  ensureRowPaid(student);
+  student.dateRows.forEach(function(row, r){
     html += '<tr>';
     for(var c=0;c<n;c++) html += '<td>'+escapeHtml(row[c]||'')+'</td>';
-    html += '<td class="lp-count-cell">'+countFilledInRow(row)+'</td></tr>';
+    html += '<td class="lp-count-cell">'+countFilledInRow(row)+'</td>';
+    html += '<td class="lp-partial-cell'+(student.rowPaid[r]?' is-paid':'')+'">'+formatPartialCellHTML(student, r)+'</td></tr>';
   });
-  html += '<tr class="lp-rate-row"><td class="lp-label" colspan="'+n+'">Tariffa oraria</td><td>€ '+escapeHtml((student.hourlyRate+'').replace('.',',')||'0')+'</td></tr>';
-  html += '<tr class="lp-pay-row"><td class="lp-label" colspan="'+n+'">Pagamento totale</td><td>'+formatPaymentCellText(student)+'</td></tr>';
+  html += '<tr class="lp-rate-row"><td class="lp-label" colspan="'+n+'">Tariffa oraria</td><td colspan="2">€ '+escapeHtml((student.hourlyRate+'').replace('.',',')||'0')+'</td></tr>';
+  html += '<tr class="lp-pay-row"><td class="lp-label" colspan="'+n+'">Pagamento totale</td><td colspan="2">'+formatPaymentCellText(student)+'</td></tr>';
   html += '</tbody></table></div>';
   return html;
 }
