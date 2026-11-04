@@ -804,7 +804,7 @@ body.dark .choice-btn.choice-danger > span small{color:var(--ink-soft);}
 .reg-table input.reg-grade-input{text-align:center;width:30px;}
 .reg-table tbody tr.reg-data-row:nth-child(odd) td.reg-alt{background:#ffffff;}
 .reg-table tbody tr.reg-data-row:nth-child(even) td.reg-alt{background:#e4e4e4;}
-.reg-table tbody tr.reg-data-row td.reg-alt.low{background:#F5A623 !important;color:#5a2d00;}
+.reg-table tbody tr.reg-data-row td.reg-alt.low{background-color:#F5A623 !important;color:#5a2d00;--reg-slash:#ffffff;}
 .reg-table td.reg-media-cell{background:#FFF3D6;font-weight:700;}
 .reg-table td.reg-media-cell.low{background:#F5A623;color:#5a2d00;}
 .reg-table tr.reg-separator-row td{background:#2b2b2b;height:8px;padding:0;border:none;}
@@ -5568,7 +5568,9 @@ function cellFmtStyle(sheet, key){
 }
 /* "Barrato" nel Registro personale: non barra più il testo, ma traccia sulla cella una linea
    sottile dall'angolo in basso a sinistra a quello in alto a destra; il contenuto resta leggibile. */
-var REG_CELL_DIAGONAL = 'linear-gradient(to bottom right, rgba(40,40,40,0) 48.9%, rgba(40,40,40,.85) 48.9%, rgba(40,40,40,.85) 51.1%, rgba(40,40,40,0) 51.1%)';
+/* Il colore della linea viene dalla variabile --reg-slash: grigio scuro di norma, bianco sulle
+   caselle arancioni dei voti sotto il 5,5 (dove una linea scura non si vedrebbe). */
+var REG_CELL_DIAGONAL = 'linear-gradient(to bottom right, transparent 48.9%, var(--reg-slash, rgba(40,40,40,.85)) 48.9%, var(--reg-slash, rgba(40,40,40,.85)) 51.1%, transparent 51.1%)';
 function cellBgStyle(sheet, key){
   var s = sheet.cellStyles && sheet.cellStyles[key];
   if(!s || (!s.bg && !s.strike)) return '';
